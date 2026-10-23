@@ -10,8 +10,8 @@
     ; Create vars for before/after transaction
     ; Condition on the initial cash values?
     (:variables (?wc ?pc2 ?mc2)
-      :inputs (?m) ; ?pc1 ?mc1)
-      :domain (and (machine ?m)) ; (pcash ?pc1) (mcash ?mc1))
+      :inputs (?m)
+      :domain (and (machine ?m))
       :graph (and (wcash ?wc) (pcash ?pc2) (mcash ?mc2)
                   (transaction ?wc ?pc2 ?mc2) ; Include ?m?
     ))
@@ -22,13 +22,6 @@
     (:constraint (withdraw ?wc ?pc1 ?pc2 ?mc1 ?mc2)
       :necessary (and (pcash ?pc1) (mcash ?mc1) ; TODO: condition mcash on the machine
                       (transaction ?wc ?pc2 ?mc2)))
-
-    ; TODO: multiple constraints
-    ;(:constraint (sum ?pc1 ?wc ?pc2)
-    ;  :necessary (and (pcash ?pc1) (wcash ?wc) (pcash ?pc2)))
-    ;
-    ;(:constraint (sum ?mc2 ?wc ?mc1)
-    ;  :necessary (and (mcash ?mc2) (wcash ?wc) (mcash ?mc1)))
 
     (:objective withdrawcost)
   )

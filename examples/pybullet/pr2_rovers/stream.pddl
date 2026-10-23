@@ -5,16 +5,6 @@
     :domain (and (Rover ?v) (BConf ?bq))
     :certified (Reachable ?v ?bq)
   )
-  ;(:stream obj-range ; Eager
-  ;  :inputs (?bq ?o)
-  ;  :domain (and (BConf ?bq) (Objective ?o))
-  ;  :certified (ImageRange ?bq ?o)
-  ;)
-  ;(:stream com-range ; Eager
-  ;  :inputs (?bq ?l)
-  ;  :domain (and (BConf ?bq) (Lander ?l))
-  ;  :certified (ComRange ?bq ?l)
-  ;)
   (:stream obj-inv-visible
     :inputs (?o)
     :domain (and (Objective ?o))
@@ -49,10 +39,4 @@
   )
 
   ; Could make the robots communicate via line of sight to each other
-
-  ;(:stream test-cfree-ray-conf
-  ;  :inputs (?y ?bq)
-  ;  :domain (and (Ray ?y) (BConf ?bq))
-  ;  :certified (CFreeRayConf ?bq ?r)
-  ;)
 )

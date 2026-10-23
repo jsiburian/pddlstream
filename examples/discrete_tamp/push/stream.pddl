@@ -11,7 +11,7 @@
   )
   (:stream push-target
     :inputs (?p1 ?p2)
-    :domain (and (Pose ?p1) (GoalPose ?p2))  ;(Pose ?p2))
+    :domain (and (Pose ?p1) (GoalPose ?p2))
     :outputs (?q1 ?q2)
     :certified (Push ?p1 ?q1 ?p2 ?q2)
   )

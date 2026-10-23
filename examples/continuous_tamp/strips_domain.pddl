@@ -48,7 +48,7 @@
 
   (:action pick
     :parameters (?r ?b ?p ?g ?q)
-    :precondition (and (Robot ?r) (Kin ?b ?q ?p ?g) ; (Contain ?b ?p ?s) (In ?b ?s)
+    :precondition (and (Robot ?r) (Kin ?b ?q ?p ?g)
                        (AtConf ?r ?q) (AtPose ?b ?p) (HandEmpty ?r)
                   )
     :effect (and (AtGrasp ?r ?b ?g) (Holding ?r ?b) (CanMove ?r)
@@ -61,9 +61,6 @@
                        ; TODO: opposite version where the search pays before using (like with axioms)
                        (AtConf ?r ?q) (AtGrasp ?r ?b ?g)
                        ; TODO: recreate a precondition version
-                       ;(forall (?b2 ?p2) ; TODO: makes incremental slow
-                       ;  (imply (and (Pose ?b2 ?p2) (AtPose ?b2 ?p2))
-                       ;         (CFree ?b ?p ?b2 ?p2)))
                   )
     :effect (and (AtPose ?b ?p) (In ?b ?s) (HandEmpty ?r) (CanMove ?r)
                  (not (AtGrasp ?r ?b ?g)) (not (Holding ?r ?b))

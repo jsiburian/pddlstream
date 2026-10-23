@@ -3,20 +3,10 @@
     (and (Conf ?q1) (Conf ?q2))
   )
 
-  ;(:predicate (TrajCollision ?t ?b2 ?p2)
-  ;  (and (Traj ?t) (Pose ?b2 ?p2))
-  ;)
-
   (:stream t-region
     :inputs (?b ?p ?r)
     :domain (and (Pose ?b ?p) (Placeable ?b ?r))
     :certified (Contain ?b ?p ?r))
-
-  ;(:stream s-grasp
-  ;  :inputs (?b)
-  ;  :domain (Block ?b)
-  ;  :outputs (?g)
-  ;  :certified (Grasp ?b ?g))
 
   ;;;;;;;;;;
 
@@ -30,11 +20,6 @@
       :inputs (?b ?r)
       :domain (Placeable ?b ?r)
       :graph (and (Contain ?b ?p ?r) (Pose ?b ?p)))
-
-    ;(:variables (?g) ; TODO: could be independent of the block
-    ;  :inputs (?b)
-    ;  :domain (Block ?b)
-    ;  :graph (Grasp ?b ?g))
 
     (:variables (?q)
       :inputs (?b ?p ?g)
@@ -57,7 +42,5 @@
 
   ;;;;;;;;;;
 
-    ; Treating predicate as an objective
-    ;(:objective TrajCollision)
   )
 )

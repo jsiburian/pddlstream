@@ -22,7 +22,6 @@
     :domain (and (Conf ?q1) (Conf ?q2))
     :fluents (AtPose) ; AtGrasp
     :outputs (?t)
-    ;:certified (and (Traj ?t) (FreeMotion ?q1 ?t ?q2))
     :certified (FreeMotion ?q1 ?t ?q2)
   )
   (:stream plan-holding-motion
@@ -30,7 +29,6 @@
     :domain (and (Conf ?q1) (Conf ?q2) (Grasp ?o ?g))
     :fluents (AtPose)
     :outputs (?t)
-    ;:certified (and (Traj ?t) (HoldingMotion ?q1 ?t ?q2 ?o ?g))
     :certified (HoldingMotion ?q1 ?t ?q2 ?o ?g)
   )
 
@@ -49,8 +47,4 @@
     :domain (and (Traj ?t) (Pose ?o2 ?p2))
     :certified (CFreeTrajPose ?t ?o2 ?p2)
   )
-
-  ;(:predicate (TrajCollision ?t ?o2 ?p2)
-  ;  (and (Traj ?t) (Pose ?o2 ?p2))
-  ;)
 )

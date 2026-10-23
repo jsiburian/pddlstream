@@ -1,7 +1,6 @@
 (define (stream continuous-tamp)
   (:stream s-region
     :inputs (?b ?r)
-    ;:domain (and (Block ?b) (Region ?r))
     :domain (Placeable ?b ?r)
     :outputs (?p)
     :certified (and (Contain ?b ?p ?r) (Pose ?b ?p)))
@@ -21,7 +20,6 @@
   (:stream s-motion
     :inputs (?q1 ?q2)
     :domain (and (Conf ?q1) (Conf ?q2))
-    ;:fluents (AtPose AtGrasp AtConf)
     :outputs (?t)
     :certified (and (Motion ?q1 ?t ?q2) (Traj ?t)))
 

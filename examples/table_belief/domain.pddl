@@ -26,11 +26,6 @@
     (PickCost)
     (PlaceCost)
   )
-  ;(:action move
-  ;  :parameters (?s)
-  ;  :precondition (Fixed ?s)
-  ;  :effect (Nearby ?s)
-  ;)
 
   (:action scan
     :parameters (?s ?i)
@@ -50,8 +45,8 @@
   (:action pick
     :parameters (?a ?i ?s)
     :precondition (and (Arm ?a) (Stackable ?i ?s) (Graspable ?i)
-                       (On ?i ?s) (HandEmpty ?a) (Registered ?i) (Localized ?s)) ; (Nearby ?s)
-    :effect (and (Holding ?a ?i) ; (CanMove)
+                       (On ?i ?s) (HandEmpty ?a) (Registered ?i) (Localized ?s))
+    :effect (and (Holding ?a ?i)
                  (not (On ?i ?s)) (not (HandEmpty ?a))
                  (not (Localized ?i)) (not (Registered ?i))
                  (increase (total-cost) (PickCost)))
@@ -59,8 +54,8 @@
   (:action place
     :parameters (?a ?i ?s)
     :precondition (and (Arm ?a) (Stackable ?i ?s) (Graspable ?i)
-                       (Holding ?a ?i) (Localized ?s)) ; (Nearby ?s)
-    :effect (and (On ?i ?s) (HandEmpty ?a) (Localized ?i) ; (CanMove)
+                       (Holding ?a ?i) (Localized ?s))
+    :effect (and (On ?i ?s) (HandEmpty ?a) (Localized ?i)
                  (not (Holding ?a ?i))
                  (increase (total-cost) (PlaceCost)))
   )

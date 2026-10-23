@@ -1,6 +1,5 @@
 (define (domain rovers)
   (:requirements :strips :equality)
-  ; (:constants)
   (:predicates
     (Rover ?v)
     (Objective ?o)
@@ -34,7 +33,6 @@
 
     (Blocked ?y)
   )
-  ; (:functions)
 
   (:action move_base
     :parameters (?v ?bq1 ?bt ?bq2)
@@ -54,7 +52,6 @@
     :parameters (?v ?bq ?hq ?y ?o ?c ?m)
     :precondition (and (Rover ?v) (ImageVisible ?bq ?hq ?y ?o) (OnBoard ?c ?v) (Supports ?c ?m)
                        (AtBConf ?v ?bq) (AtHConf ?v ?hq) (Calibrated ?c ?v)
-                       ; (not (Blocked ?y))
                   )
     :effect (and (HaveImage ?v ?o ?m)
                  (not (Calibrated ?c ?v)))
@@ -63,7 +60,6 @@
     :parameters (?v ?bq ?hq ?y ?o ?c)
     :precondition (and (Rover ?v) (ImageVisible ?bq ?hq ?y ?o) (OnBoard ?c ?v)
                        (AtBConf ?v ?bq) (AtHConf ?v ?hq)
-                       ; (not (Blocked ?y))
                   )
     :effect (Calibrated ?c ?v)
   )
@@ -71,7 +67,6 @@
     :parameters (?v ?bq ?hq ?y ?l ?o ?m)
     :precondition (and (Rover ?v) (ComVisible ?bq ?hq ?y ?l) (Objective ?o) (Mode ?m)
                        (HaveImage ?v ?o ?m) (AtBConf ?v ?bq) (AtHConf ?v ?hq)
-                       ; (not (Blocked ?y))
                   )
     :effect (ReceivedImage ?o ?m)
   )
@@ -87,7 +82,6 @@
     :parameters (?v ?bq ?hq ?y ?l ?r)
     :precondition (and (Rover ?v) (ComVisible ?bq ?hq ?y ?l) (Rock ?r)
                        (Analyzed ?v ?r) (AtBConf ?v ?bq) (AtHConf ?v ?hq)
-                       ; (not (Blocked ?y))
                   )
     :effect (ReceivedAnalysis ?r)
   )
@@ -98,19 +92,4 @@
     :effect (and (Free ?v ?s)
                  (not (Full ?v ?s)))
   )
-
-  ;(:action recharge # TODO: sample states accessible by sun
-  ;  :parameters (?v ?bq)
-  ;  :precondition (and (InSun ?bq)
-  ;                     (AtBConf ?v ?bq)
-  ;                )
-  ;  :effect (Charged ?v)
-  ;)
-
-  ;(:derived (Blocked ?y)
-  ;  (exists (?v ?bq) (and (Ray ?y) (Rover ?v) (BConf ?bq)
-  ;                         (not (CFreeRayConf ?y ?v ?bq))
-  ;                         (AtBConf ?v ?bq)))
-  ;)
-
 )

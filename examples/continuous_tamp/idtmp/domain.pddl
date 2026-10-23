@@ -31,15 +31,12 @@
   )
 
   (:action move
-    ;:parameters (?r ?q1 ?q2)
-    ;:precondition (and (Robot ?r) (Reachable ?q1 ?q2)
     :parameters (?r ?q1 ?t ?q2)
     :precondition (and (Robot ?r) (Motion ?q1 ?t ?q2)
                         (AtConf ?r ?q1) (CanMove ?r)) ; Works for both :parameters
     :effect (and (AtConf ?r ?q2)
                  (not (AtConf ?r ?q1)) (not (CanMove ?r))
                  (increase (total-cost) 1)))
-                 ;(increase (total-cost) (Dist ?q1 ?q2))))
 
   (:action pick
     :parameters (?r ?b ?p ?g ?q)

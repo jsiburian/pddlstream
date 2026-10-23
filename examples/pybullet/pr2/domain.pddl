@@ -54,13 +54,6 @@
                  (not (AtBConf ?q1)) (not (CanMove))
                  (increase (total-cost) (MoveCost ?t)))
   )
-  ;(:action move_arm
-  ;  :parameters (?q1 ?q2 ?t)
-  ;  :precondition (and (ArmMotion ?a ?q1 ?t ?q2)
-  ;                     (AtAConf ?a ?q1))
-  ;  :effect (and (AtAConf ?a ?q2)
-  ;               (not (AtAConf ?a ?q1)))
-  ;)
 
   (:action pick
     :parameters (?a ?o ?p ?g ?q ?t)
@@ -69,7 +62,6 @@
                        (not (UnsafeApproach ?o ?p ?g))
                        (not (UnsafeATraj ?t)))
     :effect (and (AtGrasp ?a ?o ?g) (CanMove)
-                 ;(forall (?r) (when (Supported ?o ?p ?r) (not (On ?o ?r))))
                  (not (AtPose ?o ?p)) (not (HandEmpty ?a))
                  (increase (total-cost) (PickCost)))
   )
@@ -82,7 +74,6 @@
                        (not (UnsafeATraj ?t)))
     :effect (and (AtPose ?o ?p) (HandEmpty ?a) (CanMove)
                  (not (AtGrasp ?a ?o ?g))
-                 ;(forall (?r) (when (Supported ?o ?p ?r) (On ?o ?r)))
                  (increase (total-cost) (PlaceCost)))
   )
 
@@ -124,13 +115,4 @@
                            (not (CFreeTrajPose ?t ?o2 ?p2))
                            (AtPose ?o2 ?p2)))
   )
-
-  ;(:derived (UnsafeBTraj ?t) (or
-  ;  (exists (?o2 ?p2) (and (TrajPoseCollision ?t ?o2 ?p2)
-  ;                         (AtPose ?o2 ?p2)))
-  ;  (exists (?a ?q) (and (TrajArmCollision ?t ?a ?q)
-  ;                       (AtAConf ?a ?q)))
-  ;  (exists (?a ?o ?g) (and (TrajGraspCollision ?t ?a ?o ?g)
-  ;                          (AtGrasp ?a ?o ?g)))
-  ;))
 )

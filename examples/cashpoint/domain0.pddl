@@ -1,7 +1,6 @@
 (define (domain nightout)
     (:requirements :typing)
-    ;(:types person location machine)
-    (:constants @amount) ; @min @max)
+    (:constants @amount)
     (:predicates
         (person ?p)
         (machine ?m)
@@ -18,7 +17,6 @@
         (maxwithdraw ?m ?c)
     )
     (:functions
-        ;(minwithdraw ?m - machine)
         (withdrawcost ?wcash)
     )
 
@@ -26,18 +24,13 @@
     (:action withdraw_money
      :parameters (?p ?m ?wcash ?pcash1 ?pcash2 ?mcash1 ?mcash2)
      :precondition (and (person ?p) (machine ?m)
-                        ; (ge ?wcash @min) (ge @max ?wcash) (ge ?mcash1 ?wcash)
-                        ;(sum ?pcash1 ?wcash ?pcash2) (sum ?mcash2 ?wcash ?mcash1) ; TODO: separate
                         (withdraw ?wcash ?pcash1 ?pcash2 ?mcash1 ?mcash2)
                         (inpocket ?p ?pcash1) (maxwithdraw ?m ?mcash1))
      :effect (and (inpocket ?p ?pcash2) (maxwithdraw ?m ?mcash2)
                   (not (inpocket ?p ?pcash1)) (not (maxwithdraw ?m ?mcash1))
-                  ;(increase (total-cost) 2)))
                   (increase (total-cost) (withdrawcost ?wcash))))
 
     (:action finish
-     ;:parameters (?p ?pcash) ; TODO: strange bug due to constants
-     ;:precondition (and (person ?p) (ge ?pcash @amount) ; (pcash ?wcash)
      :parameters (?p ?pcash ?tcash)
      :precondition (and (person ?p) (ge ?pcash ?tcash)
                         (inpocket ?p ?pcash))

@@ -38,8 +38,4 @@
     (exists (?o ?d) (and (Location ?l) (BCollision ?l ?o ?d) ; Include object do no self collisions?
                          (BLoc ?o ?d)))
   )
-  ; (:derived (Unsafe2 ?l ?p1)
-  ;   (exists (?o ?d ?p2) (and (Obj ?o) (Prob ?p1) (PCollision ?l ?d ?p2) (GE ?p1 ?p2) ;Strict?
-  ;                       (BLoc ?o ?d)))
-  ; )
 )

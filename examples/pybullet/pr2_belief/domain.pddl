@@ -47,12 +47,10 @@
   (:action move_base
     :parameters (?q1 ?q2 ?t)
     :precondition (and (BaseMotion ?q1 ?t ?q2)
-                       (AtBConf ?q1)) ; (CanMove)
+                       (AtBConf ?q1))
     :effect (and (AtBConf ?q2)
                  (not (AtBConf ?q1)) (not (CanMove))
                  (increase (total-cost) (MoveCost)))
-                 ; (forall (?o) (not (Registered ?o))))
-                 ; (forall (?o) (when (Graspable ?o) (not (Registered ?o)))))
   )
   (:action pick
     :parameters (?a ?o ?p ?g ?q ?t)
@@ -65,7 +63,7 @@
   (:action place
     :parameters (?a ?o ?p ?g ?q ?t)
     :precondition (and (Kin ?a ?o ?p ?g ?q ?t)
-                       (AtGrasp ?a ?o ?g) (AtBConf ?q)) ; (Localized ?o)
+                       (AtGrasp ?a ?o ?g) (AtBConf ?q))
     :effect (and (AtPose ?o ?p) (HandEmpty ?a) (CanMove)
                  (not (AtGrasp ?a ?o ?g))
                  (increase (total-cost) (PlaceCost)))
@@ -80,7 +78,7 @@
   )
   (:action localize
     :parameters (?r ?p1 ?o ?p2)
-    :precondition (and (Stackable ?o ?r) (Pose ?r ?p1) (Pose ?o ?p2) ; (FiniteScanCost ?r ?o)
+    :precondition (and (Stackable ?o ?r) (Pose ?r ?p1) (Pose ?o ?p2)
                    (AtPose ?o ?p2) (Scanned ?r) (Uncertain ?o))
     :effect (and (Localized ?o) (Supported ?o ?p2 ?r)
                  (not (Uncertain ?o))

@@ -1,8 +1,5 @@
 ; everything written here, should have a corresponding function!
 (define (stream kitchen2d)
-	;(:predicate (Collision ?control ?gripper ?pose)
-	;    (and (IsControl ?control) (IsPose ?gripper ?pose))
-	;)
 
 	(:stream sample-motion
 		:inputs (?gripper ?pose ?pose2)
@@ -19,14 +16,6 @@
 		:certified (and (CanPush ?gripper ?pose ?pose2 ?block ?pose3 ?pose4 ?control)
 						(IsPose ?gripper ?pose) (IsPose ?gripper ?pose2))
 	)
-	;(:stream sample-motion-h
-	;	:inputs (?gripper ?pose ?cup ?grasp ?pose2)
-	;	:domain (and (IsGripper ?gripper) (IsPose ?gripper ?pose)
-	;				 (IsGrasp ?cup ?grasp) (IsPose ?gripper ?pose2))
-	;	:outputs (?control)
-	;	:certified (and (MotionH ?gripper ?pose ?cup ?grasp ?pose2 ?control)
-	;	                (IsControl ?control))
-	;)
 	(:stream sample-pour
 		:inputs (?gripper ?cup ?kettle ?pose2)
 		:domain (and (IsGripper ?gripper) (IsPourable ?cup)

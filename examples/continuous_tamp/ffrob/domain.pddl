@@ -36,7 +36,7 @@
   (:action move
     :parameters (?r ?q1 ?q2)
     :precondition (and (Robot ?r) (Conf ?q1) (Conf ?q2)
-                       (AtConf ?r ?q1) ; (Reachable ?r ?q2)
+                       (AtConf ?r ?q1)
                        (CanMove ?r))
     :effect (and (AtConf ?r ?q2)
                  (not (AtConf ?r ?q1)) (not (CanMove ?r))
@@ -79,7 +79,6 @@
     (and (Robot ?r) (Conf ?q2)
         (or (AtConf ?r ?q2)
             (exists (?q1 ?t) (and (Motion ?q1 ?t ?q2) (Reachable ?r ?q1)
-                                  ;(not (UnsafeTraj ?r ?t))
                                   ))))
   )
 )

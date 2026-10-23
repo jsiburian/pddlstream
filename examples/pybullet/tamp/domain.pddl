@@ -49,20 +49,11 @@
     :parameters (?q1 ?q2 ?t)
     :precondition (and (BaseMotion ?q1 ?t ?q2)
                        (AtBConf ?q1) (CanMove)
-                       ;(not (UnsafeBTraj ?t))
                    )
     :effect (and (AtBConf ?q2)
                  (not (AtBConf ?q1)) (not (CanMove))
                  (increase (total-cost) (Distance ?q1 ?q2)))
-                 ; (increase (total-cost) (MoveCost ?t)))
   )
-  ;(:action move_arm
-  ;  :parameters (?q1 ?q2 ?t)
-  ;  :precondition (and (ArmMotion ?a ?q1 ?t ?q2)
-  ;                     (AtAConf ?a ?q1))
-  ;  :effect (and (AtAConf ?a ?q2)
-  ;               (not (AtAConf ?a ?q1)))
-  ;)
 
   (:action pick
     :parameters (?a ?o ?p ?g ?q ?t)
@@ -90,13 +81,13 @@
 
   (:action clean
     :parameters (?o ?r)
-    :precondition (and (Stackable ?o ?r) (Type ?r @sink) ; (Sink ?r)
+    :precondition (and (Stackable ?o ?r) (Type ?r @sink)
                        (On ?o ?r))
     :effect (Cleaned ?o)
   )
   (:action cook
     :parameters (?o ?r)
-    :precondition (and (Stackable ?o ?r) (Type ?r @stove) ; (Stove ?r)
+    :precondition (and (Stackable ?o ?r) (Type ?r @stove)
                        (On ?o ?r) (Cleaned ?o))
     :effect (and (Cooked ?o)
                  (not (Cleaned ?o)))
@@ -127,13 +118,4 @@
                            (not (CFreeTrajPose ?t ?o2 ?p2))
                            (AtPose ?o2 ?p2)))
   )
-  ;(:derived (UnsafeBTraj ?t) (or
-  ;  ;(exists (?o2 ?p2) (and (BTraj ?t) (Pose ?o2 ?p2)
-  ;  ;                       (not (CFreeTrajPose ?t ?o2 ?p2))
-  ;  ;                       (AtPose ?o2 ?p2)))
-  ;  (exists (?a ?o1 ?g1 ?o2 ?p2) (and (BTraj ?t) (Arm ?a) (Grasp ?o1 ?g1) (Pose ?o2 ?p2)
-  ;                                    (not (CFreeTrajGraspPose ?t ?a ?o1 ?g1 ?o2 ?p2)) (not (= ?o1 ?o2))
-  ;                                    (AtGrasp ?a ?o1 ?g1) (AtPose ?o2 ?p2)))
-  ;))
-
 )

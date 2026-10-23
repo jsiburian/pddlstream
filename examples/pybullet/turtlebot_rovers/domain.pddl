@@ -1,6 +1,5 @@
 (define (domain rovers)
   (:requirements :strips :equality)
-  ; (:constants)
   (:predicates
     (Rover ?v)
     (Objective ?o)
@@ -32,7 +31,6 @@
 
     (Blocked ?y)
   )
-  ; (:functions)
 
   (:action move
     :parameters (?v ?q1 ?t ?q2)
@@ -90,18 +88,9 @@
                  (not (Full ?v ?s)))
   )
 
-  ;(:action recharge # TODO: sample states accessible by sun
-  ;  :parameters (?v ?q)
-  ;  :precondition (and (InSun ?q)
-  ;                     (AtConf ?v ?q)
-  ;                )
-  ;  :effect (Charged ?v)
-  ;)
-
   (:derived (Blocked ?y)
     (exists (?v ?q) (and (Ray ?y) (Conf ?v ?q)
                          (not (CFreeRayConf ?y ?v ?q))
                          (AtConf ?v ?q)))
   )
-
 )

@@ -13,7 +13,7 @@
   (:action pick
     :parameters (?b ?t)
     :precondition (and (Pickable ?b ?t) (OnTable ?b))
-    :effect (and (Holding ?b) (not (OnTable ?b)))) ; (Executed ?t)
+    :effect (and (Holding ?b) (not (OnTable ?b))))
   (:action clean
     :parameters (?b)
     :precondition (and (Cleanable ?b) (Holding ?b))

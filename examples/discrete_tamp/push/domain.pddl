@@ -9,7 +9,6 @@
     (HandEmpty)
     (CFree ?p1 ?p2)
     (Push ?p1 ?q1 ?p2 ?q2)
-    ;(Push ?p1 ?q1 ?p2 ?q2 ?t)
     (Unsafe ?p)
     (CanMove)
   )

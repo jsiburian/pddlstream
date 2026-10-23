@@ -16,12 +16,11 @@
     :inputs (?a ?o ?p ?g)
     :domain (and (Controllable ?a) (Pose ?o ?p) (Grasp ?o ?g))
     :outputs (?q ?t)
-    :certified (and (BConf ?q) (ATraj ?t) (Kin ?a ?o ?p ?g ?q ?t)) ; (ATraj ?t)
+    :certified (and (BConf ?q) (ATraj ?t) (Kin ?a ?o ?p ?g ?q ?t))
   )
   (:stream plan-base-motion
     :inputs (?q1 ?q2)
     :domain (and (BConf ?q1) (BConf ?q2))
-    ;:fluents (AtPose AtGrasp) ; AtBConf
     :outputs (?t)
     :certified (and (BTraj ?t) (BaseMotion ?q1 ?t ?q2))
   )
@@ -42,16 +41,8 @@
     :domain (and (ATraj ?t) (Pose ?o2 ?p2))
     :certified (CFreeTrajPose ?t ?o2 ?p2)
   )
-  ;(:stream test-cfree-traj-grasp-pose
-  ;  :inputs (?t ?a ?o1 ?g1 ?o2 ?p2)
-  ;  :domain (and (BTraj ?t) (Arm ?a) (Grasp ?o1 ?g1) (Pose ?o2 ?p2))
-  ;  :certified (CFreeTrajGraspPose ?t ?a ?o1 ?g1 ?o2 ?p2)
-  ;)
 
   (:function (Distance ?q1 ?q2)
     (and (BConf ?q1) (BConf ?q2))
   )
-  ;(:function (MoveCost ?t)
-  ;  (and (BTraj ?t))
-  ;)
 )

@@ -53,7 +53,6 @@
     	:parameters (?gripper ?pose ?pose2 ?control)
     	:precondition
     		(and (Motion ?gripper ?pose ?pose2 ?control)
-    			 ; (CanMove ?gripper) ; (Empty ?gripper)
     			 (AtPose ?gripper ?pose) (not (Unsafe ?control)))
     	:effect
     		(and (AtPose ?gripper ?pose2)
@@ -61,17 +60,6 @@
     			 (not (CanMove ?gripper))
     			 (increase (total-cost) 1))
     )
-    ;(:action move-holding
-    ;	:parameters (?gripper ?pose ?cup ?grasp ?pose2 ?control)
-    ;	:precondition
-    ;		(and (MotionH ?gripper ?pose ?cup ?grasp ?pose2 ?control)
-    ;			 (not (Empty ?gripper)) (AtPose ?gripper ?pose)
-    ;		     (Grasped ?cup ?grasp) (CanMove ?gripper) (not (Unsafe ?control)))
-    ;	:effect
-    ;		(and (AtPose ?gripper ?pose2) (not (AtPose ?gripper ?pose))
-    ;			 (not (CanMove ?gripper))
-    ;            (increase (total-cost) 1))
-    ;)
     (:action push
     	:parameters (?gripper ?pose ?pose2 ?block ?pose3 ?pose4 ?control)
     	:precondition
@@ -176,9 +164,6 @@
     			 (increase (total-cost) 1))
     )
 
-    ;(:derived (Unsafe ?control)
-    ;    (exists (?cup ?pose) (and (Collision ?control ?cup ?pose) (AtPose ?cup ?pose)))
-    ;)
     (:derived (Holding ?cup)
         (exists (?grasp) (and (IsGrasp ?cup ?grasp)
                               (Grasped ?cup ?grasp)))
