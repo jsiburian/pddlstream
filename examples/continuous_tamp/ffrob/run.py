@@ -2,8 +2,14 @@
 
 import argparse
 
-from examples.continuous_tamp.primitives import get_pose_gen, distance_fn, inverse_kin, \
-    get_region_test, plan_motion, GRASP
+from examples.continuous_tamp.primitives import (
+    get_pose_gen,
+    distance_fn,
+    inverse_kin,
+    get_region_test,
+    plan_motion,
+    GRASP,
+)
 from examples.continuous_tamp.run import initialize, create_problem, dump_pddlstream, step_plan
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.language.constants import PDDLProblem, print_solution
@@ -11,8 +17,10 @@ from pddlstream.language.generator import from_gen_fn, from_test, from_fn, from_
 from pddlstream.language.stream import WildOutput
 from pddlstream.utils import read, get_file_path, Profiler
 
+
 def test_cfree(r, b1, g1, b2, g2):
     return True
+
 
 def get_connect(initial_state):
     vertices = list(initial_state.robot_confs.values())
@@ -21,13 +29,17 @@ def get_connect(initial_state):
         facts = []
         for q1 in vertices:
             (t,) = plan_motion(q1, q2)
-            facts.extend([
-                ('Motion', q1, t, q2),
-                ('Traj', t),
-            ])
+            facts.extend(
+                [
+                    ('Motion', q1, t, q2),
+                    ('Traj', t),
+                ]
+            )
         vertices.append(q2)
         return WildOutput(facts=facts)
+
     return fn
+
 
 def pddlstream_from_tamp(tamp_problem):
     domain_pddl = read(get_file_path(__file__, 'domain.pddl'))
@@ -43,9 +55,10 @@ def pddlstream_from_tamp(tamp_problem):
         'dist': distance_fn,
     }
     init, goal = create_problem(tamp_problem)
-    init.extend(('Grasp', b, GRASP) for b in tamp_problem.initial.block_poses) # No grasp stream in this domain
+    init.extend(('Grasp', b, GRASP) for b in tamp_problem.initial.block_poses)  # No grasp stream in this domain
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -59,6 +72,7 @@ def main():
         print_solution(solution)
     plan, cost, evaluations = solution
     step_plan(tamp_problem, plan)
+
 
 if __name__ == '__main__':
     main()

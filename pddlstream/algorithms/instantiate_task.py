@@ -2,13 +2,32 @@ import os
 from collections import namedtuple, defaultdict, deque, Counter
 from time import time
 
-from pddlstream.algorithms.downward import get_literals, get_precondition, get_fluents, get_function_assignments, \
-    TRANSLATE_OUTPUT, parse_sequential_domain, parse_problem, task_from_domain_problem, GOAL_NAME, literal_holds, \
-    get_conjunctive_parts, get_conditional_effects
+from pddlstream.algorithms.downward import (
+    get_literals,
+    get_precondition,
+    get_fluents,
+    get_function_assignments,
+    TRANSLATE_OUTPUT,
+    parse_sequential_domain,
+    parse_problem,
+    task_from_domain_problem,
+    GOAL_NAME,
+    literal_holds,
+    get_conjunctive_parts,
+    get_conditional_effects,
+)
 from pddlstream.algorithms.relation import Relation, compute_order, solve_satisfaction
 from pddlstream.language.constants import is_parameter
-from pddlstream.utils import flatten, apply_mapping, MockSet, elapsed_time, Verbose, safe_remove, ensure_dir, \
-    str_from_object
+from pddlstream.utils import (
+    flatten,
+    apply_mapping,
+    MockSet,
+    elapsed_time,
+    Verbose,
+    safe_remove,
+    ensure_dir,
+    str_from_object,
+)
 
 import pddl
 import instantiate
@@ -17,8 +36,9 @@ import normalize
 
 FD_INSTANTIATE = True
 
-InstantiatedTask = namedtuple('InstantiatedTask', ['task', 'atoms', 'actions', 'axioms',
-                                                   'reachable_action_params', 'goal_list'])
+InstantiatedTask = namedtuple(
+    'InstantiatedTask', ['task', 'atoms', 'actions', 'axioms', 'reachable_action_params', 'goal_list']
+)
 
 
 def instantiate_goal(goal):
@@ -30,26 +50,32 @@ def instantiate_goal(goal):
 def get_goal_instance(goal):
     return pddl.PropositionalAction(GOAL_NAME, instantiate_goal(goal), [], None)
 
+
 ##################################################
+
 
 def get_constants(atom):
     return tuple((i, a) for i, a in enumerate(atom.args) if not is_parameter(a))
+
 
 def instantiate_condition(action, is_static, args_from_predicate):
     parameters = {p.name for p in action.parameters}
     static_conditions = list(filter(is_static, get_literals(get_precondition(action))))
     static_parameters = set(filter(is_parameter, flatten(atom.args for atom in static_conditions)))
     if not (parameters <= static_parameters):
-        raise NotImplementedError(f'Could not instantiate action {action.name} due to parameters: '
-                                  f'{str_from_object(parameters - static_parameters)}')
-    atoms_from_cond = {condition: args_from_predicate[condition.predicate, get_constants(condition)]
-                       for condition in static_conditions}
+        raise NotImplementedError(
+            f'Could not instantiate action {action.name} due to parameters: '
+            f'{str_from_object(parameters - static_parameters)}'
+        )
+    atoms_from_cond = {
+        condition: args_from_predicate[condition.predicate, get_constants(condition)] for condition in static_conditions
+    }
     conditions, atoms = zip(*atoms_from_cond.items())
-    relations = [Relation(conditions[index].args, atoms[index])
-                 for index in compute_order(conditions, atoms)]
+    relations = [Relation(conditions[index].args, atoms[index]) for index in compute_order(conditions, atoms)]
     solution = solve_satisfaction(relations)
     for element in solution.body:
         yield solution.get_mapping(element)
+
 
 def get_reachable_action_params(instantiated_actions):
     # TODO: use pddl_from_instance
@@ -58,10 +84,12 @@ def get_reachable_action_params(instantiated_actions):
         action = inst_action.action
         parameters = [p.name for p in action.parameters]
         args = apply_mapping(parameters, inst_action.var_mapping)
-        reachable_action_params[action].append(args) # TODO: does this actually do anything
+        reachable_action_params[action].append(args)  # TODO: does this actually do anything
     return reachable_action_params
 
+
 ##################################################
+
 
 def filter_negated(conditions, negated_from_name):
     return list(filter(lambda a: a.predicate not in negated_from_name, conditions))
@@ -73,9 +101,10 @@ def get_achieving_axioms(state, operators, negated_from_name={}):
     unprocessed_from_literal = defaultdict(list)
     operator_from_literal = {}
     remaining_from_stream = {}
-    reachable_operators = set() # TODO: only keep facts
+    reachable_operators = set()  # TODO: only keep facts
 
     queue = deque()
+
     def process_axiom(op, effect):
         reachable_operators.add(id(op))
         if effect not in operator_from_literal:
@@ -105,7 +134,9 @@ def get_achieving_axioms(state, operators, negated_from_name={}):
                 process_axiom(op, effect)
     return operator_from_literal, [op for op in operators if id(op) in reachable_operators]
 
+
 ##################################################
+
 
 def instantiate_domain(task, prune_static=True):
     fluent_predicates = get_fluents(task)
@@ -134,8 +165,15 @@ def instantiate_domain(task, prune_static=True):
     instantiated_actions = []
     for action in task.actions:
         for variable_mapping in instantiate_condition(action, is_static, args_from_predicate):
-            inst_action = action.instantiate(variable_mapping, init_facts, function_assignments, fluent_facts,
-                                             type_to_objects, task.use_min_cost_metric, predicate_to_atoms)
+            inst_action = action.instantiate(
+                variable_mapping,
+                init_facts,
+                function_assignments,
+                fluent_facts,
+                type_to_objects,
+                task.use_min_cost_metric,
+                predicate_to_atoms,
+            )
             if inst_action:
                 instantiated_actions.append(inst_action)
     instantiated_axioms = []
@@ -147,21 +185,25 @@ def instantiate_domain(task, prune_static=True):
 
     reachable_facts, reachable_operators = get_achieving_axioms(init_facts, instantiated_actions + instantiated_axioms)
     atoms = {atom.positive() for atom in (init_facts | set(reachable_facts)) if isinstance(atom, pddl.Literal)}
-    relaxed_reachable = all(literal_holds(init_facts, goal) or goal in reachable_facts
-                            for goal in instantiate_goal(task.goal))
-    reachable_actions = [action for action in reachable_operators
-                         if isinstance(action, pddl.PropositionalAction)]
-    reachable_axioms = [axiom for axiom in reachable_operators
-                        if isinstance(axiom, pddl.PropositionalAxiom)]
+    relaxed_reachable = all(
+        literal_holds(init_facts, goal) or goal in reachable_facts for goal in instantiate_goal(task.goal)
+    )
+    reachable_actions = [action for action in reachable_operators if isinstance(action, pddl.PropositionalAction)]
+    reachable_axioms = [axiom for axiom in reachable_operators if isinstance(axiom, pddl.PropositionalAxiom)]
     return relaxed_reachable, atoms, reachable_actions, reachable_axioms
+
 
 ##################################################
 
+
 def dump_instantiated(instantiated):
-    print('Instantiated frequencies:\n'
-          f'Atoms: {str_from_object(Counter(atom.predicate for atom in instantiated.atoms))}\n'
-          f'Actions: {str_from_object(Counter(action.action.name for action in instantiated.actions))}\n'
-          f'Axioms: {str_from_object(Counter(axiom.axiom.name for axiom in instantiated.axioms))}')
+    print(
+        'Instantiated frequencies:\n'
+        f'Atoms: {str_from_object(Counter(atom.predicate for atom in instantiated.atoms))}\n'
+        f'Actions: {str_from_object(Counter(action.action.name for action in instantiated.actions))}\n'
+        f'Axioms: {str_from_object(Counter(axiom.axiom.name for axiom in instantiated.axioms))}'
+    )
+
 
 def instantiate_task(task, check_infeasible=True, use_fd=FD_INSTANTIATE, **kwargs):
     start_time = time()
@@ -182,7 +224,9 @@ def instantiate_task(task, check_infeasible=True, use_fd=FD_INSTANTIATE, **kwarg
     dump_instantiated(instantiated)
     return instantiated
 
+
 ##################################################
+
 
 def sas_from_instantiated(instantiated_task):
     import timers
@@ -190,71 +234,85 @@ def sas_from_instantiated(instantiated_task):
     import options
     import simplify
     import variable_order
-    from translate import translate_task, unsolvable_sas_task, strips_to_sas_dictionary, \
-        build_implied_facts, build_mutex_key, solvable_sas_task
+    from translate import (
+        translate_task,
+        unsolvable_sas_task,
+        strips_to_sas_dictionary,
+        build_implied_facts,
+        build_mutex_key,
+        solvable_sas_task,
+    )
+
     start_time = time()
     print()
 
     if not instantiated_task:
-        return unsolvable_sas_task("No relaxed solution")
+        return unsolvable_sas_task('No relaxed solution')
     task, atoms, actions, axioms, reachable_action_params, goal_list = instantiated_task
 
     # TODO: option to skip and just use binary variables
-    with timers.timing("Computing fact groups", block=True):
-        groups, mutex_groups, translation_key = fact_groups.compute_groups(
-            task, atoms, reachable_action_params)
+    with timers.timing('Computing fact groups', block=True):
+        groups, mutex_groups, translation_key = fact_groups.compute_groups(task, atoms, reachable_action_params)
 
-    with timers.timing("Building STRIPS to SAS dictionary"):
-        ranges, strips_to_sas = strips_to_sas_dictionary(
-            groups, assert_partial=options.use_partial_encoding)
+    with timers.timing('Building STRIPS to SAS dictionary'):
+        ranges, strips_to_sas = strips_to_sas_dictionary(groups, assert_partial=options.use_partial_encoding)
 
-    with timers.timing("Building dictionary for full mutex groups"):
-        mutex_ranges, mutex_dict = strips_to_sas_dictionary(
-            mutex_groups, assert_partial=False)
+    with timers.timing('Building dictionary for full mutex groups'):
+        mutex_ranges, mutex_dict = strips_to_sas_dictionary(mutex_groups, assert_partial=False)
 
     if options.add_implied_preconditions:
-        with timers.timing("Building implied facts dictionary..."):
-            implied_facts = build_implied_facts(strips_to_sas, groups,
-                                                mutex_groups)
+        with timers.timing('Building implied facts dictionary...'):
+            implied_facts = build_implied_facts(strips_to_sas, groups, mutex_groups)
     else:
         implied_facts = {}
 
-    with timers.timing("Building mutex information", block=True):
+    with timers.timing('Building mutex information', block=True):
         mutex_key = build_mutex_key(strips_to_sas, mutex_groups)
 
-    with timers.timing("Translating task", block=True):
+    with timers.timing('Translating task', block=True):
         sas_task = translate_task(
-            strips_to_sas, ranges, translation_key,
-            mutex_dict, mutex_ranges, mutex_key,
-            task.init, goal_list, actions, axioms, task.use_min_cost_metric,
-            implied_facts)
+            strips_to_sas,
+            ranges,
+            translation_key,
+            mutex_dict,
+            mutex_ranges,
+            mutex_key,
+            task.init,
+            goal_list,
+            actions,
+            axioms,
+            task.use_min_cost_metric,
+            implied_facts,
+        )
 
     if options.filter_unreachable_facts:
-        with timers.timing("Detecting unreachable propositions", block=True):
+        with timers.timing('Detecting unreachable propositions', block=True):
             try:
                 simplify.filter_unreachable_propositions(sas_task)
             except simplify.Impossible:
-                return unsolvable_sas_task("Simplified to trivially false goal")
+                return unsolvable_sas_task('Simplified to trivially false goal')
             except simplify.TriviallySolvable:
-                return solvable_sas_task("Simplified to empty goal")
+                return solvable_sas_task('Simplified to empty goal')
 
     if options.reorder_variables or options.filter_unimportant_vars:
-        with timers.timing("Reordering and filtering variables", block=True):
+        with timers.timing('Reordering and filtering variables', block=True):
             variable_order.find_and_apply_variable_order(
-                sas_task, options.reorder_variables,
-                options.filter_unimportant_vars)
+                sas_task, options.reorder_variables, options.filter_unimportant_vars
+            )
 
     translate.dump_statistics(sas_task)
     print(f'Translation time: {elapsed_time(start_time):.3f}s')
     return sas_task
 
+
 ##################################################
+
 
 def write_sas_task(sas_task, temp_dir):
     translate_path = os.path.join(temp_dir, TRANSLATE_OUTPUT)
     safe_remove(translate_path)
     ensure_dir(translate_path)
-    with open(os.path.join(temp_dir, TRANSLATE_OUTPUT), "w") as output_file:
+    with open(os.path.join(temp_dir, TRANSLATE_OUTPUT), 'w') as output_file:
         sas_task.output(output_file)
     return translate_path
 
@@ -263,7 +321,7 @@ def sas_from_pddl(task, debug=False):
     with Verbose(debug):
         instantiated = instantiate_task(task)
         sas_task = sas_from_instantiated(instantiated)
-        sas_task.metric = task.use_min_cost_metric # TODO: are these sometimes not equal?
+        sas_task.metric = task.use_min_cost_metric  # TODO: are these sometimes not equal?
     return sas_task
 
 
@@ -281,7 +339,8 @@ def convert_instantiated(instantiated_task, verbose=False):
     normalize.normalize(task)
     import axiom_rules
     import options
+
     with Verbose(verbose):
         axioms, axiom_layers = axiom_rules.handle_axioms(actions, axioms, goal_list, options.layer_strategy)
     init = task.init
-    return InstantiatedTask(task, init, actions, axioms, reachable_action_params, goal_list) # init instead of atoms
+    return InstantiatedTask(task, init, actions, axioms, reachable_action_params, goal_list)  # init instead of atoms

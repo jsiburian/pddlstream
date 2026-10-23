@@ -1,4 +1,5 @@
 """Tests of PDDLStream's calls into the FastDownward fork's translator API."""
+
 from pddlstream.algorithms.common import evaluations_from_init
 from pddlstream.algorithms.downward import parse_sequential_domain, get_problem, task_from_domain_problem
 from pddlstream.algorithms.instantiate_task import instantiate_task
@@ -21,15 +22,17 @@ def test_instantiate_domain_costs(tmp_path, monkeypatch):
     task = task_from_domain_problem(domain, get_problem(evaluations, goal, domain))
     instantiated = instantiate_task(task, use_fd=False)
     assert len(instantiated.actions) == 2
-    assert all(action.cost == 1000 for action in instantiated.actions) # Unit cost times the 1e3 cost scale
+    assert all(action.cost == 1000 for action in instantiated.actions)  # Unit cost times the 1e3 cost scale
 
 
 def test_instantiate_unsatisfiable():
     # Exercises Effect.instantiate(var_mapping, init_facts, fluent_facts, objects_by_type, result, predicate_to_atoms)
     blocked = '~blocked-negative'
-    effect = pddl.Effect([pddl.TypedObject('?y', 'object')],
-                         pddl.Conjunction([pddl.Atom('p', ('?y',)), pddl.Atom(blocked, ('?x', '?y'))]),
-                         pddl.Atom(UNSATISFIABLE, ()))
+    effect = pddl.Effect(
+        [pddl.TypedObject('?y', 'object')],
+        pddl.Conjunction([pddl.Atom('p', ('?y',)), pddl.Atom(blocked, ('?x', '?y'))]),
+        pddl.Atom(UNSATISFIABLE, ()),
+    )
     action = pddl.Action('act', [pddl.TypedObject('?x', 'object')], 1, pddl.Truth(), [effect], None)
     state = {pddl.Atom('p', ('b',))}
     precondition = instantiate_unsatisfiable(state, action, {'?x': 'a'}, negative_from_name={blocked: None})

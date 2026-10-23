@@ -15,7 +15,7 @@ from pddlstream.language.temporal import retime_plan
 from pddlstream.utils import Profiler, INF
 
 # Be careful about uniqueness here
-CONF0 = array([-5., 6.])
+CONF0 = array([-5.0, 6.0])
 POSE0 = array([0, 0])
 POSE1 = array([-3, 0])
 
@@ -42,20 +42,16 @@ INIT = [
 CONSTRAINTS = [
     ('cfree', 'A', '?p0', 'B', POSE1),
     ('cfree', 'B', '?p1', 'A', '?p0'),
-
     ('contain', 'A', '?p0', 'red'),
     ('contain', 'B', '?p1', 'red'),
-
     ('kin', 'A', '?q0', POSE0, '?g0'),
     ('kin', 'A', '?q1', '?p0', '?g0'),
     ('kin', 'B', '?q3', POSE1, '?g1'),
     ('kin', 'B', '?q2', '?p1', '?g1'),
-
     ('motion', CONF0, '?t0', '?q0'),
     ('motion', '?q0', '?t1', '?q1'),
     ('motion', '?q1', '?t3', '?q3'),
     ('motion', '?q3', '?t2', '?q2'),
-
 ]
 
 OBJECTIVES = [
@@ -72,7 +68,6 @@ SKELETON = [
     ('pick', ['r0', 'A', POSE0, '?g0', '?q0']),
     ('move', ['r0', '?q0', '?t1', '?q1']),
     ('place', ['r0', 'A', '?p0', '?g0', '?q1']),
-
     ('move', ['r0', '?q1', '?t3', '?q3']),
     ('pick', ['r0', 'B', POSE1, '?g1', '?q3']),
     ('move', ['r0', '?q3', '?t2', '?q2']),
@@ -81,7 +76,8 @@ SKELETON = [
 
 ##################################################
 
-def main(success_cost=INF, use_costs=True): # 0 | INF
+
+def main(success_cost=INF, use_costs=True):  # 0 | INF
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--deterministic', action='store_true', help='Uses a deterministic sampler')
     parser.add_argument('-a', '--algorithm', default='', help='Specifies the algorithm')
@@ -98,11 +94,10 @@ def main(success_cost=INF, use_costs=True): # 0 | INF
     tamp_problem = tight(n_robots=1, n_blocks=2, n_goals=2)
     print(tamp_problem)
 
-    pddlstream_problem = pddlstream_from_tamp(tamp_problem, use_stream=not args.gurobi,
-                                              use_optimizer=args.gurobi)
+    pddlstream_problem = pddlstream_from_tamp(tamp_problem, use_stream=not args.gurobi, use_optimizer=args.gurobi)
     _, _, stream_pddl, stream_map, _, _ = pddlstream_problem
     stream_info = {
-        't-region': StreamInfo(eager=True, p_success=0), # bound_fn is None
+        't-region': StreamInfo(eager=True, p_success=0),  # bound_fn is None
     }
 
     terms = CONSTRAINTS
@@ -114,18 +109,33 @@ def main(success_cost=INF, use_costs=True): # 0 | INF
 
     with Profiler():
         if args.algorithm == 'focused':
-            solution = solve_pddlstream_satisfaction(satisfaction_problem, algorithm='adaptive', stream_info=stream_info,
-                                                     success_cost=success_cost, max_time=args.max_time)
+            solution = solve_pddlstream_satisfaction(
+                satisfaction_problem,
+                algorithm='adaptive',
+                stream_info=stream_info,
+                success_cost=success_cost,
+                max_time=args.max_time,
+            )
         elif args.algorithm == 'incremental':
             assert not args.gurobi
-            solution = solve_pddlstream_satisfaction(satisfaction_problem, algorithm='incremental',
-                                                     success_cost=success_cost, max_time=args.max_time,
-                                                     verbose=False, debug=False)
+            solution = solve_pddlstream_satisfaction(
+                satisfaction_problem,
+                algorithm='incremental',
+                success_cost=success_cost,
+                max_time=args.max_time,
+                verbose=False,
+                debug=False,
+            )
         else:
-            solution = constraint_satisfaction(satisfaction_problem, stream_info=stream_info,
-                                               costs=not args.unit, success_cost=success_cost,
-                                               max_time=args.max_time, search_sample_ratio=1,
-                                               debug=False)
+            solution = constraint_satisfaction(
+                satisfaction_problem,
+                stream_info=stream_info,
+                costs=not args.unit,
+                success_cost=success_cost,
+                max_time=args.max_time,
+                search_sample_ratio=1,
+                debug=False,
+            )
 
     dump_assignment(solution)
     bindings, cost, evaluations = solution
@@ -136,6 +146,7 @@ def main(success_cost=INF, use_costs=True): # 0 | INF
         new_args = [bindings[a] if is_parameter(a) else a for a in args]
         plan.append((name, new_args))
     display_plan(tamp_problem, retime_plan(plan))
+
 
 if __name__ == '__main__':
     main()

@@ -1,4 +1,3 @@
-
 from pddlstream.algorithms.reorder import get_stream_plan_components
 from pddlstream.algorithms.scheduling.utils import partition_external_plan
 from pddlstream.language.constants import get_prefix, is_plan, get_args
@@ -9,10 +8,13 @@ from pddlstream.utils import get_mapping, safe_apply_mapping
 
 CLUSTER = True
 
+
 def get_optimizer(result):
     return result.external.optimizer if isinstance(result.external, ComponentStream) else None
 
+
 ##################################################
+
 
 def combine_optimizer_plan(stream_plan, functions):
     if not stream_plan:
@@ -20,8 +22,7 @@ def combine_optimizer_plan(stream_plan, functions):
     optimizer = get_optimizer(stream_plan[-1])
     if optimizer is None:
         return stream_plan
-    function_plan = list(filter(lambda r: get_prefix(r.instance.external.head)
-                                          in optimizer.objectives, functions))
+    function_plan = list(filter(lambda r: get_prefix(r.instance.external.head) in optimizer.objectives, functions))
     external_plan = stream_plan + function_plan
     cluster_plans = get_stream_plan_components(external_plan) if CLUSTER else [external_plan]
     optimizer_plan = []
@@ -34,11 +35,12 @@ def combine_optimizer_plan(stream_plan, functions):
         optimizer_plan.append(result)
     return optimizer_plan
 
+
 def combine_optimizers(evaluations, external_plan):
     if not is_plan(external_plan):
         return external_plan
     stream_plan, function_plan = partition_external_plan(external_plan)
-    optimizers = {get_optimizer(r) for r in stream_plan} # None is like a unique optimizer
+    optimizers = {get_optimizer(r) for r in stream_plan}  # None is like a unique optimizer
     if len(optimizers - {None}) == 0:
         return external_plan
 
@@ -60,11 +62,13 @@ def combine_optimizers(evaluations, external_plan):
                 current_facts.update(result.get_certified())
                 combined_results.remove(result)
                 break
-        else: # TODO: can also just try one cluster and return
+        else:  # TODO: can also just try one cluster and return
             raise RuntimeError()
     return combined_plan
 
+
 ##################################################
+
 
 def retrace_instantiation(fact, streams, evaluations, free_parameters, visited_facts, planned_results):
     # Makes two assumptions:
@@ -90,8 +94,7 @@ def retrace_instantiation(fact, streams, evaluations, free_parameters, visited_f
                     continue
                 instance = stream.get_instance(input_objects)
                 for new_fact in instance.get_domain():
-                    retrace_instantiation(new_fact, streams, evaluations, free_parameters,
-                                          visited_facts, planned_results)
+                    retrace_instantiation(
+                        new_fact, streams, evaluations, free_parameters, visited_facts, planned_results
+                    )
                 planned_results.append(instance.get_result(output_objects))
-
-

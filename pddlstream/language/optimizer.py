@@ -6,14 +6,21 @@ from pddlstream.language.conversion import substitute_expression, list_from_conj
 from pddlstream.language.external import parse_lisp_list, get_procedure_fn
 from pddlstream.language.function import PredicateResult, FunctionResult
 from pddlstream.language.object import Object
-from pddlstream.language.stream import StreamInfo, Stream, StreamInstance, StreamResult, \
-    PartialInputs, NEGATIVE_SUFFIX, WildOutput
+from pddlstream.language.stream import (
+    StreamInfo,
+    Stream,
+    StreamInstance,
+    StreamResult,
+    PartialInputs,
+    NEGATIVE_SUFFIX,
+    WildOutput,
+)
 from pddlstream.language.generator import get_next
 from pddlstream.utils import get_mapping, safe_zip, str_from_object
 from pddlstream.algorithms.reorder import get_stream_plan_components
 
 DEFAULT_SIMULTANEOUS = False
-DEFAULT_UNIQUE = True # TODO: would it ever even make sense to do shared here?
+DEFAULT_UNIQUE = True  # TODO: would it ever even make sense to do shared here?
 # TODO: revert to my previous specification where streams can simply be fused
 
 VARIABLES = ':variables'
@@ -22,17 +29,22 @@ UNSATISFIABLE = f'unsatisfiable{NEGATIVE_SUFFIX}'
 
 ##################################################
 
+
 class OptimizerOutput:
-    def __init__(self, assignments=[], facts=[], infeasible=[]): # infeasible=None
+    def __init__(self, assignments=[], facts=[], infeasible=[]):  # infeasible=None
         self.assignments = list(assignments)
         self.facts = list(facts)
         self.infeasible = list(map(frozenset, infeasible))
+
     def to_wild(self):
         return WildOutput(self.assignments, self.facts)
+
     def __bool__(self):
         return bool(self.assignments)
+
     def __repr__(self):
         return str_from_object(self.__dict__)
+
 
 class Optimizer:
     def __init__(self, name, procedure, info):
@@ -43,17 +55,22 @@ class Optimizer:
         self.constraints = []
         self.objectives = []
         self.streams = []
+
     def get_streams(self):
         return self.variables + self.constraints
+
     def __repr__(self):
         return f'{self.name}'
+
 
 class ComponentStream(Stream):
     def __init__(self, optimizer, *args):
         self.optimizer = optimizer
         super().__init__(*args)
 
+
 ##################################################
+
 
 def get_list_gen_fn(procedure, inputs, outputs, certified, hint={}):
     # TODO: prevent outputs of the sampler from being used as inputs (only consider initial values)
@@ -61,28 +78,34 @@ def get_list_gen_fn(procedure, inputs, outputs, certified, hint={}):
         mapping = get_mapping(inputs, input_values)
         targets = substitute_expression(certified, mapping)
         return procedure(outputs, targets, hint=hint)
+
     return list_gen_fn
+
 
 def get_effort_fn(optimizer_name):
     # TODO: higher effort is the variable cannot be free for the testing process
     # This might happen if the variable is certified to have a property after construction
     def effort_fn(*input_values):
         return 1
+
     return effort_fn
+
 
 def prune_dominated(collections):
     for i, collection1 in enumerate(collections):
-        if all((i == j) or not (collection2 <= collection1)
-               for j, collection2 in enumerate(collections)):
+        if all((i == j) or not (collection2 <= collection1) for j, collection2 in enumerate(collections)):
             yield collection1
 
+
 ##################################################
+
 
 class OptimizerInfo(StreamInfo):
     def __init__(self, planable=False, p_success=None, overhead=None):
         super().__init__(p_success=p_success, overhead=overhead)
-        self.planable = planable # TODO: this isn't currently used
+        self.planable = planable  # TODO: this isn't currently used
         # TODO: post-processing
+
 
 class VariableStream(ComponentStream):
     # TODO: allow generation of two variables
@@ -92,10 +115,9 @@ class VariableStream(ComponentStream):
         # TODO: need to convert OptimizerOutput
         info = infos.get(name, None)
         if info is None:
-            info = StreamInfo(opt_gen_fn=PartialInputs(unique=DEFAULT_UNIQUE),
-                              simultaneous=DEFAULT_SIMULTANEOUS)
-        super().__init__(optimizer, name, gen_fn, inputs, domain,
-                                             variables, certified, info)
+            info = StreamInfo(opt_gen_fn=PartialInputs(unique=DEFAULT_UNIQUE), simultaneous=DEFAULT_SIMULTANEOUS)
+        super().__init__(optimizer, name, gen_fn, inputs, domain, variables, certified, info)
+
 
 class ConstraintStream(ComponentStream):
     def __init__(self, optimizer, constraint, domain, infos):
@@ -107,33 +129,37 @@ class ConstraintStream(ComponentStream):
         gen_fn = get_list_gen_fn(optimizer.procedure, inputs, outputs, certified)
         info = infos.get(name, None)
         if info is None:
-            info = StreamInfo(effort=get_effort_fn(optimizer.name),
-                              simultaneous=DEFAULT_SIMULTANEOUS)
-        super().__init__(optimizer, name, gen_fn, inputs, domain,
-                                               outputs, certified, info)
+            info = StreamInfo(effort=get_effort_fn(optimizer.name), simultaneous=DEFAULT_SIMULTANEOUS)
+        super().__init__(optimizer, name, gen_fn, inputs, domain, outputs, certified, info)
+
 
 ##################################################
+
 
 def parse_variable(optimizer, lisp_list, infos):
     value_from_attribute = parse_lisp_list(lisp_list)
     assert set(value_from_attribute) <= {VARIABLES, ':inputs', ':domain', ':graph'}
-    return VariableStream(optimizer,
-                          value_from_attribute[VARIABLES], # TODO: assume unique?
-                          value_from_attribute.get(':inputs', []),
-                          list_from_conjunction(value_from_attribute.get(':domain')),
-                          list_from_conjunction(value_from_attribute.get(':graph')),
-                          infos)
+    return VariableStream(
+        optimizer,
+        value_from_attribute[VARIABLES],  # TODO: assume unique?
+        value_from_attribute.get(':inputs', []),
+        list_from_conjunction(value_from_attribute.get(':domain')),
+        list_from_conjunction(value_from_attribute.get(':graph')),
+        infos,
+    )
+
 
 def parse_constraint(optimizer, lisp_list, infos):
     # TODO: constraints with the same name
     value_from_attribute = parse_lisp_list(lisp_list)
-    assert set(value_from_attribute) <= {CONSTRAINT, ':necessary'} # , ':fluents'}
-    return ConstraintStream(optimizer,
-                            value_from_attribute[CONSTRAINT],
-                            list_from_conjunction(value_from_attribute[':necessary']),
-                            infos)
+    assert set(value_from_attribute) <= {CONSTRAINT, ':necessary'}  # , ':fluents'}
+    return ConstraintStream(
+        optimizer, value_from_attribute[CONSTRAINT], list_from_conjunction(value_from_attribute[':necessary']), infos
+    )
+
 
 # TODO: convert optimizer into a set of streams? Already present within test stream
+
 
 def parse_optimizer(lisp_list, procedures, infos):
     _, optimizer_name = lisp_list[:2]
@@ -152,18 +178,24 @@ def parse_optimizer(lisp_list, procedures, infos):
             raise ValueError(form)
     return optimizer.get_streams()
 
+
 ##################################################
+
 
 class OptimizerResult(StreamResult):
     def get_components(self):
         return self.external.stream_plan
+
     def get_objectives(self):
         return substitute_expression(self.external.objectives, self.mapping)
+
     def get_unsatisfiable(self):
         return self.instance.get_unsatisfiable()
 
+
 class OptimizerInstance(StreamInstance):
     _Result = OptimizerResult
+
     def __init__(self, stream, input_objects, fluent_facts):
         super().__init__(stream, input_objects, fluent_facts)
         all_constraints = frozenset(range(len(self.external.certified)))
@@ -173,6 +205,7 @@ class OptimizerInstance(StreamInstance):
         # TODO: cluster connected components in the infeasible set
         # TODO: compute things dependent on a stream and treat like an optimizer
         # Also make an option to just treat everything like an optimizer
+
     def _next_wild(self):
         output, self.enumerated = get_next(self._generator, default=[])
         if not isinstance(output, OptimizerOutput):
@@ -180,6 +213,7 @@ class OptimizerInstance(StreamInstance):
         self.infeasible.update(output.infeasible)
         # TODO: instead replace each time
         return output.to_wild()
+
     def get_unsatisfiable(self):
         constraints = substitute_expression(self.external.certified, self.external.mapping)
         index_from_constraint = {c: i for i, c in enumerate(constraints)}
@@ -190,23 +224,36 @@ class OptimizerInstance(StreamInstance):
                 if fact in index_from_constraint:
                     result_from_index[index_from_constraint[fact]].add(result)
         # TODO: add implied results
-        return [{result for index in cluster for result in result_from_index[index]}
-                for cluster in prune_dominated(self.infeasible)]
+        return [
+            {result for index in cluster for result in result_from_index[index]}
+            for cluster in prune_dominated(self.infeasible)
+        ]
+
 
 class OptimizerStream(Stream):
     _Instance = OptimizerInstance
+
     def __init__(self, optimizer, external_plan):
         optimizer.streams.append(self)
         self.optimizer = optimizer
         self.stream_plan, self.function_plan = partition_external_plan(external_plan)
-        inputs, domain, outputs, certified, functions, self.macro_from_micro, \
-            self.input_objects, self.output_objects, self.fluent_facts = get_cluster_values(external_plan)
+        (
+            inputs,
+            domain,
+            outputs,
+            certified,
+            functions,
+            self.macro_from_micro,
+            self.input_objects,
+            self.output_objects,
+            self.fluent_facts,
+        ) = get_cluster_values(external_plan)
 
         hint = self.create_hint()
         self.objectives = certified + functions
         gen_fn = get_list_gen_fn(optimizer.procedure, inputs, outputs, self.objectives, hint=hint)
-        super().__init__(optimizer.name, gen_fn, inputs, domain, outputs,
-                                              certified, optimizer.info)
+        super().__init__(optimizer.name, gen_fn, inputs, domain, outputs, certified, optimizer.info)
+
     def create_hint(self):
         hint = {}
         for result, mapping in safe_zip(self.stream_plan, self.macro_from_micro):
@@ -215,24 +262,28 @@ class OptimizerStream(Stream):
                     if isinstance(obj, Object):
                         hint[mapping[param]] = obj.value
         return hint
+
     @property
     def mapping(self):
-        return get_mapping(self.inputs + self.outputs,
-                           self.input_objects + self.output_objects)
+        return get_mapping(self.inputs + self.outputs, self.input_objects + self.output_objects)
+
     def get_cluster_plans(self):
         # TODO: split the optimizer into clusters when provably independent
         return get_stream_plan_components(self.stream_plan + self.function_plan)
+
     @property
     def instance(self):
         return self.get_instance(self.input_objects, fluent_facts=self.fluent_facts)
 
+
 ##################################################
+
 
 def add_result_inputs(result, param_from_obj, local_mapping, inputs, input_objects):
     for param, obj in zip(result.instance.external.inputs, result.instance.input_objects):
         # TODO: only do optimistic parameters?
         if obj not in param_from_obj:
-            param_from_obj[obj] = f'?i{len(inputs)}' # '?_i{}'
+            param_from_obj[obj] = f'?i{len(inputs)}'  # '?_i{}'
             inputs.append(param_from_obj[obj])
             input_objects.append(obj)
         local_mapping[param] = param_from_obj[obj]
@@ -245,6 +296,7 @@ def add_result_outputs(result, param_from_obj, local_mapping, outputs, output_ob
             outputs.append(param_from_obj[obj])
             output_objects.append(obj)
         local_mapping[param] = param_from_obj[obj]
+
 
 def get_cluster_values(stream_plan):
     param_from_obj = {}
@@ -267,6 +319,15 @@ def get_cluster_values(stream_plan):
             fluent_facts.extend(result.instance.fluent_facts)
             add_result_outputs(result, param_from_obj, local_mapping, outputs, output_objects)
             certified.update(substitute_expression(stream.certified, local_mapping))
-            macro_from_micro.append(local_mapping) # TODO: append for functions as well?
-    return inputs, sorted(domain), outputs, sorted(certified), sorted(functions), \
-           macro_from_micro, input_objects, output_objects, fluent_facts
+            macro_from_micro.append(local_mapping)  # TODO: append for functions as well?
+    return (
+        inputs,
+        sorted(domain),
+        outputs,
+        sorted(certified),
+        sorted(functions),
+        macro_from_micro,
+        input_objects,
+        output_objects,
+        fluent_facts,
+    )

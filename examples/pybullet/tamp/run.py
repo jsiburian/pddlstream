@@ -1,21 +1,48 @@
 #!/usr/bin/env python
 
-from examples.pybullet.tamp.streams import get_cfree_approach_pose_test, get_cfree_pose_pose_test, get_cfree_traj_pose_test, \
-    BASE_CONSTANT, distance_fn
+from examples.pybullet.tamp.streams import (
+    get_cfree_approach_pose_test,
+    get_cfree_pose_pose_test,
+    get_cfree_traj_pose_test,
+    BASE_CONSTANT,
+    distance_fn,
+)
 
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import Pose, Conf, get_ik_ir_gen, get_motion_gen, \
-    get_stable_gen, get_grasp_gen, control_commands
-from examples.pybullet.utils.pybullet_tools.pr2_utils import get_arm_joints, ARM_NAMES, get_group_joints, \
-    get_group_conf
-from examples.pybullet.utils.pybullet_tools.utils import connect, get_pose, is_placement, disconnect, \
-    get_joint_positions, HideOutput, LockRenderer, wait_for_user
+from examples.pybullet.utils.pybullet_tools.pr2_primitives import (
+    Pose,
+    Conf,
+    get_ik_ir_gen,
+    get_motion_gen,
+    get_stable_gen,
+    get_grasp_gen,
+    control_commands,
+)
+from examples.pybullet.utils.pybullet_tools.pr2_utils import get_arm_joints, ARM_NAMES, get_group_joints, get_group_conf
+from examples.pybullet.utils.pybullet_tools.utils import (
+    connect,
+    get_pose,
+    is_placement,
+    disconnect,
+    get_joint_positions,
+    HideOutput,
+    LockRenderer,
+    wait_for_user,
+)
 from examples.pybullet.common import get_custom_limits
 
 from pddlstream.algorithms.meta import create_parser, solve
 from pddlstream.algorithms.common import SOLUTIONS
 from pddlstream.language.generator import from_gen_fn, from_list_fn, from_fn, from_test
-from pddlstream.language.constants import Equal, And, print_solution, Exists, get_args, is_parameter, \
-    get_parameter_name, PDDLProblem
+from pddlstream.language.constants import (
+    Equal,
+    And,
+    print_solution,
+    Exists,
+    get_args,
+    is_parameter,
+    get_parameter_name,
+    PDDLProblem,
+)
 from pddlstream.utils import read, INF, get_file_path, Profiler
 from pddlstream.language.function import FunctionInfo
 from pddlstream.language.stream import StreamInfo
@@ -28,11 +55,13 @@ from examples.pybullet.tamp.problems import PROBLEMS
 
 # TODO: collapse similar streams into a single stream when reodering
 
+
 def get_bodies_from_type(problem):
     bodies_from_type = {}
     for body, ty in problem.body_types:
         bodies_from_type.setdefault(ty, set()).add(body)
     return bodies_from_type
+
 
 def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport=False):
     robot = problem.robot
@@ -45,16 +74,19 @@ def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport
     }
 
     initial_bq = Conf(robot, get_group_joints(robot, 'base'), get_group_conf(robot, 'base'))
-    init = [
-        ('CanMove',),
-        ('BConf', initial_bq),
-        ('AtBConf', initial_bq),
-        Equal(('PickCost',), 1),
-        Equal(('PlaceCost',), 1),
-    ] + [('Sink', s) for s in problem.sinks] + \
-           [('Stove', s) for s in problem.stoves] + \
-           [('Connected', b, d) for b, d in problem.buttons] + \
-           [('Button', b) for b, _ in problem.buttons]
+    init = (
+        [
+            ('CanMove',),
+            ('BConf', initial_bq),
+            ('AtBConf', initial_bq),
+            Equal(('PickCost',), 1),
+            Equal(('PlaceCost',), 1),
+        ]
+        + [('Sink', s) for s in problem.sinks]
+        + [('Stove', s) for s in problem.stoves]
+        + [('Connected', b, d) for b, d in problem.buttons]
+        + [('Button', b) for b, _ in problem.buttons]
+    )
     for arm in ARM_NAMES:
         joints = get_arm_joints(robot, arm)
         conf = Conf(robot, joints, get_joint_positions(robot, joints))
@@ -62,9 +94,8 @@ def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport
         if arm in problem.arms:
             init += [('Controllable', arm)]
     for body in problem.movable:
-        pose = Pose(body, get_pose(body), init=True) # TODO: supported here
-        init += [('Graspable', body), ('Pose', body, pose),
-                 ('AtPose', body, pose), ('Stackable', body, None)]
+        pose = Pose(body, get_pose(body), init=True)  # TODO: supported here
+        init += [('Graspable', body), ('Pose', body, pose), ('AtPose', body, pose), ('Stackable', body, None)]
         for surface in problem.surfaces:
             if is_placement(body, surface):
                 init += [('Supported', body, pose, surface)]
@@ -81,9 +112,11 @@ def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport
         bodies = bodies_from_type[get_parameter_name(ty)] if is_parameter(ty) else [ty]
         init += [('Stackable', b, s) for b in bodies]
         goal_literals += [('On', ty, s)]
-    goal_literals += [('Holding', a, b) for a, b in problem.goal_holding] + \
-                     [('Cleaned', b)  for b in problem.goal_cleaned] + \
-                     [('Cooked', b)  for b in problem.goal_cooked]
+    goal_literals += (
+        [('Holding', a, b) for a, b in problem.goal_holding]
+        + [('Cleaned', b) for b in problem.goal_cleaned]
+        + [('Cooked', b) for b in problem.goal_cooked]
+    )
     goal_formula = []
     for literal in goal_literals:
         parameters = [a for a in get_args(literal) if is_parameter(a)]
@@ -101,21 +134,23 @@ def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport
     stream_map = {
         'sample-pose': from_gen_fn(get_stable_gen(problem, collisions=collisions)),
         'sample-grasp': from_list_fn(get_grasp_gen(problem, collisions=collisions)),
-        'inverse-kinematics': from_gen_fn(get_ik_ir_gen(problem, custom_limits=custom_limits,
-                                                        collisions=collisions, teleport=teleport)),
-        'plan-base-motion': from_fn(get_motion_gen(problem, custom_limits=custom_limits,
-                                                   collisions=collisions, teleport=teleport)),
-
+        'inverse-kinematics': from_gen_fn(
+            get_ik_ir_gen(problem, custom_limits=custom_limits, collisions=collisions, teleport=teleport)
+        ),
+        'plan-base-motion': from_fn(
+            get_motion_gen(problem, custom_limits=custom_limits, collisions=collisions, teleport=teleport)
+        ),
         'test-cfree-pose-pose': from_test(get_cfree_pose_pose_test(collisions=collisions)),
         'test-cfree-approach-pose': from_test(get_cfree_approach_pose_test(problem, collisions=collisions)),
         'test-cfree-traj-pose': from_test(get_cfree_traj_pose_test(robot, collisions=collisions)),
-
         'Distance': distance_fn,
     }
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal_formula)
 
+
 #######################################################
+
 
 def main(verbose=True):
     # TODO: could work just on postprocessing
@@ -146,17 +181,15 @@ def main(verbose=True):
     draw_base_limits(problem.base_limits, color=(1, 0, 0))
     saver = WorldSaver()
 
-
-    pddlstream_problem = pddlstream_from_problem(problem, base_limits=problem.base_limits,
-                                                 collisions=not args.cfree, teleport=args.teleport)
+    pddlstream_problem = pddlstream_from_problem(
+        problem, base_limits=problem.base_limits, collisions=not args.cfree, teleport=args.teleport
+    )
     stream_info = {
         'inverse-kinematics': StreamInfo(),
         'plan-base-motion': StreamInfo(overhead=1e1),
-
         'test-cfree-pose-pose': StreamInfo(p_success=1e-3, verbose=verbose),
         'test-cfree-approach-pose': StreamInfo(p_success=1e-2, verbose=verbose),
-        'test-cfree-traj-pose': StreamInfo(p_success=1e-1, verbose=verbose), # TODO: apply to arm and base trajs
-
+        'test-cfree-traj-pose': StreamInfo(p_success=1e-1, verbose=verbose),  # TODO: apply to arm and base trajs
         'Distance': FunctionInfo(p_success=0.99, opt_fn=lambda q1, q2: BASE_CONSTANT),
     }
 
@@ -171,16 +204,24 @@ def main(verbose=True):
     max_planner_time = 10
     effort_weight = 1e-3 if args.optimal else 1
 
-    with Profiler(field='tottime', num=25): # cumtime | tottime
+    with Profiler(field='tottime', num=25):  # cumtime | tottime
         with LockRenderer(lock=not args.enable):
-            solution = solve(pddlstream_problem, algorithm=args.algorithm, stream_info=stream_info,
-                             planner=planner, max_planner_time=max_planner_time,
-                             unit_costs=args.unit, success_cost=success_cost,
-                             max_time=args.max_time, verbose=True, debug=False,
-                             unit_efforts=True, effort_weight=effort_weight,
-                             search_sample_ratio=search_sample_ratio)
+            solution = solve(
+                pddlstream_problem,
+                algorithm=args.algorithm,
+                stream_info=stream_info,
+                planner=planner,
+                max_planner_time=max_planner_time,
+                unit_costs=args.unit,
+                success_cost=success_cost,
+                max_time=args.max_time,
+                verbose=True,
+                debug=False,
+                unit_efforts=True,
+                effort_weight=effort_weight,
+                search_sample_ratio=search_sample_ratio,
+            )
             saver.restore()
-
 
     cost_over_time = [(s.cost, s.time) for s in SOLUTIONS]
     for i, (cost, runtime) in enumerate(cost_over_time):
@@ -204,6 +245,7 @@ def main(verbose=True):
         apply_commands(State(), commands, time_step)
     wait_for_user()
     disconnect()
+
 
 if __name__ == '__main__':
     main()

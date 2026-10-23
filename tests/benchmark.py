@@ -8,6 +8,7 @@ more than 10% slower warns and more than 20% fails (exit code 1), ignoring slowd
 varies between runs.
 Timings depend on the machine, so the baseline lives outside git (default: .benchmarks/baseline.json).
 """
+
 import argparse
 import json
 import pathlib
@@ -27,8 +28,9 @@ def measure(case, repeat, wall_clock):
     times, counters = [], None
     for _ in range(repeat):
         with tempfile.TemporaryDirectory() as tmp:
-            result = run_case(case.example, cwd=tmp, timeout=case.timeout, display='gui' in case.marks,
-                              wall_clock=wall_clock)
+            result = run_case(
+                case.example, cwd=tmp, timeout=case.timeout, display='gui' in case.marks, wall_clock=wall_clock
+            )
         if result['error'] or not result['calls'] or not result['calls'][-1]['solved']:
             raise RuntimeError('{} did not solve: {}'.format(case.example, result['error']))
         times.append(sum(call['elapsed'] for call in result['calls']))
@@ -44,10 +46,14 @@ def compare(current, baseline):
     status = 'FAIL' if ratio > FAIL_RATIO else 'warn' if ratio > WARN_RATIO else 'ok'
     if current['time'] - baseline['time'] < MIN_SLOWDOWN:
         status = 'ok'
-    changed = ['{}: {} -> {}'.format(key, baseline['counters'].get(key), value)
-               for key, value in current['counters'].items() if baseline['counters'].get(key) != value]
+    changed = [
+        '{}: {} -> {}'.format(key, baseline['counters'].get(key), value)
+        for key, value in current['counters'].items()
+        if baseline['counters'].get(key) != value
+    ]
     return status, '{:8.2f}s vs {:8.2f}s ({:+.0%}) {}'.format(
-        current['time'], baseline['time'], ratio - 1, '; '.join(changed))
+        current['time'], baseline['time'], ratio - 1, '; '.join(changed)
+    )
 
 
 def main():
@@ -63,13 +69,14 @@ def main():
     for case in (case for case in CASES if case.bench):
         results[case.example] = measure(case, args.repeat, args.wall_clock or not case.deterministic)
         status, message = compare(results[case.example], baseline.get(case.example))
-        failed |= (status == 'FAIL')
+        failed |= status == 'FAIL'
         print(f'{status:5} {case.example:45} {message}', flush=True)
 
     if args.save:
         args.baseline.parent.mkdir(exist_ok=True)
-        args.baseline.write_text(json.dumps({'machine': platform.node(), 'python': platform.python_version(),
-                                             'cases': results}, indent=2))
+        args.baseline.write_text(
+            json.dumps({'machine': platform.node(), 'python': platform.python_version(), 'cases': results}, indent=2)
+        )
         print('Saved', args.baseline)
     sys.exit(int(failed and not args.save))
 

@@ -26,11 +26,12 @@ def create_optimizer(min_take=0, max_take=INF, max_wallet=INF, max_time=5, integ
         for fact in facts:
             prefix, args = fact[0], fact[1:]
             if prefix in ['wcash', 'pcash', 'mcash']:
-                cash, = args
+                (cash,) = args
                 if is_parameter(cash):
                     # TODO: scale by 100 for cents
                     var_from_param[cash] = model.addVar(
-                        lb=0, ub=GRB.INFINITY, vtype=GRB.INTEGER if integer else GRB.CONTINUOUS)
+                        lb=0, ub=GRB.INFINITY, vtype=GRB.INTEGER if integer else GRB.CONTINUOUS
+                    )
                     if prefix == 'wcash':
                         model.addConstr(var_from_param[cash] >= min_take)
                         if max_take < INF:
@@ -41,7 +42,7 @@ def create_optimizer(min_take=0, max_take=INF, max_wallet=INF, max_time=5, integ
                         # min_balance >= 0
                         pass
 
-        get_var = lambda p: var_from_param[p] if is_parameter(p) else p # var_from_param.get(p, p)
+        get_var = lambda p: var_from_param[p] if is_parameter(p) else p  # var_from_param.get(p, p)
 
         objective_terms = []
         for index, fact in enumerate(facts):
@@ -50,7 +51,7 @@ def create_optimizer(min_take=0, max_take=INF, max_wallet=INF, max_time=5, integ
                 fact = fact[1]
                 func, args = fact[0], map(get_var, fact[1:])
                 if func == 'withdrawcost':
-                    cash, = args
+                    (cash,) = args
                     objective_terms.append(cash)
             elif fact[0] == NOT:
                 pass  # Negated facts add no constraints
@@ -76,8 +77,9 @@ def create_optimizer(min_take=0, max_take=INF, max_wallet=INF, max_time=5, integ
         print(f'Objective: {objective:.3f} | Solutions: {model.solCount} | Status: {model.status}')
 
         # https://www.gurobi.com/documentation/9.0/refman/optimization_status_codes.html
-        if not model.solCount: # GRB.INFEASIBLE | GRB.INF_OR_UNBD | OPTIMAL | SUBOPTIMAL | UNBOUNDED
+        if not model.solCount:  # GRB.INFEASIBLE | GRB.INF_OR_UNBD | OPTIMAL | SUBOPTIMAL | UNBOUNDED
             return OptimizerOutput()
         assignment = tuple(get_var(out).x for out in outputs)
         return OptimizerOutput(assignments=[assignment])
+
     return from_list_fn(fn)

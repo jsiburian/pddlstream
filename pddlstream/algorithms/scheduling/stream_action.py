@@ -16,6 +16,7 @@ def enforce_single_binding(result, preconditions, effects):
     preconditions.extend(Not(fact) for fact in binding_facts)
     effects.extend(fact for fact in binding_facts)
 
+
 def get_stream_actions(results, unique_binding=False, effort_scale=1, max_effort=INF, **kwargs):
     result_from_name = OrderedDict()
     stream_actions = []
@@ -37,6 +38,7 @@ def get_stream_actions(results, unique_binding=False, effort_scale=1, max_effort
         stream_actions.append(make_action(name, [], preconditions, effects, cost))
     return stream_actions, result_from_name
 
+
 def add_stream_actions(domain, results, **kwargs):
     if not results:
         return domain, {}
@@ -47,6 +49,10 @@ def add_stream_actions(domain, results, **kwargs):
             output_objects.extend(map(pddl_from_object, result.output_objects))
     new_constants = list(make_parameters(set(output_objects) | set(domain.constants)))
     # to_untyped_strips, free_variables
-    new_domain = make_domain(constants=new_constants, predicates=domain.predicates,
-                             actions=domain.actions[:] + stream_actions, axioms=domain.axioms)
+    new_domain = make_domain(
+        constants=new_constants,
+        predicates=domain.predicates,
+        actions=domain.actions[:] + stream_actions,
+        axioms=domain.axioms,
+    )
     return new_domain, result_from_name

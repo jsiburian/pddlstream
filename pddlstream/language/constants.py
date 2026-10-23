@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from pddlstream.utils import INF, str_from_object, read
 
-EQ = '=' # xnor
+EQ = '='  # xnor
 AND = 'and'
 OR = 'or'
 NOT = 'not'
@@ -17,11 +17,11 @@ INCREASE = 'increase'
 PARAMETER = '?'
 TYPE = '-'
 OBJECT = 'object'
-TOTAL_COST = 'total-cost' # TotalCost
+TOTAL_COST = 'total-cost'  # TotalCost
 CONNECTIVES = (AND, OR, NOT, IMPLY)
 QUANTIFIERS = (FORALL, EXISTS)
 OBJECTIVES = (MINIMIZE, MAXIMIZE, INCREASE)
-OPERATORS = CONNECTIVES + QUANTIFIERS + (WHEN,) # + OBJECTIVES
+OPERATORS = CONNECTIVES + QUANTIFIERS + (WHEN,)  # + OBJECTIVES
 
 # TODO: OPTIMAL
 SUCCEEDED = True
@@ -30,8 +30,7 @@ INFEASIBLE = False
 NOT_PLAN = [FAILED, INFEASIBLE]
 
 # TODO: rename PDDLProblem
-PDDLProblem = namedtuple('PDDLProblem', ['domain_pddl', 'constant_map',
-                                         'stream_pddl', 'stream_map', 'init', 'goal'])
+PDDLProblem = namedtuple('PDDLProblem', ['domain_pddl', 'constant_map', 'stream_pddl', 'stream_map', 'init', 'goal'])
 Solution = namedtuple('Solution', ['plan', 'cost', 'certificate'])
 Certificate = namedtuple('Certificate', ['all_facts', 'preimage_facts'])
 
@@ -52,19 +51,20 @@ NegatedAtom = lambda head: Evaluation(head, False)
 
 ##################################################
 
+
 def Output(*args):
     return tuple(args)
 
 
 def And(*expressions):
     if len(expressions) == 1:
-       return expressions[0]
+        return expressions[0]
     return (AND,) + tuple(expressions)
 
 
 def Or(*expressions):
     if len(expressions) == 1:
-       return expressions[0]
+        return expressions[0]
     return (OR,) + tuple(expressions)
 
 
@@ -95,7 +95,9 @@ def Exists(args, expression):
 def ForAll(args, expression):
     return (FORALL, args, expression)
 
+
 ##################################################
+
 
 def get_prefix(expression):
     return expression[0]
@@ -122,14 +124,16 @@ def is_parameter(expression):
 
 def get_parameter_name(expression):
     if is_parameter(expression):
-        return expression[len(PARAMETER):]
+        return expression[len(PARAMETER) :]
     return expression
 
 
 def is_head(expression):
     return get_prefix(expression) not in OPERATORS
 
+
 ##################################################
+
 
 def is_plan(plan):
     return not any(plan is status for status in NOT_PLAN)
@@ -157,16 +161,18 @@ def print_plan(plan):
     for action in plan:
         if isinstance(action, DurativeAction):
             name, args, start, duration = action
-            print('{:.2f} - {:.2f}) {} {}'.format(start, start+duration, name,
-                                                  ' '.join(map(str_from_object, args))))
+            print('{:.2f} - {:.2f}) {} {}'.format(start, start + duration, name, ' '.join(map(str_from_object, args))))
         elif isinstance(action, Action):
             name, args = action
             print('{:2}) {} {}'.format(step, name, ' '.join(map(str_from_object, args))))
             step += 1
         elif isinstance(action, StreamAction):
             name, inputs, outputs = action
-            print('    {}({})->({})'.format(name, ', '.join(map(str_from_object, inputs)),
-                                            ', '.join(map(str_from_object, outputs))))
+            print(
+                '    {}({})->({})'.format(
+                    name, ', '.join(map(str_from_object, inputs)), ', '.join(map(str_from_object, outputs))
+                )
+            )
         elif isinstance(action, FunctionAction):
             name, inputs = action
             print('    {}({})'.format(name, ', '.join(map(str_from_object, inputs))))
@@ -176,14 +182,15 @@ def print_plan(plan):
 
 def print_solution(solution):
     plan, cost, evaluations = solution
-    if isinstance(evaluations, Certificate): # Solvers return a Certificate of (all_facts, preimage_facts)
+    if isinstance(evaluations, Certificate):  # Solvers return a Certificate of (all_facts, preimage_facts)
         evaluations = evaluations.all_facts
     solved = is_plan(plan)
     if plan is None:
         num_deferred = 0
     else:
-        num_deferred = len([action for action in plan if isinstance(action, StreamAction)
-                            or isinstance(action, FunctionAction)])
+        num_deferred = len(
+            [action for action in plan if isinstance(action, StreamAction) or isinstance(action, FunctionAction)]
+        )
     print()
     print(f'Solved: {solved}')
     print(f'Cost: {cost:.3f}')
@@ -226,6 +233,7 @@ def get_costs(objectives):
 def get_constraints(objectives):
     return [o for o in objectives if not is_cost(o)]
 
+
 ##################################################
 
 DOMAIN_FILE = 'domain.pddl'
@@ -235,7 +243,7 @@ PDDL_FILES = [DOMAIN_FILE, PROBLEM_FILE]
 PDDLSTREAM_FILES = [DOMAIN_FILE, STREAM_FILE]
 
 
-def read_relative(file, relative_path): # file=__file__
+def read_relative(file, relative_path):  # file=__file__
     directory = os.path.dirname(file)
     path = os.path.abspath(os.path.join(directory, relative_path))
     return read(os.path.join(directory, path))

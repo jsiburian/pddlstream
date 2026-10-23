@@ -12,17 +12,60 @@ from pddlstream.utils import read, get_file_path, Profiler
 from pddlstream.language.constants import PDDLProblem, And, Equal, print_solution
 from pddlstream.language.stream import StreamInfo
 
-from examples.pybullet.pr2_belief.primitives import Scan, ScanRoom, Detect, Register, \
-    plan_head_traj, get_cone_commands, move_look_trajectory, get_vis_base_gen, \
-    get_inverse_visibility_fn, get_in_range_test, VIS_RANGE, REG_RANGE
+from examples.pybullet.pr2_belief.primitives import (
+    Scan,
+    ScanRoom,
+    Detect,
+    Register,
+    plan_head_traj,
+    get_cone_commands,
+    move_look_trajectory,
+    get_vis_base_gen,
+    get_inverse_visibility_fn,
+    get_in_range_test,
+    VIS_RANGE,
+    REG_RANGE,
+)
 from examples.pybullet.pr2_belief.problems import get_problem1, USE_DRAKE_PR2, create_pr2
-from examples.pybullet.utils.pybullet_tools.pr2_utils import ARM_NAMES, get_arm_joints, attach_viewcone, \
-    is_drake_pr2, get_group_joints, get_group_conf
-from examples.pybullet.utils.pybullet_tools.utils import set_pose, get_pose, connect, clone_world, \
-    disconnect, set_client, add_data_path, WorldSaver, wait_for_user, get_joint_positions, get_configuration, \
-    set_configuration, ClientSaver, HideOutput, is_center_stable, add_body_name, draw_base_limits
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, get_ik_ir_gen, get_motion_gen, get_stable_gen, \
-    get_grasp_gen, Attach, Detach, apply_commands, Trajectory, get_base_limits
+from examples.pybullet.utils.pybullet_tools.pr2_utils import (
+    ARM_NAMES,
+    get_arm_joints,
+    attach_viewcone,
+    is_drake_pr2,
+    get_group_joints,
+    get_group_conf,
+)
+from examples.pybullet.utils.pybullet_tools.utils import (
+    set_pose,
+    get_pose,
+    connect,
+    clone_world,
+    disconnect,
+    set_client,
+    add_data_path,
+    WorldSaver,
+    wait_for_user,
+    get_joint_positions,
+    get_configuration,
+    set_configuration,
+    ClientSaver,
+    HideOutput,
+    is_center_stable,
+    add_body_name,
+    draw_base_limits,
+)
+from examples.pybullet.utils.pybullet_tools.pr2_primitives import (
+    Conf,
+    get_ik_ir_gen,
+    get_motion_gen,
+    get_stable_gen,
+    get_grasp_gen,
+    Attach,
+    Detach,
+    apply_commands,
+    Trajectory,
+    get_base_limits,
+)
 from examples.discrete_belief.run import revisit_mdp_cost, MAX_COST, clip_cost
 
 
@@ -56,23 +99,24 @@ def pddlstream_from_state(state, teleport=False):
     for attach in state.attachments.values():
         holding_arms.add(attach.arm)
         holding_bodies.add(attach.body)
-        init += [('Grasp', attach.body, attach.grasp),
-                 ('AtGrasp', attach.arm, attach.body, attach.grasp)]
+        init += [('Grasp', attach.body, attach.grasp), ('AtGrasp', attach.arm, attach.body, attach.grasp)]
     for arm in ARM_NAMES:
-       joints = get_arm_joints(robot, arm)
-       conf = Conf(robot, joints, get_joint_positions(robot, joints))
-       init += [('Arm', arm), ('AConf', arm, conf), ('AtAConf', arm, conf)]
-       if arm in task.arms:
-           init += [('Controllable', arm)]
-       if arm not in holding_arms:
-           init += [('HandEmpty', arm)]
+        joints = get_arm_joints(robot, arm)
+        conf = Conf(robot, joints, get_joint_positions(robot, joints))
+        init += [('Arm', arm), ('AConf', arm, conf), ('AtAConf', arm, conf)]
+        if arm in task.arms:
+            init += [('Controllable', arm)]
+        if arm not in holding_arms:
+            init += [('HandEmpty', arm)]
     for body in task.get_bodies():
         if body in holding_bodies:
             continue
         # TODO: no notion whether observable actually corresponds to the correct thing
         pose = state.poses[body]
-        init += [('Pose', body, pose), ('AtPose', body, pose),
-                 ('Observable', pose),
+        init += [
+            ('Pose', body, pose),
+            ('AtPose', body, pose),
+            ('Observable', pose),
         ]
 
     init += [('Scannable', body) for body in task.rooms + task.surfaces]
@@ -85,8 +129,7 @@ def pddlstream_from_state(state, teleport=False):
         for surface in supports:
             p_obs = state.b_on[body].prob(surface)
             cost = revisit_mdp_cost(0, scan_cost, p_obs)  # TODO: imperfect observation model
-            init += [('Stackable', body, surface),
-                     Equal(('LocalizeCost', surface, body), clip_cost(cost))]
+            init += [('Stackable', body, surface), Equal(('LocalizeCost', surface, body), clip_cost(cost))]
             if is_center_stable(body, surface):
                 if body in holding_bodies:
                     continue
@@ -101,20 +144,20 @@ def pddlstream_from_state(state, teleport=False):
         if body in state.registered:
             init.append(('Registered', body))
 
-    goal = And(*[('Holding', a, b) for a, b in task.goal_holding] + \
-           [('On', b, s) for b, s in task.goal_on] + \
-           [('Localized', b) for b in task.goal_localized] + \
-           [('Registered', b) for b in task.goal_registered])
+    goal = And(
+        *[('Holding', a, b) for a, b in task.goal_holding]
+        + [('On', b, s) for b, s in task.goal_on]
+        + [('Localized', b) for b in task.goal_localized]
+        + [('Registered', b) for b in task.goal_registered]
+    )
 
     stream_map = {
         'sample-pose': from_gen_fn(get_stable_gen(task)),
         'sample-grasp': from_list_fn(get_grasp_gen(task)),
         'inverse-kinematics': from_gen_fn(get_ik_ir_gen(task, teleport=teleport)),
         'plan-base-motion': from_fn(get_motion_gen(task, teleport=teleport)),
-
         'test-vis-base': from_test(get_in_range_test(task, VIS_RANGE)),
         'test-reg-base': from_test(get_in_range_test(task, REG_RANGE)),
-
         'sample-vis-base': accelerate_list_gen_fn(from_gen_fn(get_vis_base_gen(task, VIS_RANGE)), max_attempts=25),
         'sample-reg-base': accelerate_list_gen_fn(from_gen_fn(get_vis_base_gen(task, REG_RANGE)), max_attempts=25),
         'inverse-visibility': from_fn(get_inverse_visibility_fn(task)),
@@ -137,7 +180,7 @@ def post_process(state, plan, replan_obs=True, replan_base=False, look_move=Fals
     for i, (name, args) in enumerate(plan):
         if replan_obs and expecting_obs:
             break
-        saved_world = WorldSaver() # StateSaver()
+        saved_world = WorldSaver()  # StateSaver()
         if name == 'move_base':
             c = args[-1]
             [t] = c.commands
@@ -210,10 +253,10 @@ def plan_commands(state, args, profile=True, verbose=True):
             robot = create_pr2(use_drake=USE_DRAKE_PR2)
         set_pose(robot, robot_pose)
         set_configuration(robot, robot_conf)
-    mapping = clone_world(client=sim_world, exclude=[task.robot]) # TODO: TypeError: argument 5 must be str, not bytes
+    mapping = clone_world(client=sim_world, exclude=[task.robot])  # TODO: TypeError: argument 5 must be str, not bytes
     assert all(i1 == i2 for i1, i2 in mapping.items())
     set_client(sim_world)
-    saver = WorldSaver() # StateSaver()
+    saver = WorldSaver()  # StateSaver()
 
     pddlstream_problem = pddlstream_from_state(state, teleport=args.teleport)
     _, _, _, stream_map, init, goal = pddlstream_problem
@@ -231,9 +274,16 @@ def plan_commands(state, args, profile=True, verbose=True):
     ]
 
     with Profiler(field='cumtime', num=10 if profile else None):
-        solution = solve(pddlstream_problem, algorithm=args.algorithm, unit_costs=args.unit,
-                         stream_info=stream_info, hierarchy=hierarchy, debug=False,
-                         success_cost=MAX_COST, verbose=verbose)
+        solution = solve(
+            pddlstream_problem,
+            algorithm=args.algorithm,
+            unit_costs=args.unit,
+            stream_info=stream_info,
+            hierarchy=hierarchy,
+            debug=False,
+            success_cost=MAX_COST,
+            verbose=verbose,
+        )
         plan, cost, evaluations = solution
         if MAX_COST <= cost:
             plan = None
@@ -247,6 +297,7 @@ def plan_commands(state, args, profile=True, verbose=True):
 
 #######################################################
 
+
 def main(time_step=0.01):
     parser = create_parser()
     parser.add_argument('-teleport', action='store_true', help='Teleports between configurations')
@@ -259,13 +310,13 @@ def main(time_step=0.01):
     # TODO: closed world and open world
     connect(use_gui=not args.viewer)
     add_data_path()
-    task, state = get_problem1(localized='rooms', p_other=0.25) # surfaces | rooms
+    task, state = get_problem1(localized='rooms', p_other=0.25)  # surfaces | rooms
     for body in task.get_bodies():
         add_body_name(body)
 
     robot = task.robot
-    assert(USE_DRAKE_PR2 == is_drake_pr2(robot))
-    attach_viewcone(robot) # Doesn't work for the normal pr2?
+    assert USE_DRAKE_PR2 == is_drake_pr2(robot)
+    attach_viewcone(robot)  # Doesn't work for the normal pr2?
     draw_base_limits(get_base_limits(robot), color=(0, 1, 0))
     # TODO: partially observable values
     # TODO: base movements preventing pick without look

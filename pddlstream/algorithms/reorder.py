@@ -1,11 +1,17 @@
-
 from collections import namedtuple, deque, Counter
 from itertools import combinations
 
 from pddlstream.language.statistics import Stats, Performance, EPSILON
 from pddlstream.language.stream import StreamResult
-from pddlstream.utils import neighbors_from_orders, topological_sort, get_connected_components, \
-    is_acyclic, layer_sort, Score, safe_zip
+from pddlstream.utils import (
+    neighbors_from_orders,
+    topological_sort,
+    get_connected_components,
+    is_acyclic,
+    layer_sort,
+    Score,
+    safe_zip,
+)
 
 
 def get_output_objects(result):
@@ -13,14 +19,16 @@ def get_output_objects(result):
         return result.output_objects
     return tuple()
 
+
 def get_object_orders(stream_plan):
     # TODO: check that only one result per output object
     partial_orders = set()
     for i, stream1 in enumerate(stream_plan):
-        for stream2 in stream_plan[i+1:]:
+        for stream2 in stream_plan[i + 1 :]:
             if set(get_output_objects(stream1)) & stream2.instance.get_all_input_objects():
                 partial_orders.add((stream1, stream2))
     return partial_orders
+
 
 def get_fact_orders(stream_plan, init_facts=set()):
     # TODO: explicitly recover this from plan_streams
@@ -29,11 +37,12 @@ def get_fact_orders(stream_plan, init_facts=set()):
     partial_orders = set()
     for i, stream1 in enumerate(stream_plan):
         new_facts = set(stream1.get_certified()) - achieved_facts
-        for stream2 in stream_plan[i+1:]: # Prevents circular
+        for stream2 in stream_plan[i + 1 :]:  # Prevents circular
             if new_facts & set(stream2.get_domain()):
                 partial_orders.add((stream1, stream2))
         achieved_facts.update(new_facts)
     return partial_orders
+
 
 def get_partial_orders(stream_plan, use_facts=True, **kwargs):
     partial_orders = get_object_orders(stream_plan)
@@ -42,40 +51,48 @@ def get_partial_orders(stream_plan, use_facts=True, **kwargs):
     assert is_acyclic(stream_plan, partial_orders)
     return partial_orders
 
+
 ##################################################
+
 
 def get_stream_plan_components(external_plan, **kwargs):
     partial_orders = get_partial_orders(external_plan, **kwargs)
     return get_connected_components(external_plan, partial_orders)
 
+
 ##################################################
 
 Subproblem = namedtuple('Subproblem', ['cost', 'head', 'subset'])
+
 
 def compute_pruning_orders(results, stats_fn=Performance.get_statistics, tiebreaker_fn=lambda v: None):
     # TODO: reason about pairs that don't have a (transitive) ordering
     # TODO: partial orders make this heuristic not optimal
     # TODO: use result.external.name to cluster?
-    dominates = lambda v1, v2: all(s1 <= s2 for s1, s2 in safe_zip(stats_fn(v1), stats_fn(v2))) \
-                               and tiebreaker_fn(v1) <= tiebreaker_fn(v2)
+    dominates = lambda v1, v2: (
+        all(s1 <= s2 for s1, s2 in safe_zip(stats_fn(v1), stats_fn(v2))) and tiebreaker_fn(v1) <= tiebreaker_fn(v2)
+    )
     effort_orders = set()
-    for v1, v2 in combinations(results, r=2): # randomize
+    for v1, v2 in combinations(results, r=2):  # randomize
         if dominates(v1, v2):
             effort_orders.add((v1, v2))  # Includes equality
         elif dominates(v2, v1):
             effort_orders.add((v2, v1))
     return effort_orders
 
-def dynamic_programming(store, vertices, valid_head_fn, stats_fn=Performance.get_statistics, prune=True, greedy=False, **kwargs):
+
+def dynamic_programming(
+    store, vertices, valid_head_fn, stats_fn=Performance.get_statistics, prune=True, greedy=False, **kwargs
+):
     # TODO: include context here as a weak constraint
     # TODO: works in the absence of partial orders
     # TODO: can also more manually reorder
     # 2^N rather than N!
-    effort_orders = set() # 1 cheaper than 2
+    effort_orders = set()  # 1 cheaper than 2
     if prune:
         effort_orders.update(compute_pruning_orders(vertices, stats_fn=stats_fn, **kwargs))
-    _, out_priority_orders = neighbors_from_orders(effort_orders) # more expensive
-    priority_ordering = topological_sort(vertices, effort_orders)[::-1] # most expensive to cheapest
+    _, out_priority_orders = neighbors_from_orders(effort_orders)  # more expensive
+    priority_ordering = topological_sort(vertices, effort_orders)[::-1]  # most expensive to cheapest
     # TODO: can break ties with index on action plan to prioritize doing the temporally first things
 
     # TODO: could the greedy strategy lead to premature choices
@@ -84,23 +101,23 @@ def dynamic_programming(store, vertices, valid_head_fn, stats_fn=Performance.get
     # TODO: flood-fill cheapest as soon as something that has no future dependencies has been found
     # TODO: do the forward version to take advantage of sink vertices
     subset = frozenset()
-    queue = deque([subset]) # Acyclic because subsets
+    queue = deque([subset])  # Acyclic because subsets
     subproblems = {subset: Subproblem(cost=0, head=None, subset=None)}
-    while queue: # searches backward from last to first
+    while queue:  # searches backward from last to first
         if store.is_terminated():
             return vertices
-        subset = queue.popleft() # TODO: greedy/weighted A* version of this (heuristic is next cheapest stream)
+        subset = queue.popleft()  # TODO: greedy/weighted A* version of this (heuristic is next cheapest stream)
         applied = set()
         # TODO: roll-out more than one step to cut the horizon
         # TODO: compute a heuristic that's the best case affordances from subsequent streams
-        for v in priority_ordering: # most expensive first
+        for v in priority_ordering:  # most expensive first
             if greedy and applied:
                 break
             if (v not in subset) and valid_head_fn(v, subset) and not (out_priority_orders[v] & applied):
                 applied.add(v)
                 new_subset = frozenset([v]) | subset
                 p_success, overhead = stats_fn(v)
-                new_cost = overhead + p_success*subproblems[subset].cost
+                new_cost = overhead + p_success * subproblems[subset].cost
                 subproblem = Subproblem(cost=new_cost, head=v, subset=subset)  # Adds new element to the front
                 if new_subset not in subproblems:
                     queue.append(new_subset)
@@ -121,13 +138,15 @@ def dynamic_programming(store, vertices, valid_head_fn, stats_fn=Performance.get
         subset = subproblem.subset
     return ordering
 
+
 ##################################################
+
 
 def compute_distances(stream_plan):
     stream_orders = get_partial_orders(stream_plan)
     reversed_orders = {(s2, s1) for s1, s2 in stream_orders}
     in_stream_orders, out_stream_orders = neighbors_from_orders(reversed_orders)
-    sources = {stream for stream in stream_plan if not in_stream_orders[stream]} # In the reversed DAG
+    sources = {stream for stream in stream_plan if not in_stream_orders[stream]}  # In the reversed DAG
     output_sources = {stream for stream in sources if stream.external.has_outputs}
     test_sources = sources - output_sources
     distances = layer_sort(set(stream_plan) - test_sources, reversed_orders)
@@ -139,6 +158,7 @@ def compute_distances(stream_plan):
             distances[stream] = min([max_distance] + [distances[s] - 1 for s in out_stream_orders[stream]])
     return distances
 
+
 def layer_reorder_stream_plan(stream_plan, **kwargs):
     if not stream_plan:
         return stream_plan
@@ -148,6 +168,7 @@ def layer_reorder_stream_plan(stream_plan, **kwargs):
     priority_fn = lambda s: Score(not s.external.has_outputs, distances[s], -s.stats_heuristic())
     reverse_order = topological_sort(stream_plan, reversed_orders, priority_fn=priority_fn)
     return reverse_order[::-1]
+
 
 def compute_statistics(stream_plan, bias=True):
     stats_from_stream = {result: result.external.get_statistics() for result in stream_plan}
@@ -161,13 +182,15 @@ def compute_statistics(stream_plan, bias=True):
             # TODO: is_function, number of free inputs, etc.
             # TODO: decrease p_success if fewer free inputs (or input streams)
             # TODO: dynamic_programming seems to automatically order streams with fewer free ahead anyways
-            overhead += EPSILON*(max_distance - distances[result] + 1)
+            overhead += EPSILON * (max_distance - distances[result] + 1)
         else:
             p_success *= EPSILON
         stats_from_stream[result] = Stats(p_success, overhead)
     return stats_from_stream
 
+
 ##################################################
+
 
 def optimal_reorder_stream_plan(store, stream_plan, stats_from_stream=None, **kwargs):
     if not stream_plan:
@@ -180,18 +203,21 @@ def optimal_reorder_stream_plan(store, stream_plan, stats_from_stream=None, **kw
     index_from_stream = dict(zip(stream_plan, indices))
     stream_orders = get_partial_orders(stream_plan)
     stream_orders = {(index_from_stream[s1], index_from_stream[s2]) for s1, s2 in stream_orders}
-    nodes = indices # TODO: are indices actually much faster?
+    nodes = indices  # TODO: are indices actually much faster?
 
     in_stream_orders, out_stream_orders = neighbors_from_orders(stream_orders)
     valid_combine = lambda v, subset: out_stream_orders[v] <= subset
 
-
     stats_fn = lambda idx: stats_from_stream[stream_plan[idx]]
     tiebreaker_fn = lambda idx: stream_plan[idx].stats_heuristic()
-    ordering = dynamic_programming(store, nodes, valid_combine, stats_fn=stats_fn, tiebreaker_fn=tiebreaker_fn, **kwargs)
+    ordering = dynamic_programming(
+        store, nodes, valid_combine, stats_fn=stats_fn, tiebreaker_fn=tiebreaker_fn, **kwargs
+    )
     return [stream_plan[index] for index in ordering]
 
+
 ##################################################
+
 
 def reorder_stream_plan(store, stream_plan, algorithm=None, **kwargs):
     if not stream_plan:

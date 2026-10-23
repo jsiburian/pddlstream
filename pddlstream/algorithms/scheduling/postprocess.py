@@ -12,27 +12,39 @@ from pddlstream.utils import flatten, INF
 
 RESCHEDULE_PLANNER = 'lmcut-astar'
 
-def reschedule_stream_plan(evaluations, target_facts, domain, stream_results,
-                           unique_binding=False, unsatisfiable=False, max_effort=INF,
-                           planner=RESCHEDULE_PLANNER, max_reschedule_time=10, debug=False):
+
+def reschedule_stream_plan(
+    evaluations,
+    target_facts,
+    domain,
+    stream_results,
+    unique_binding=False,
+    unsatisfiable=False,
+    max_effort=INF,
+    planner=RESCHEDULE_PLANNER,
+    max_reschedule_time=10,
+    debug=False,
+):
     # TODO: search in space of partially ordered plans
     # TODO: constrain selection order to be alphabetical?
-    domain.actions[:], stream_result_from_name = get_stream_actions(
-        stream_results, unique_binding=unique_binding)
+    domain.actions[:], stream_result_from_name = get_stream_actions(stream_results, unique_binding=unique_binding)
     goal_expression = And(*target_facts)
-    if unsatisfiable: # TODO: ensure that the copy hasn't harmed anything
+    if unsatisfiable:  # TODO: ensure that the copy hasn't harmed anything
         goal_expression = add_unsatisfiable_to_goal(domain, goal_expression)
     reschedule_problem = get_problem(evaluations, goal_expression, domain, unit_costs=False)
     reschedule_task = task_from_domain_problem(domain, reschedule_problem)
     sas_task = sas_from_pddl(reschedule_task)
-    stream_names, effort = solve_from_task(sas_task, planner=planner, max_planner_time=max_reschedule_time,
-                                           max_cost=max_effort, debug=debug)
+    stream_names, effort = solve_from_task(
+        sas_task, planner=planner, max_planner_time=max_reschedule_time, max_cost=max_effort, debug=debug
+    )
     if stream_names is None:
         return None
     stream_plan = [stream_result_from_name[name] for name, _ in stream_names]
     return stream_plan
 
+
 ##################################################
+
 
 def shorten_stream_plan(evaluations, stream_plan, target_facts):
     all_subgoals = set(target_facts) | set(flatten(r.instance.get_domain() for r in stream_plan))
@@ -43,9 +55,9 @@ def shorten_stream_plan(evaluations, stream_plan, target_facts):
         for fact in result.get_certified():
             results_from_fact.setdefault(fact, []).append(result)
 
-    for removed_result in reversed(stream_plan): # TODO: only do in order?
+    for removed_result in reversed(stream_plan):  # TODO: only do in order?
         certified_subgoals = open_subgoals & set(removed_result.get_certified())
-        if not certified_subgoals: # Could combine with following
+        if not certified_subgoals:  # Could combine with following
             new_stream_plan = stream_plan[:]
             new_stream_plan.remove(removed_result)
             return new_stream_plan
@@ -66,7 +78,9 @@ def prune_stream_plan(evaluations, stream_plan, target_facts):
         stream_plan = new_stream_plan
     return stream_plan
 
+
 ##################################################
+
 
 def postprocess_stream_plan(evaluations, domain, stream_plan, target_facts):
     return prune_stream_plan(evaluations, stream_plan, target_facts)

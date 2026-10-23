@@ -1,11 +1,20 @@
 import numpy as np
 
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, Trajectory, create_trajectory
-from examples.pybullet.utils.pybullet_tools.pr2_utils import get_group_joints, \
-    visible_base_generator, inverse_visibility
+from examples.pybullet.utils.pybullet_tools.pr2_utils import (
+    get_group_joints,
+    visible_base_generator,
+    inverse_visibility,
+)
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import get_custom_limits
-from examples.pybullet.utils.pybullet_tools.utils import pairwise_collision, get_point, \
-    all_between, get_bodies, plan_direct_joint_motion, plan_joint_motion
+from examples.pybullet.utils.pybullet_tools.utils import (
+    pairwise_collision,
+    get_point,
+    all_between,
+    get_bodies,
+    plan_direct_joint_motion,
+    plan_joint_motion,
+)
 
 VIS_RANGE = 2.5
 COM_RANGE = 5
@@ -18,6 +27,7 @@ def get_fixed_bodies(problems):
 def get_reachable_test(problem):
     def test(v, bq):
         return True
+
     return test
 
 
@@ -25,6 +35,7 @@ def get_inv_vis_gen(problem, max_range=VIS_RANGE, custom_limits={}):
     base_range = (0, max_range)
     robot = problem.rovers[0]
     fixed = get_fixed_bodies(problem)
+
     def gen(objective):
         base_joints = get_group_joints(robot, 'base')
         head_joints = get_group_joints(robot, 'head')
@@ -45,6 +56,7 @@ def get_inv_vis_gen(problem, max_range=VIS_RANGE, custom_limits={}):
             hq = Conf(robot, head_joints, head_conf)
             y = None
             yield (bq, hq, y)
+
     return gen
 
 
@@ -55,6 +67,7 @@ def get_inv_com_gen(problem, **kwargs):
 def get_above_gen(problem, custom_limits={}):
     rover = problem.rovers[0]
     fixed = get_fixed_bodies(problem)
+
     def gen(rock):
         base_joints = get_group_joints(rover, 'base')
         x, y, _ = get_point(rock)
@@ -69,28 +82,33 @@ def get_above_gen(problem, custom_limits={}):
             if any(pairwise_collision(rover, b) for b in fixed):
                 continue
             yield (bq,)
+
     return gen
 
 
 def get_base_motion_fn(problem, custom_limits={}, teleport=False):
     rover = problem.rovers[0]
     fixed = get_fixed_bodies(problem)
+
     def test(bq1, bq2):
         if teleport:
             ht = Trajectory([bq1, bq2])
         else:
             bq1.assign()
-            path = plan_joint_motion(rover, bq1.joints, bq2.values, custom_limits=custom_limits,
-                                     obstacles=fixed, self_collisions=False)
+            path = plan_joint_motion(
+                rover, bq1.joints, bq2.values, custom_limits=custom_limits, obstacles=fixed, self_collisions=False
+            )
             if path is None:
                 return None
             ht = create_trajectory(rover, bq2.joints, path)
         return (ht,)
+
     return test
 
 
 def get_head_motion_fn(problem, teleport=False):
     rover = problem.rovers[0]
+
     def test(hq1, hq2):
         if teleport:
             ht = Trajectory([hq1, hq2])
@@ -101,4 +119,5 @@ def get_head_motion_fn(problem, teleport=False):
                 return None
             ht = create_trajectory(rover, hq1.joints, path)
         return (ht,)
+
     return test

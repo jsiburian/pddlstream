@@ -4,8 +4,14 @@ from contextlib import contextmanager
 
 from pddlstream.algorithms.common import evaluations_from_init, SOLUTIONS
 from pddlstream.algorithms.constraints import add_plan_constraints
-from pddlstream.algorithms.downward import parse_lisp, parse_goal, has_costs, set_unit_costs, normalize_domain_goal, \
-    parse_sequential_domain
+from pddlstream.algorithms.downward import (
+    parse_lisp,
+    parse_goal,
+    has_costs,
+    set_unit_costs,
+    normalize_domain_goal,
+    parse_sequential_domain,
+)
 from pddlstream.language.constants import get_prefix, get_args
 from pddlstream.language.conversion import obj_from_value_expression
 from pddlstream.language.exogenous import compile_to_exogenous, FutureValue
@@ -20,15 +26,16 @@ from pddlstream.utils import INF, WallClock, WorkClock, set_clock, reset_creatio
 
 # TODO: rename file to parsing
 
+
 def parse_constants(domain, constant_map):
     obj_from_constant = {}
     for constant in domain.constants:
-        if constant.name.startswith(Object._prefix): # TODO: check other prefixes
+        if constant.name.startswith(Object._prefix):  # TODO: check other prefixes
             raise NotImplementedError(f'Constants are not currently allowed to begin with {Object._prefix}')
         if constant.name not in constant_map:
             raise ValueError(f'Undefined constant {constant.name}')
         value = constant_map.get(constant.name, constant.name)
-        obj_from_constant[constant.name] = Object(value, name=constant.name) # TODO: remap names
+        obj_from_constant[constant.name] = Object(value, name=constant.name)  # TODO: remap names
         # TODO: add object predicate
 
     for name in constant_map:
@@ -37,11 +44,12 @@ def parse_constants(domain, constant_map):
                 break
         else:
             raise ValueError(f'Constant map value {name} not mentioned in domain :constants')
-    del domain.constants[:] # So not set twice
+    del domain.constants[:]  # So not set twice
     return obj_from_constant
 
+
 def check_problem(domain, streams, obj_from_constant):
-    for action in (domain.actions + domain.axioms):
+    for action in domain.actions + domain.axioms:
         for p, c in Counter(action.parameters).items():
             if c != 1:
                 raise ValueError(f'Parameter [{p.name}] for action [{action.name}] is not unique')
@@ -57,10 +65,11 @@ def check_problem(domain, streams, obj_from_constant):
             name = get_prefix(fact)
             if name not in domain.predicate_dict:
                 undeclared_predicates.add(name)
-            elif len(get_args(fact)) != domain.predicate_dict[name].get_arity(): # predicate used with wrong arity: {}
+            elif len(get_args(fact)) != domain.predicate_dict[name].get_arity():  # predicate used with wrong arity: {}
                 print(f'Warning! predicate used with wrong arity in stream [{stream.name}]: {fact}')
     if undeclared_predicates:
-        print(f'Warning! Undeclared predicates: {sorted(undeclared_predicates)}') # Undeclared predicate: {}
+        print(f'Warning! Undeclared predicates: {sorted(undeclared_predicates)}')  # Undeclared predicate: {}
+
 
 def reset_registries():
     # TODO: maintain these dictionaries in an object
@@ -71,11 +80,14 @@ def reset_registries():
     RULES[:] = []
     reset_creation_hashes()
 
+
 def reset_globals():
     reset_registries()
     SOLUTIONS[:] = []
 
+
 _solve_depth = 0
+
 
 @contextmanager
 def solve_scope(deterministic=False):
@@ -96,19 +108,23 @@ def solve_scope(deterministic=False):
         # Cleared afterwards rather than beforehand because callers may create objects before solving (satisfaction)
         reset_registries()
 
+
 def scoped_solve(solve_fn):
     """Runs a solver inside solve_scope; the solver also receives deterministic, e.g. to skip loading statistics."""
+
     @functools.wraps(solve_fn)
     def wrapper(problem, *args, deterministic=False, **kwargs):
         with solve_scope(deterministic):
             return solve_fn(problem, *args, deterministic=deterministic, **kwargs)
+
     return wrapper
+
 
 def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, unit_efforts=False):
     # TODO: just return the problem if already written programmatically
     domain_pddl, constant_map, stream_pddl, stream_map, init, goal = problem
 
-    domain = parse_sequential_domain(domain_pddl) # TODO: normalize here
+    domain = parse_sequential_domain(domain_pddl)  # TODO: normalize here
     if len(domain.types) != 1:
         raise NotImplementedError('Types are not currently supported')
     if unit_costs:
@@ -116,31 +132,34 @@ def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, u
     if not has_costs(domain):
         # TODO: set effort_weight to 1 if no costs
         print('Warning! All actions have no cost. Recommend setting unit_costs=True')
-    obj_from_constant = parse_constants(domain, constant_map) # Keep before parse_stream_pddl
+    obj_from_constant = parse_constants(domain, constant_map)  # Keep before parse_stream_pddl
 
-    streams = parse_stream_pddl(stream_pddl, stream_map, stream_info=stream_info,
-                                unit_costs=unit_costs, unit_efforts=unit_efforts)
+    streams = parse_stream_pddl(
+        stream_pddl, stream_map, stream_info=stream_info, unit_costs=unit_costs, unit_efforts=unit_efforts
+    )
     check_problem(domain, streams, obj_from_constant)
 
     evaluations = evaluations_from_init(init)
     goal_exp = obj_from_value_expression(goal)
 
     goal_exp = add_plan_constraints(constraints, domain, evaluations, goal_exp)
-    parse_goal(goal_exp, domain) # Just to check that it parses
-    normalize_domain_goal(domain, goal_exp) # TODO: does not normalize goal_exp
+    parse_goal(goal_exp, domain)  # Just to check that it parses
+    normalize_domain_goal(domain, goal_exp)  # TODO: does not normalize goal_exp
 
     compile_to_exogenous(evaluations, domain, streams)
     return evaluations, goal_exp, domain, streams
 
+
 ##################################################
+
 
 def parse_streams(streams, rules, stream_pddl, procedure_map, procedure_info, use_functions=True):
     stream_iter = iter(parse_lisp(stream_pddl))
-    assert('define' == next(stream_iter))
+    assert 'define' == next(stream_iter)
     pddl_type, pddl_name = next(stream_iter)
-    assert('stream' == pddl_type)
+    assert 'stream' == pddl_type
     for lisp_list in stream_iter:
-        name = lisp_list[0] # TODO: refactor at this point
+        name = lisp_list[0]  # TODO: refactor at this point
         if name == ':stream':
             externals = [parse_stream(lisp_list, procedure_map, procedure_info)]
         elif name == ':rule':
@@ -149,7 +168,7 @@ def parse_streams(streams, rules, stream_pddl, procedure_map, procedure_info, us
             if not use_functions:
                 continue
             externals = [parse_function(lisp_list, procedure_map, procedure_info)]
-        elif name == ':predicate': # Cannot just use args if want a bound
+        elif name == ':predicate':  # Cannot just use args if want a bound
             externals = [parse_predicate(lisp_list, procedure_map, procedure_info)]
         elif name == ':optimizer':
             externals = parse_optimizer(lisp_list, procedure_map, procedure_info)
@@ -160,25 +179,27 @@ def parse_streams(streams, rules, stream_pddl, procedure_map, procedure_info, us
                 raise ValueError(f'Stream [{external.name}] is not unique')
             if name == ':rule':
                 rules.append(external)
-            external.pddl_name = pddl_name # TODO: move within constructors
+            external.pddl_name = pddl_name  # TODO: move within constructors
             streams.append(external)
+
 
 def set_unit_efforts(externals):
     for external in externals:
         if external.get_effort() < INF:
             external.info.effort = 1
 
+
 def parse_stream_pddl(stream_pddl, stream_map, stream_info={}, unit_costs=False, unit_efforts=False):
-    if stream_info is None: # NO_INFO
+    if stream_info is None:  # NO_INFO
         stream_info = {}
     externals = []
     if stream_pddl is None:
-        return externals # No streams
+        return externals  # No streams
     if isinstance(stream_pddl, str):
         stream_pddl = [stream_pddl]
     if all(isinstance(e, External) for e in stream_pddl):
         return stream_pddl
-    if isinstance(stream_map, dict): # DEBUG_MODES
+    if isinstance(stream_map, dict):  # DEBUG_MODES
         stream_map = {k.lower(): v for k, v in stream_map.items()}
     stream_info = {k.lower(): v for k, v in stream_info.items()}
     rules = []
@@ -190,7 +211,9 @@ def parse_stream_pddl(stream_pddl, stream_map, stream_info={}, unit_costs=False,
         set_unit_efforts(externals)
     return externals
 
+
 ##################################################
+
 
 def remove_blocked(evaluations, domain, instance, new_results):
     # TODO: finish refactoring this

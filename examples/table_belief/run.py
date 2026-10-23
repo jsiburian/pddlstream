@@ -15,9 +15,11 @@ GRASPABLE = [SOUP, GREEN]
 STACKABLE = [(TABLE, ROOM), (SOUP, TABLE), (GREEN, TABLE)]
 ARMS = ['left', 'right']
 
+
 def is_class(item, cl):
-    assert(cl in CLASSES)
+    assert cl in CLASSES
     return cl in item
+
 
 def pddlstream_from_belief(initial_belief):
     domain_pddl = read(get_file_path(__file__, 'domain.pddl'))
@@ -27,7 +29,7 @@ def pddlstream_from_belief(initial_belief):
 
     init = [
         Equal(('RegisterCost',), 1),
-        Equal(('PickCost',), 1), # TODO: imperfect transition model
+        Equal(('PickCost',), 1),  # TODO: imperfect transition model
         Equal(('PlaceCost',), 1),
     ]
 
@@ -39,18 +41,17 @@ def pddlstream_from_belief(initial_belief):
             init += [('Unknown', item)]
             for i2 in support:
                 p_obs = dist.prob(i2)
-                cost = revisit_mdp_cost(1, 1, p_obs) # TODO: imperfect observation model
+                cost = revisit_mdp_cost(1, 1, p_obs)  # TODO: imperfect observation model
                 if cost == INF:
                     continue
                 if i2 in initial_belief:
-                    init += [('FiniteScanCost', i2, item),
-                             Equal(('ScanCost', i2, item), cost)]
+                    init += [('FiniteScanCost', i2, item), Equal(('ScanCost', i2, item), cost)]
 
     for item in initial_belief:
         for cl in filter(lambda c: is_class(item, c), CLASSES):
             init += [('Class', item, cl)]
             if cl in GRASPABLE:
-                init += [('Graspable', item)] # TODO: include hand?
+                init += [('Graspable', item)]  # TODO: include hand?
 
     for cl1, cl2 in STACKABLE:
         for i1 in filter(lambda i: is_class(i, cl1), initial_belief):
@@ -65,10 +66,12 @@ def pddlstream_from_belief(initial_belief):
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 ##################################################
 
 WORLD = 'world'
 OTHER = 'other'
+
 
 def get_room_belief(uniform_rooms, uniform_tables, uncertainty):
     mix = 1 - uncertainty
@@ -80,6 +83,7 @@ def get_room_belief(uniform_rooms, uniform_tables, uncertainty):
         'green0': MixtureDist(DeltaDist('table0'), uniform_tables, mix),
     }
 
+
 def get_table_belief(uniform_tables, uncertainty):
     mix = 1 - uncertainty
     return {
@@ -90,6 +94,7 @@ def get_table_belief(uniform_tables, uncertainty):
         'green0': MixtureDist(DeltaDist('table0'), uniform_tables, mix),
     }
 
+
 def get_item_belief():
     return {
         'room0': DeltaDist(WORLD),
@@ -99,7 +104,9 @@ def get_item_belief():
         'green0': DeltaDist('table0'),
     }
 
+
 ##################################################
+
 
 def main():
     parser = create_parser()
@@ -120,6 +127,7 @@ def main():
     with Profiler(field='tottime', num=10):
         solution = solve(pddlstream_problem, algorithm=args.algorithm, unit_costs=args.unit, planner=planner)
     print_solution(solution)
+
 
 if __name__ == '__main__':
     main()

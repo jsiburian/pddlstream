@@ -2,8 +2,11 @@ import pytest
 
 
 def pytest_addoption(parser):
-    parser.addoption('--record', action='store_true',
-                     help='Rewrites the recorded outputs (tests/recorded_outputs.json) of the cases that run')
+    parser.addoption(
+        '--record',
+        action='store_true',
+        help='Rewrites the recorded outputs (tests/recorded_outputs.json) of the cases that run',
+    )
 
 
 @pytest.fixture

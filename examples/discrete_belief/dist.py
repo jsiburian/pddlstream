@@ -7,7 +7,6 @@ import copy
 # Think of this as a mixture of a distribution and something like a uniform,
 # but it doesn't really work unless the universe is finite
 class Distribution:
-
     def prob(self, x):
         raise NotImplementedError()
 
@@ -81,8 +80,7 @@ class DiscreteDist(Distribution):
         """
         newElements = [elt for elt in self.support() if elt[index] == value]
         z = sum(self.prob(elt) for elt in newElements)
-        return DDist({removeElt(elt, index): self.prob(elt) / z
-                      for elt in newElements})
+        return DDist({removeElt(elt, index): self.prob(elt) / z for elt in newElements})
 
     def verify(self, epsilon=1e-5):
         z = sum(self.prob(elt) for elt in self.support())
@@ -258,9 +256,10 @@ class DDist(DiscreteDist):
         return z
 
     def __repr__(self):
-        return '{}{{{}}}'.format(self.__class__.__name__, ', '.join(
-            '{}: {:.5f}'.format(*pair) for pair in sorted(
-                self.__d.items(), key=lambda pair: pair[1])))
+        return '{}{{{}}}'.format(
+            self.__class__.__name__,
+            ', '.join('{}: {:.5f}'.format(*pair) for pair in sorted(self.__d.items(), key=lambda pair: pair[1])),
+        )
 
     def __hash__(self):
         return hash(frozenset(self.__d.items()))
@@ -274,6 +273,7 @@ class DDist(DiscreteDist):
 
 ######################################################################
 #   Special cases
+
 
 def DeltaDist(v):
     """
@@ -343,8 +343,7 @@ def mixDDists(dists):
     pairs = list(dists.items()) if isinstance(dists, dict) else list(dists)
     support = {key for dist, _ in pairs for key in dist.support()}
     assert support
-    return DDist({key: sum(weight*dist.prob(key) for dist, weight in pairs)
-                  for key in support})
+    return DDist({key: sum(weight * dist.prob(key) for dist, weight in pairs) for key in support})
 
 
 def MixtureDD(d1, d2, p):
@@ -367,7 +366,7 @@ def JDist(PA, *PBgAs, **kwargs):
     """
     Create a joint distribution on P(A, B) (in that order),
     represented as a C{DDist}
-        
+
     @param PA: a C{DDist} on some random var A
     @param PBgA: a conditional probability distribution specifying
     P(B | A) (that is, a function from elements of A to C{DDist}
@@ -408,6 +407,7 @@ def totalProbability(PA, PBgA):
 ######################################################################
 #   Utilities
 
+
 def to_tuple(e):
     if isinstance(e, tuple):
         return e
@@ -418,9 +418,9 @@ def removeElt(items, i):
     """
     non-destructively remove the element at index i from a list;
     returns a copy;  if the result is a list of length 1, just return
-    the element  
+    the element
     """
-    result = items[:i] + items[i + 1:]
+    result = items[:i] + items[i + 1 :]
     if len(result) == 1:
         return result[0]
     else:
@@ -437,6 +437,7 @@ def removeElt(items, i):
 # Amount of probability mass within delta of value, given a Gaussian
 # Gauss CDF
 # Given p value find chiSq
+
 
 def clip(v, vMin, vMax):
     if vMin is None:

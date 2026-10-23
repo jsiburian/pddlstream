@@ -1,4 +1,5 @@
 """In-process tests of solver entry points and helpers."""
+
 import pathlib
 
 import pytest
@@ -42,17 +43,26 @@ def test_gen_fn_from_wild_gen_fn():
 def test_continuous_tamp(use_skeleton):
     from examples.continuous_tamp.primitives import tight
     from examples.continuous_tamp.run import pddlstream_from_tamp, set_deterministic, TIGHT_SKELETON
+
     set_deterministic()
     constraints = PlanConstraints(skeletons=[TIGHT_SKELETON] if use_skeleton else None, exact=True)
-    plan, cost, _ = solve(pddlstream_from_tamp(tight(n_blocks=2)), constraints=constraints,
-                          planner='max-astar', unit_costs=True, max_time=120)
+    plan, cost, _ = solve(
+        pddlstream_from_tamp(tight(n_blocks=2)),
+        constraints=constraints,
+        planner='max-astar',
+        unit_costs=True,
+        max_time=120,
+    )
     assert is_plan(plan)
     if use_skeleton:
         assert [action.name for action in plan] == [name for name, _ in TIGHT_SKELETON]
 
 
-@pytest.mark.skipif(not (ROOT / 'examples/pybullet/utils/pybullet_tools/utils.py').exists(),
-                    reason='pybullet-planning submodule not checked out')
+@pytest.mark.skipif(
+    not (ROOT / 'examples/pybullet/utils/pybullet_tools/utils.py').exists(),
+    reason='pybullet-planning submodule not checked out',
+)
 def test_numpy_math_shim():
     from examples.pybullet.utils.pybullet_tools.utils import get_yaw
+
     assert get_yaw((1, 1)) == pytest.approx(0.785398, abs=1e-6)

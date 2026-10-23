@@ -17,13 +17,14 @@ from examples.ipc.rovers.run import dump_plan
 
 # TODO: rocket and car domains
 
+
 def get_problem(optimize=True):
     initial_atm = 30
     initial_person = 2
 
     min_take = 1
     max_take = initial_atm
-    target = 50 # 1 | 3 | 50
+    target = 50  # 1 | 3 | 50
     num_atms = 2
 
     domain_pddl = read_pddl(__file__, 'domain0.pddl')
@@ -43,7 +44,7 @@ def get_problem(optimize=True):
         'add': from_fn(lambda c1, c2: (c1 + c2,)),
         'subtract': from_fn(lambda c3, c2: (c3 - c2,) if c3 - c2 >= 0 else None),
         'withdraw': from_fn(lambda wc, pc1, mc1: (pc1 + wc, mc1 - wc) if mc1 - wc >= 0 else None),
-        'withdrawcost': lambda c: c, # TODO: withdraw fee
+        'withdrawcost': lambda c: c,  # TODO: withdraw fee
         'gurobi': create_optimizer(min_take, max_take),
     }
 
@@ -55,21 +56,25 @@ def get_problem(optimize=True):
         ('pcash', target),
         ('tcash', target),
         ('inpocket', person, initial_person),
-    ] # + [('cash', amount) for amount in amounts]
+    ]  # + [('cash', amount) for amount in amounts]
 
     for num in range(num_atms):
-        name = f'atm{num+1}'
-        init.extend([
-            ('machine', name),
-            ('mcash', initial_atm),
-            ('maxwithdraw', name, initial_atm),
-        ])
+        name = f'atm{num + 1}'
+        init.extend(
+            [
+                ('machine', name),
+                ('mcash', initial_atm),
+                ('maxwithdraw', name, initial_atm),
+            ]
+        )
 
-    goal = ('finished',) # TODO: focused bug when goal initially satisfied
+    goal = ('finished',)  # TODO: focused bug when goal initially satisfied
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 ##################################################
+
 
 def solve_pddlstream(planner='max-astar'):
     parser = create_parser()
@@ -86,15 +91,25 @@ def solve_pddlstream(planner='max-astar'):
         'withdraw': StreamInfo(opt_gen_fn=PartialInputs(unique=True)),
     }
     with Profiler(field='cumtime'):
-        solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit,
-                         stream_info=stream_info, planner=planner,
-                         initial_complexity=3, clean=False, debug=True, verbose=True)
+        solution = solve(
+            problem,
+            algorithm=args.algorithm,
+            unit_costs=args.unit,
+            stream_info=stream_info,
+            planner=planner,
+            initial_complexity=3,
+            clean=False,
+            debug=True,
+            verbose=True,
+        )
 
     print_solution(solution)
     plan, cost, certificate = solution
     print('Certificate:', certificate.preimage_facts)
 
+
 ##################################################
+
 
 def solve_pddl():
     domain_pddl = read_pddl(__file__, 'domain0.pddl')
@@ -102,8 +117,10 @@ def solve_pddl():
     plan, cost = solve_from_pddl(domain_pddl, problem_pddl)
     dump_plan(plan, cost)
 
+
 def main():
     solve_pddlstream()
+
 
 if __name__ == '__main__':
     main()

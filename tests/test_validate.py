@@ -1,4 +1,5 @@
 """The plan validator must accept the solvers' plans and reject corrupted ones."""
+
 import pytest
 
 from pddlstream.algorithms.constraints import PlanConstraints
@@ -22,12 +23,14 @@ def blocksworld(tmp_path_factory):
 def continuous_tamp(tmp_path_factory):
     from examples.continuous_tamp.primitives import tight
     from examples.continuous_tamp.run import get_stream_info, pddlstream_from_tamp, set_deterministic
+
     with pytest.MonkeyPatch.context() as monkeypatch:
         monkeypatch.chdir(tmp_path_factory.mktemp('continuous_tamp'))
         set_deterministic()
         problem = pddlstream_from_tamp(tight(n_blocks=2))
-        return problem, solve(problem, stream_info=get_stream_info(), planner='max-astar', unit_costs=True,
-                              max_time=120)
+        return problem, solve(
+            problem, stream_info=get_stream_info(), planner='max-astar', unit_costs=True, max_time=120
+        )
 
 
 def replace_plan(solution, plan):
@@ -39,11 +42,15 @@ def test_accepts_solution(blocksworld):
     assert validate_solution(problem, solution, unit_costs=True) == (True, 4)
 
 
-@pytest.mark.parametrize('corrupt', [
-    lambda plan: plan[:-1],                             # Doesn't reach the goal
-    lambda plan: [plan[1], plan[0]] + plan[2:],         # Puts down a block before unstacking it
-    lambda plan: [plan[0]._replace(args=plan[0].args[::-1])] + plan[1:],  # Unstacks the wrong block
-], ids=['truncated', 'swapped', 'wrong-args'])
+@pytest.mark.parametrize(
+    'corrupt',
+    [
+        lambda plan: plan[:-1],  # Doesn't reach the goal
+        lambda plan: [plan[1], plan[0]] + plan[2:],  # Puts down a block before unstacking it
+        lambda plan: [plan[0]._replace(args=plan[0].args[::-1])] + plan[1:],  # Unstacks the wrong block
+    ],
+    ids=['truncated', 'swapped', 'wrong-args'],
+)
 def test_rejects_corrupted_plan(blocksworld, corrupt):
     problem, solution = blocksworld
     assert validate_solution(problem, replace_plan(solution, corrupt(list(solution.plan)))) == (False, INF)
@@ -80,6 +87,10 @@ def test_constraints_avoid_domain_predicate_names():
       (:predicates (order ?x) (assigned ?x) (done))
       (:action finish :parameters (?x) :precondition (order ?x) :effect (and (done) (assigned ?x))))"""
     problem = PDDLProblem(domain_pddl, {}, None, {}, [('order', 'a'), ('order', 'b')], And(('done',)))
-    plan, _, _ = solve(problem, algorithm='incremental', unit_costs=True,
-                       constraints=PlanConstraints(skeletons=[[('finish', ['b'])]], exact=True))
+    plan, _, _ = solve(
+        problem,
+        algorithm='incremental',
+        unit_costs=True,
+        constraints=PlanConstraints(skeletons=[[('finish', ['b'])]], exact=True),
+    )
     assert [(action.name, action.args) for action in plan] == [('finish', ('b',))]

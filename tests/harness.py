@@ -10,6 +10,7 @@ constraint-satisfaction assignments are only recorded. Every stream and function
 input object names, so the digest of the log identifies a run. The last stdout line starting with RESULT_PREFIX holds
 the JSON result.
 """
+
 import argparse
 import functools
 import hashlib
@@ -36,8 +37,10 @@ PDDLSTREAM, PDDL, SATISFACTION = 'pddlstream', 'pddl', 'satisfaction'
 SOLVERS = {  # (module, name): what the solver returns
     **{(meta, name): PDDLSTREAM for name in ['solve']},
     **{(incremental, name): PDDLSTREAM for name in ['solve_incremental', 'solve_immediate', 'solve_exhaustive']},
-    **{(focused, name): PDDLSTREAM for name in ['solve_focused', 'solve_focused_original', 'solve_binding',
-                                                'solve_adaptive', 'solve_hierarchical']},
+    **{
+        (focused, name): PDDLSTREAM
+        for name in ['solve_focused', 'solve_focused_original', 'solve_binding', 'solve_adaptive', 'solve_hierarchical']
+    },
     **{(serialized, name): PDDLSTREAM for name in ['solve_serialized']},
     (search, 'solve_from_pddl'): PDDL,  # (plan, cost)
     (satisfaction, 'constraint_satisfaction'): SATISFACTION,  # (bindings, cost, facts)
@@ -50,8 +53,12 @@ def str_from_plan(plan, kind):
     if kind == SATISFACTION:  # An assignment of values to parameters
         return sorted([parameter, str(value)] for parameter, value in plan.items())
     # Plain PDDL plans hold (name, args) pairs; deferred StreamActions and FunctionActions have no args
-    return [[action[0], [str(arg) for arg in action[1]]] if isinstance(action, (Action, tuple)) and len(action) == 2
-            else str(action) for action in plan]
+    return [
+        [action[0], [str(arg) for arg in action[1]]]
+        if isinstance(action, (Action, tuple)) and len(action) == 2
+        else str(action)
+        for action in plan
+    ]
 
 
 def to_json(value):
@@ -86,6 +93,7 @@ class Recorder:
                     return self.record(solver, kind, problem, args, kwargs)
             finally:
                 self.depth -= 1
+
         return wrapper
 
     def record(self, solver, kind, problem, args, kwargs):
@@ -102,21 +110,23 @@ class Recorder:
                 valid, replay_cost = validate_solution(problem, solution, unit_costs=kwargs.get('unit_costs', False))
             except Exception:
                 validation_error = traceback.format_exc()
-        self.calls.append({
-            'solver': solver.__name__,
-            'kind': kind,
-            'solved': is_plan(plan),
-            'plan': str_from_plan(plan, kind),
-            'length': len(plan) if is_plan(plan) else None,
-            'cost': to_json(cost),
-            'valid': valid,
-            'replay_cost': to_json(replay_cost),
-            'validation_error': validation_error,
-            'elapsed': elapsed,
-            'summary': to_json(summary) if summary else None,
-            'stream_calls': dict(sorted(Counter(name for name, _ in stream_calls).items())),
-            'digest': hashlib.sha256(repr(stream_calls).encode()).hexdigest()[:16],
-        })
+        self.calls.append(
+            {
+                'solver': solver.__name__,
+                'kind': kind,
+                'solved': is_plan(plan),
+                'plan': str_from_plan(plan, kind),
+                'length': len(plan) if is_plan(plan) else None,
+                'cost': to_json(cost),
+                'valid': valid,
+                'replay_cost': to_json(replay_cost),
+                'validation_error': validation_error,
+                'elapsed': elapsed,
+                'summary': to_json(summary) if summary else None,
+                'stream_calls': dict(sorted(Counter(name for name, _ in stream_calls).items())),
+                'digest': hashlib.sha256(repr(stream_calls).encode()).hexdigest()[:16],
+            }
+        )
         return solution
 
     def install(self):
@@ -124,17 +134,21 @@ class Recorder:
             setattr(module, name, self.wrap(getattr(module, name), kind))
 
         export_summary = SolutionStore.export_summary
+
         def record_summary(store):
             summary = export_summary(store)
             self.summaries.append(summary)
             return summary
+
         SolutionStore.export_summary = record_summary
 
         # Every stream and function call that runs the user's procedure updates the statistics once
         update_statistics = Instance.update_statistics
+
         def record_stream_call(instance, *args, **kwargs):
             self.stream_calls.append((instance.external.name, tuple(obj.pddl for obj in instance.input_objects)))
             return update_statistics(instance, *args, **kwargs)
+
         Instance.update_statistics = record_stream_call
 
 

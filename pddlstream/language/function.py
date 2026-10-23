@@ -4,25 +4,29 @@ from pddlstream.language.external import ExternalInfo, Result, Instance, Externa
 from pddlstream.utils import str_from_object, apply_mapping, get_clock
 
 
-
 ##################################################
 
-def add_opt_function(name, base_fn, stream_map, stream_info, constant=0., coefficient=1., **external_kwargs):
-    stream_fn = lambda *args, **kwargs: constant + coefficient*base_fn(*args, **kwargs)
+
+def add_opt_function(name, base_fn, stream_map, stream_info, constant=0.0, coefficient=1.0, **external_kwargs):
+    stream_fn = lambda *args, **kwargs: constant + coefficient * base_fn(*args, **kwargs)
     stream_map[name] = stream_fn
     opt_fn = lambda *args, **kwargs: constant
     info = FunctionInfo(opt_fn=opt_fn, **external_kwargs)
     stream_info[name] = info
     return stream_map, stream_info
 
+
 ##################################################
+
 
 class FunctionInfo(ExternalInfo):
     _default_eager = True
-    def __init__(self, opt_fn=None, eager=_default_eager, verbose=True, **kwargs): # Setting eager=True as a heuristic
+
+    def __init__(self, opt_fn=None, eager=_default_eager, verbose=True, **kwargs):  # Setting eager=True as a heuristic
         super().__init__(eager=eager, **kwargs)
         self.opt_fn = opt_fn
-        self.verbose = verbose # TODO: move to ExternalInfo
+        self.verbose = verbose  # TODO: move to ExternalInfo
+
 
 class FunctionResult(Result):
     def __init__(self, instance, value, optimistic=True):
@@ -31,38 +35,49 @@ class FunctionResult(Result):
         self.value = value
         self._certified = None
         # TODO: could add empty output_objects tuple
+
     @property
     def certified(self):
         if self._certified is None:
             self._certified = [Equal(self.instance.head, self.value)]
         return self._certified
+
     def get_certified(self):
         return self.certified
+
     def get_action(self):
         return FunctionAction(self.name, self.input_objects)
+
     def remap_inputs(self, bindings):
         input_objects = apply_mapping(self.instance.input_objects, bindings)
         new_instance = self.external.get_instance(input_objects)
         return self.__class__(new_instance, self.value, self.optimistic)
+
     def is_successful(self):
         return True
+
     def __repr__(self):
         return f'{str_from_head(self.instance.head)}={self.value:.3f}'
 
+
 class FunctionInstance(Instance):
     _Result = FunctionResult
+
     def __init__(self, external, input_objects):
         super().__init__(external, input_objects)
         self._head = None
+
     @property
     def head(self):
         if self._head is None:
             self._head = substitute_expression(self.external.head, self.mapping)
         return self._head
+
     @property
     def value(self):
         assert len(self.history) == 1
         return self.history[0]
+
     def _compute_output(self):
         self.enumerated = True
         self.num_calls += 1
@@ -77,6 +92,7 @@ class FunctionInstance(Instance):
             raise ValueError(f'Function [{self.external.name}] produced a negative value [{value}]')
         self.history.append(self.external.codomain(value))
         return self.value
+
     def next_results(self, verbose=False):
         assert not self.enumerated
         start_time = get_clock().now()
@@ -87,12 +103,15 @@ class FunctionInstance(Instance):
 
         if (value is not False) and verbose:
             # TODO: str(new_results[-1])
-            print(f'iter={self.get_iteration()}, outs={len(new_results)}) {get_prefix(self.external.head)}'
-                  f'{str_from_object(self.get_input_values())}={value:.3f}')
+            print(
+                f'iter={self.get_iteration()}, outs={len(new_results)}) {get_prefix(self.external.head)}'
+                f'{str_from_object(self.get_input_values())}={value:.3f}'
+            )
         if start_history <= len(self.history) - 1:
             self.update_statistics(start_time, new_results)
         self.successful |= any(r.is_successful() for r in new_results)
         return new_results, new_facts
+
     def next_optimistic(self):
         if self.enumerated or self.disabled:
             return []
@@ -100,16 +119,20 @@ class FunctionInstance(Instance):
         opt_value = self.external.opt_fn(*self.get_input_values())
         self.opt_results = [self._Result(self, opt_value, optimistic=True)]
         return self.opt_results
+
     def __repr__(self):
         return f'{str_from_head(self.head)}=?{self.external.codomain.__name__}'
+
 
 class Function(External):
     """
     An external nonnegative function F(i1, ..., ik) -> 0 <= int
     External functions differ from streams in that their output isn't an object
     """
-    codomain = float # int | float
+
+    codomain = float  # int | float
     _Instance = FunctionInstance
+
     def __init__(self, head, fn, domain, info):
         # TODO: function values that act as preconditions (cost must be below threshold)
         if info is None:
@@ -120,74 +143,94 @@ class Function(External):
         opt_fn = lambda *args: self.codomain()
         self.fn = opt_fn if (fn in DEBUG_MODES) else fn
         self.opt_fn = opt_fn if (self.info.opt_fn is None) else self.info.opt_fn
-        self.num_opt_fns = 0 # TODO: support multiple opt_fns
+        self.num_opt_fns = 0  # TODO: support multiple opt_fns
+
     @property
     def function(self):
         return get_prefix(self.head)
+
     @property
     def has_outputs(self):
         return False
+
     @property
     def is_fluent(self):
         return False
+
     @property
     def is_negated(self):
         return False
+
     @property
     def is_function(self):
         return True
+
     @property
     def is_cost(self):
         return True
+
     def __repr__(self):
         return f'{str_from_head(self.head)}=?{self.codomain.__name__}'
 
+
 ##################################################
+
 
 class PredicateInfo(FunctionInfo):
     _default_eager = False
+
 
 class PredicateResult(FunctionResult):
     def get_certified(self):
         # TODO: cache these results
         expression = self.instance.head
         return [expression if self.value else Not(expression)]
+
     def is_successful(self):
         opt_value = self.external.opt_fn(*self.instance.get_input_values())
         return self.value == opt_value
 
+
 class PredicateInstance(FunctionInstance):
     _Result = PredicateResult
+
 
 class Predicate(Function):
     """
     An external predicate P(i1, ..., ik) -> {False, True}
     External predicates do not make the closed world assumption
     """
+
     _Instance = PredicateInstance
     codomain = bool
+
     def __init__(self, head, fn, domain, info):
         if info is None:
             info = PredicateInfo()
         super().__init__(head, fn, domain, info)
-        assert(self.info.opt_fn is None)
+        assert self.info.opt_fn is None
         self.blocked_predicate = self.name
+
     @property
     def predicate(self):
         return self.function
+
     @property
     def is_negated(self):
         return True
+
     @property
     def is_cost(self):
         return False
 
+
 ##################################################
 
+
 def parse_common(lisp_list, stream_map, stream_info):
-    assert (2 <= len(lisp_list) <= 3)
+    assert 2 <= len(lisp_list) <= 3
     head = tuple(lisp_list[1])
-    assert (is_head(head))
+    assert is_head(head)
     name = get_prefix(head)
     fn = get_procedure_fn(stream_map, name)
     domain = []
@@ -196,8 +239,10 @@ def parse_common(lisp_list, stream_map, stream_info):
     info = stream_info.get(name, None)
     return head, fn, domain, info
 
+
 def parse_function(*args):
     return Function(*parse_common(*args))
+
 
 def parse_predicate(*args):
     return Predicate(*parse_common(*args))

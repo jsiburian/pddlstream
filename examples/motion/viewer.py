@@ -51,21 +51,25 @@ class PRMViewer:
 
 #################################################################
 
+
 def get_delta(q1, q2):
     return np.array(q2) - np.array(q1)
 
+
 def get_distance(q1, q2):
     return np.linalg.norm(get_delta(q1, q2))
+
 
 def contains(q, box):
     (lower, upper) = box
     return np.greater_equal(q, lower).all() and np.greater_equal(upper, q).all()
 
-def sample_line(segment, step_size=.02):
+
+def sample_line(segment, step_size=0.02):
     (q1, q2) = segment
     diff = get_delta(q1, q2)
     dist = np.linalg.norm(diff)
-    for l in np.arange(0., dist, step_size):
+    for l in np.arange(0.0, dist, step_size):
         yield tuple(np.array(q1) + l * diff / dist)
     yield q2
 
@@ -81,14 +85,15 @@ def is_collision_free(line, boxes):
 def create_box(center, extents):
     (x, y) = center
     (w, h) = extents
-    lower = (x - w / 2., y - h / 2.)
-    upper = (x + w / 2., y + h / 2.)
+    lower = (x - w / 2.0, y - h / 2.0)
+    upper = (x + w / 2.0, y + h / 2.0)
     return np.array(lower), np.array(upper)
 
 
 def sample_box(box):
     (lower, upper) = box
     return np.random.random(2) * (upper - lower) + lower
+
 
 def draw_environment(obstacles, regions):
     viewer = PRMViewer()
@@ -98,6 +103,7 @@ def draw_environment(obstacles, regions):
         if name != 'env':
             viewer.draw_rectangle(region, color='green')
     return viewer
+
 
 def draw_solution(segments, obstacles, regions):
     viewer = draw_environment(obstacles, regions)

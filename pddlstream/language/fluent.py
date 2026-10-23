@@ -16,12 +16,14 @@ def get_predicate_map(state_streams):
             predicate_map[predicate] = state_stream
     return predicate_map
 
+
 def remap_certified(literal, stream):
     certified = find_unique(lambda f: get_prefix(f) == literal.predicate, stream.certified)
     mapping = get_mapping(get_args(certified), literal.args)
-    if not all(arg in mapping for arg in stream.inputs): # Certified must contain all inputs
+    if not all(arg in mapping for arg in stream.inputs):  # Certified must contain all inputs
         return None
     return mapping
+
 
 def compile_fluent_streams(domain, externals):
     state_streams = set(filter(lambda e: isinstance(e, Stream) and e.is_special, externals))
@@ -36,6 +38,7 @@ def compile_fluent_streams(domain, externals):
     # TODO: could make free parameters free
     # TODO: could treat like a normal stream that generates values (but with no inputs required/needed)
     import pddl
+
     def fn(literal, action):
         if literal.predicate not in predicate_map:
             return literal
@@ -46,7 +49,7 @@ def compile_fluent_streams(domain, externals):
             # TODO: this excludes typing. This is not entirely safe
             return literal
         output_args = set(mapping[arg] for arg in stream.outputs)
-        if isinstance(action, pddl.Action): # TODO: unified Action/Axiom effects
+        if isinstance(action, pddl.Action):  # TODO: unified Action/Axiom effects
             for effect in action.effects:
                 if isinstance(effect, pddl.Effect) and (output_args & set(effect.literal.args)):
                     raise RuntimeError(f'Fluent stream outputs cannot be in action effects: {effect.literal.predicate}')
@@ -58,9 +61,11 @@ def compile_fluent_streams(domain, externals):
         blocked_literal = literal.__class__(stream.blocked_predicate, blocked_args).negate()
         if stream.is_negated:
             conditions = [blocked_literal]
-            conditions.extend(pddl.Atom(get_prefix(fact), safe_apply_mapping(get_args(fact), mapping)) # fd_from_fact
-                              for fact in stream.domain) # TODO: be careful when using imply
-            return pddl.Conjunction(conditions) # TODO: prune redundant conditions
+            conditions.extend(
+                pddl.Atom(get_prefix(fact), safe_apply_mapping(get_args(fact), mapping))  # fd_from_fact
+                for fact in stream.domain
+            )  # TODO: be careful when using imply
+            return pddl.Conjunction(conditions)  # TODO: prune redundant conditions
         return pddl.Conjunction([literal, blocked_literal])
 
     for action in domain.actions:

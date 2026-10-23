@@ -15,6 +15,7 @@ from pddlstream.utils import INF, str_from_object, get_clock
 
 UPDATE_STATISTICS = False
 
+
 def solve_finite(evaluations, goal_exp, domain, unit_costs=False, debug=False, **search_args):
     problem = get_problem(evaluations, goal_exp, domain, unit_costs)
     task = task_from_domain_problem(domain, problem)
@@ -23,7 +24,9 @@ def solve_finite(evaluations, goal_exp, domain, unit_costs=False, debug=False, *
     plan = obj_from_pddl_plan(pddl_plan)
     return plan, cost
 
+
 ##################################################
+
 
 def process_instance(instantiator, store, instance, verbose=False):
     if instance.enumerated:
@@ -37,12 +40,13 @@ def process_instance(instantiator, store, instance, verbose=False):
         complexity = result.compute_complexity(evaluations)
         for evaluation in add_certified(evaluations, result):
             instantiator.add_atom(evaluation, complexity)
-    fact_complexity = 0 # TODO: record the instance or treat as initial?
+    fact_complexity = 0  # TODO: record the instance or treat as initial?
     for evaluation in add_facts(evaluations, new_facts, result=UNKNOWN_EVALUATION, complexity=fact_complexity):
         instantiator.add_atom(evaluation, fact_complexity)
     if not instance.enumerated:
         instantiator.push_instance(instance)
     return new_results
+
 
 def process_stream_queue(instantiator, store, complexity_limit=INF, verbose=False):
     instances = []
@@ -55,22 +59,35 @@ def process_stream_queue(instantiator, store, complexity_limit=INF, verbose=Fals
         instances.append(instance)
         new_results = process_instance(instantiator, store, instance, verbose=verbose)
         results.extend(new_results)
-        num_successes += bool(new_results) # TODO: max_results?
+        num_successes += bool(new_results)  # TODO: max_results?
     if verbose:
         counts = Counter(instance.external.name for instance in instances)
-        print(f'Eager Calls: {len(instances)} | Successes: {num_successes} | Results: {len(results)} | '
-              f'Counts: {str_from_object(counts)}')
+        print(
+            f'Eager Calls: {len(instances)} | Successes: {num_successes} | Results: {len(results)} | '
+            f'Counts: {str_from_object(counts)}'
+        )
     return len(instances)
 
 
 ##################################################
 
+
 @scoped_solve
-def solve_incremental(problem, constraints=PlanConstraints(),
-                      unit_costs=False, success_cost=INF,
-                      max_iterations=INF, max_time=INF, max_memory=INF,
-                      initial_complexity=0, complexity_step=1, max_complexity=INF,
-                      verbose=False, deterministic=False, **search_kwargs):
+def solve_incremental(
+    problem,
+    constraints=PlanConstraints(),
+    unit_costs=False,
+    success_cost=INF,
+    max_iterations=INF,
+    max_time=INF,
+    max_memory=INF,
+    initial_complexity=0,
+    complexity_step=1,
+    max_complexity=INF,
+    verbose=False,
+    deterministic=False,
+    **search_kwargs,
+):
     """
     Solves a PDDLStream problem by alternating between applying all possible streams and searching
     :param problem: a PDDLStream problem
@@ -99,26 +116,34 @@ def solve_incremental(problem, constraints=PlanConstraints(),
     # complexity_step = INF => exhaustive
     # TODO: warning if optimizers are present
     evaluations, goal_expression, domain, externals = parse_problem(
-        problem, constraints=constraints, unit_costs=unit_costs)
-    store = SolutionStore(evaluations, max_time, success_cost, verbose, max_memory=max_memory) # TODO: include other info here?
+        problem, constraints=constraints, unit_costs=unit_costs
+    )
+    store = SolutionStore(
+        evaluations, max_time, success_cost, verbose, max_memory=max_memory
+    )  # TODO: include other info here?
     if UPDATE_STATISTICS and not deterministic:
         load_stream_statistics(externals)
     fluent_streams = [external.name for external in externals if isinstance(external, Stream) and external.is_fluent]
     if fluent_streams:
-        raise NotImplementedError('The incremental algorithm does not support fluent streams ({}); use a focused '
-                                  'algorithm such as adaptive'.format(', '.join(fluent_streams)))
+        raise NotImplementedError(
+            'The incremental algorithm does not support fluent streams ({}); use a focused '
+            'algorithm such as adaptive'.format(', '.join(fluent_streams))
+        )
     num_iterations = num_calls = 0
     complexity_limit = initial_complexity
     instantiator = Instantiator(externals, evaluations)
     num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
     while not store.is_terminated() and (num_iterations < max_iterations) and (complexity_limit <= max_complexity):
         num_iterations += 1
-        print(f'Iteration: {num_iterations} | Complexity: {complexity_limit} | Calls: {num_calls} | '
-              f'Evaluations: {len(evaluations)} | Solved: {store.has_solution()} | Cost: {store.best_cost:.3f} | '
-              f'Search Time: {store.search_time:.3f} | Sample Time: {store.sample_time:.3f} | '
-              f'Time: {store.elapsed_time():.3f}')
-        plan, cost = solve_finite(evaluations, goal_expression, domain,
-                                  max_cost=min(store.best_cost, constraints.max_cost), **search_kwargs)
+        print(
+            f'Iteration: {num_iterations} | Complexity: {complexity_limit} | Calls: {num_calls} | '
+            f'Evaluations: {len(evaluations)} | Solved: {store.has_solution()} | Cost: {store.best_cost:.3f} | '
+            f'Search Time: {store.search_time:.3f} | Sample Time: {store.sample_time:.3f} | '
+            f'Time: {store.elapsed_time():.3f}'
+        )
+        plan, cost = solve_finite(
+            evaluations, goal_expression, domain, max_cost=min(store.best_cost, constraints.max_cost), **search_kwargs
+        )
         if is_plan(plan):
             store.add_plan(plan, cost)
         if not instantiator:
@@ -131,17 +156,21 @@ def solve_incremental(problem, constraints=PlanConstraints(),
         num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
 
     summary = store.export_summary()
-    summary.update({
-        'iterations': num_iterations,
-        'complexity': complexity_limit,
-    })
-    print(f'Summary: {str_from_object(summary, ndigits=3)}') # TODO: return the summary
+    summary.update(
+        {
+            'iterations': num_iterations,
+            'complexity': complexity_limit,
+        }
+    )
+    print(f'Summary: {str_from_object(summary, ndigits=3)}')  # TODO: return the summary
 
     if UPDATE_STATISTICS:
         write_stream_statistics(externals, verbose)
     return store.extract_solution()
 
+
 ##################################################
+
 
 def solve_immediate(problem, **kwargs):
     """
@@ -154,6 +183,7 @@ def solve_immediate(problem, **kwargs):
         using stream applications
     """
     return solve_incremental(problem, initial_complexity=0, complexity_step=0, max_complexity=0, **kwargs)
+
 
 def solve_exhaustive(problem, **kwargs):
     """

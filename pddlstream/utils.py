@@ -14,13 +14,14 @@ from heapq import heappush, heappop
 import numpy as np
 
 INF = float('inf')
-SEPARATOR = '\n' + 80*'-'  + '\n'
+SEPARATOR = '\n' + 80 * '-' + '\n'
 
 user_input = input
 
 inf_generator = count
 
 ##################################################
+
 
 def int_ceil(f):
     return int(math.ceil(f))
@@ -85,13 +86,15 @@ def get_file_path(file, rel_path):
     directory = os.path.dirname(os.path.abspath(file))
     return os.path.join(directory, rel_path)
 
-
     # TODO: close output
+
 
 ##################################################
 
+
 def elapsed_time(start_time):
     return time.time() - start_time
+
 
 ##################################################
 
@@ -103,10 +106,12 @@ _creation_counter = count()
 class CreationHash:
     """Hashes objects by creation order instead of memory address, so iterating over a set of them visits them in
     the same order on every run. Equality is still identity."""
+
     def __new__(cls, *args, **kwargs):
         self = super().__new__(cls)
         self._hash = next(_creation_counter)
         return self
+
     def __hash__(self):
         return self._hash
 
@@ -118,9 +123,12 @@ def reset_creation_hashes():
 
 class WallClock:
     """Measures time in seconds."""
+
     unit = 'seconds'
+
     def now(self):
         return time.time()
+
     def charge(self, work):
         pass
 
@@ -128,17 +136,21 @@ class WallClock:
 class WorkClock:
     """Measures time in work units that the solver charges for each stream call and search, so that decisions based
     on elapsed time (sampling budgets, stream overhead estimates) are reproducible."""
+
     unit = 'work units'
+
     def __init__(self):
-        self.work = 0.
+        self.work = 0.0
+
     def now(self):
         return self.work
+
     def charge(self, work):
         self.work += work
 
 
-CALL_WORK = 1.      # Work units charged per stream or function call
-SEARCH_WORK = 10.   # Work units charged per FastDownward search
+CALL_WORK = 1.0  # Work units charged per stream or function call
+SEARCH_WORK = 10.0  # Work units charged per FastDownward search
 BINDING_WORK = 0.1  # Work units charged per processed skeleton binding, so sampling loops always advance
 
 _clock = WallClock()
@@ -219,8 +231,11 @@ def argmax(fn, iterable):
 ##################################################
 
 BYTES_PER_KILOBYTE = math.pow(2, 10)
+
+
 def get_peak_memory_in_kb():
     import psutil
+
     # https://pypi.org/project/psutil/
     # https://psutil.readthedocs.io/en/latest/
     # rss: aka "Resident Set Size", this is the non-swapped physical memory a process has used. (bytes)
@@ -233,9 +248,10 @@ def get_peak_memory_in_kb():
     # pfaults (macOS): number of page faults.
     # pageins (macOS): number of actual pageins.
     process = psutil.Process(os.getpid())
-    pmem = process.memory_info() # this seems to actually get the current memory!
+    pmem = process.memory_info()  # this seems to actually get the current memory!
     memory_in_kb = pmem.vms / BYTES_PER_KILOBYTE
     return memory_in_kb
+
 
 def check_memory(max_memory):
     if max_memory == INF:
@@ -246,51 +262,61 @@ def check_memory(max_memory):
     print(f'Peak memory of {int(peak_memory)} KB exceeds memory limit of {int(max_memory)} KB')
     return False
 
+
 ##################################################
+
 
 class Saver:
     # TODO: contextlib
     def save(self):
         raise NotImplementedError()
+
     def restore(self):
         raise NotImplementedError()
+
     def __enter__(self):
         # TODO: move the saving to enter?
         self.save()
         return self
+
     def __exit__(self, type, value, traceback):
         self.restore()
 
 
 class Profiler(Saver):
     fields = ['tottime', 'cumtime']
+
     def __init__(self, field='tottime', num=10):
         assert field in self.fields
         self.field = field
         self.num = num
         self.pr = cProfile.Profile()
+
     def save(self):
         self.pr.enable()
         return self.pr
+
     def restore(self):
         self.pr.disable()
         if self.num is None:
             return None
         stream = None
-        stats = pstats.Stats(self.pr, stream=stream).sort_stats(self.field) # TODO: print multiple
+        stats = pstats.Stats(self.pr, stream=stream).sort_stats(self.field)  # TODO: print multiple
         stats.print_stats(self.num)
         return stats
 
 
-class Verbose(Saver): # TODO: use DisableOutput
+class Verbose(Saver):  # TODO: use DisableOutput
     def __init__(self, verbose=False):
         self.verbose = verbose
+
     def save(self):
         if self.verbose:
             return
         self.stdout = sys.stdout
         self.devnull = open(os.devnull, 'w')
         sys.stdout = self.devnull
+
     def restore(self):
         if self.verbose:
             return
@@ -300,59 +326,81 @@ class Verbose(Saver): # TODO: use DisableOutput
 
 ##################################################
 
+
 class Comparable:
     def __lt__(self, other):
         raise NotImplementedError()
+
     def __eq__(self, other):
         return not (self < other) and not (other < self)
+
     def __ne__(self, other):
         return (self < other) or (other < self)
+
     def __gt__(self, other):
         return other < self
+
     def __ge__(self, other):
         return not self < other
+
     def __le__(self, other):
         return not other < self
+
 
 class MockSet:
     def __init__(self, test=lambda item: True):
         self.test = test
+
     def __contains__(self, item):
         return self.test(item)
 
-class Score(Comparable): # tuple
+
+class Score(Comparable):  # tuple
     def __init__(self, *args):
         # TODO: convert to float
         self.values = tuple(args)
+
     def check_other(self, other):
         return isinstance(other, Score) and (len(self.values) == len(other.values))
+
     def __lt__(self, other):
         assert self.check_other(other)
         return self.values < other.values
+
     def __iter__(self):
         return iter(self.values)
+
     def __neg__(self):
         return self.__class__(*(type(value).__neg__(value) for value in self.values))
+
     def __add__(self, other):
         return self.__class__(*(self.values + other.values))
+
     def __repr__(self):
         return f'{self.__class__.__name__}{self.values}'
+
 
 class HeapElement(Comparable):
     def __init__(self, key, value):
         self.key = key
         self.value = value
+
     def __lt__(self, other):
         return self.key < other.key
+
     def __iter__(self):
         return iter([self.key, self.value])
+
     def __repr__(self):
         return f'{self.__class__.__name__}({self.key}, {self.value})'
 
+
 ##################################################
+
 
 def sorted_str_from_list(obj, **kwargs):
     return '[{}]'.format(', '.join(sorted(str_from_object(item, **kwargs) for item in obj)))
+
 
 def str_from_object(obj, ndigits=None):  # str_object
     if type(obj) in [list]:
@@ -360,18 +408,24 @@ def str_from_object(obj, ndigits=None):  # str_object
     if type(obj) == tuple:
         return '({})'.format(', '.join(str_from_object(item, ndigits) for item in obj))
     if type(obj) in [dict, defaultdict, Counter]:
-        return '{{{}}}'.format(', '.join(f'{str_from_object(key, ndigits)}: {str_from_object(obj[key], ndigits)}' \
-                                  for key in sorted(obj.keys(), key=lambda k: str_from_object(k, ndigits))))
+        return '{{{}}}'.format(
+            ', '.join(
+                f'{str_from_object(key, ndigits)}: {str_from_object(obj[key], ndigits)}'
+                for key in sorted(obj.keys(), key=lambda k: str_from_object(k, ndigits))
+            )
+        )
     if type(obj) in [set, frozenset]:
         return '{{{}}}'.format(', '.join(sorted(str_from_object(item, ndigits) for item in obj)))
     if (ndigits is not None) and (type(obj) in [float, np.float64]):
         obj = round(obj, ndigits=ndigits)
-        if obj == 0.:
-            obj = 0.  # NOTE - catches -0.0 bug
+        if obj == 0.0:
+            obj = 0.0  # NOTE - catches -0.0 bug
         return '{0:.{1}f}'.format(obj, ndigits)
     return str(obj)
 
+
 ##################################################
+
 
 def incoming_from_edges(edges):
     incoming_vertices = defaultdict(set)
@@ -379,15 +433,17 @@ def incoming_from_edges(edges):
         incoming_vertices[v2].add(v1)
     return incoming_vertices
 
+
 def outgoing_from_edges(edges):
     outgoing_vertices = defaultdict(set)
     for v1, v2 in edges:
         outgoing_vertices[v1].add(v2)
     return outgoing_vertices
 
+
 def neighbors_from_orders(orders):
-    return incoming_from_edges(orders), \
-           outgoing_from_edges(orders)
+    return incoming_from_edges(orders), outgoing_from_edges(orders)
+
 
 def adjacent_from_edges(edges):
     undirected_edges = defaultdict(set)
@@ -396,11 +452,14 @@ def adjacent_from_edges(edges):
         undirected_edges[v2].add(v1)
     return undirected_edges
 
+
 ##################################################
+
 
 def filter_orders(vertices, orders):
     # TODO: rename to filter edges?
     return [order for order in orders if all(v in vertices for v in order)]
+
 
 def is_valid_topological_sort(vertices, orders, solution):
     orders = filter_orders(vertices, orders)
@@ -412,6 +471,7 @@ def is_valid_topological_sort(vertices, orders, solution):
             return False
     return True
 
+
 def topological_sort(vertices, orders, priority_fn=lambda v: 0):
     orders = filter_orders(vertices, orders)
     incoming_edges, outgoing_edges = neighbors_from_orders(orders)
@@ -421,7 +481,7 @@ def topological_sort(vertices, orders, priority_fn=lambda v: 0):
         if not incoming_edges[v]:
             heappush(queue, HeapElement(priority_fn(v), v))
     while queue:
-        priority, v1 = heappop(queue) # Lowest to highest
+        priority, v1 = heappop(queue)  # Lowest to highest
         ordering.append(v1)
         for v2 in outgoing_edges[v1]:
             incoming_edges[v2].remove(v1)
@@ -432,7 +492,8 @@ def topological_sort(vertices, orders, priority_fn=lambda v: 0):
     assert is_valid_topological_sort(vertices, orders, ordering)
     return ordering
 
-def layer_sort(vertices, orders): # priority_fn=lambda v: 0
+
+def layer_sort(vertices, orders):  # priority_fn=lambda v: 0
     # TODO: more efficient hypergraph/layer distance (h_max)
     orders = filter_orders(vertices, orders)
     incoming_edges, outgoing_edges = neighbors_from_orders(orders)
@@ -445,16 +506,19 @@ def layer_sort(vertices, orders): # priority_fn=lambda v: 0
     while queue:
         g, v1 = heappop(queue)
         for v2 in outgoing_edges[v1]:
-            incoming_edges[v2].remove(v1) # TODO: non-uniform cost function for max
+            incoming_edges[v2].remove(v1)  # TODO: non-uniform cost function for max
             if not incoming_edges[v2] and (v2 not in visited):
                 visited[v2] = g + 1
                 heappush(queue, HeapElement(visited[v2], v2))
     return visited
 
+
 def is_acyclic(vertices, orders):
     return topological_sort(vertices, orders) is not None
 
+
 ##################################################
+
 
 def grow_component(sources, edges, disabled=set()):
     processed = set(disabled)
@@ -477,14 +541,18 @@ def grow_component(sources, edges, disabled=set()):
             add_cluster(v2)
     return cluster
 
+
 def breadth_first_search(source, edges, **kwargs):
     return grow_component([source], edges, **kwargs)
+
 
 def get_ancestors(source, edges):
     return set(breadth_first_search(source, incoming_from_edges(edges))) - {source}
 
+
 def get_descendants(source, edges):
     return set(breadth_first_search(source, outgoing_from_edges(edges))) - {source}
+
 
 def get_connected_components(vertices, edges):
     edges = filter_orders(vertices, edges)
@@ -500,7 +568,9 @@ def get_connected_components(vertices, edges):
             clusters.append([v for v in vertices if v in cluster])
     return clusters
 
+
 ##################################################
+
 
 def is_hashable(value):
     try:
@@ -508,8 +578,6 @@ def is_hashable(value):
     except TypeError:
         return False
     return True
-
-
 
 
 def value_or_id(value):

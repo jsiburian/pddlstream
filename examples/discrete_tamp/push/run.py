@@ -10,8 +10,15 @@ from pddlstream.language.generator import from_test, from_list_fn
 from pddlstream.language.stream import WildOutput
 from pddlstream.utils import read
 from examples.discrete_tamp.run import apply_plan
-from examples.discrete_tamp.primitives import GRASP, get_length, get_difference, collision_test, distance_fn, \
-    DiscreteTAMPState, DiscreteTAMPProblem
+from examples.discrete_tamp.primitives import (
+    GRASP,
+    get_length,
+    get_difference,
+    collision_test,
+    distance_fn,
+    DiscreteTAMPState,
+    DiscreteTAMPProblem,
+)
 from examples.discrete_tamp.viewer import MAX_COLS
 
 array = lambda args: tuple(map(int, args))
@@ -25,9 +32,11 @@ MAX_PUSH = 3
 
 # TODO: dynamically introduce object
 
+
 def ik_fn(p):
     q = array(GRASP + p)
     return (q,)
+
 
 def get_push_poses(p1, p2):
     push_difference = get_difference(p1, p2)
@@ -36,15 +45,18 @@ def get_push_poses(p1, p2):
         return [p1, p2]
     push_unit = push_difference / push_distance
     num_pushes = int(math.ceil(push_distance))
-    waypoint_poses = [array(i*push_unit + p1) for i in range(1, num_pushes)]
+    waypoint_poses = [array(i * push_unit + p1) for i in range(1, num_pushes)]
     all_poses = [p1] + waypoint_poses + [p2]
     return all_poses
+
 
 def get_push_confs(poses):
     return [ik_fn(p)[0] for p in poses]
 
+
 def get_push_facts(poses, confs):
     return [Fact('Push', args) for args in zip(poses, confs, poses[1:], confs[1:])]
+
 
 def push_target_fn(p1, p2):
     poses = get_push_poses(p1, p2)
@@ -53,43 +65,40 @@ def push_target_fn(p1, p2):
         return WildOutput(values=[tuple(confs)])
     return WildOutput(facts=get_push_facts(poses, confs))
 
+
 def push_direction_gen_fn(p1):
     # TODO: if any movable objects collide with the route, activate them by adding a predicate
     for direction in DIRECTIONS:
-        p2 = array(MAX_PUSH*direction + p1)
+        p2 = array(MAX_PUSH * direction + p1)
         poses = get_push_poses(p1, p2)
         confs = get_push_confs(poses)
         value = (confs[0], poses[1], confs[1])
         yield WildOutput([value])
 
+
 ##################################################
+
 
 def pddlstream_from_tamp(tamp_problem):
     initial = tamp_problem.initial
-    assert(initial.holding is None)
+    assert initial.holding is None
 
-    known_poses = list(initial.block_poses.values()) + \
-                  list(tamp_problem.goal_poses.values())
+    known_poses = list(initial.block_poses.values()) + list(tamp_problem.goal_poses.values())
 
     directory = os.path.dirname(os.path.abspath(__file__))
     domain_pddl = read(os.path.join(directory, 'domain.pddl'))
     stream_pddl = read(os.path.join(directory, 'stream.pddl'))
     constant_map = {}
 
-    init = [
-        ('CanMove',),
-        ('Conf', initial.conf),
-        ('AtConf', initial.conf),
-        ('HandEmpty',),
-        Equal((TOTAL_COST,), 0)] + \
-           [('Block', b) for b in initial.block_poses.keys()] + \
-           [('Pose', p) for p in known_poses] + \
-           [('AtPose', b, p) for b, p in initial.block_poses.items()] + \
-           [('GoalPose', p) for p in tamp_problem.goal_poses.values()]
+    init = (
+        [('CanMove',), ('Conf', initial.conf), ('AtConf', initial.conf), ('HandEmpty',), Equal((TOTAL_COST,), 0)]
+        + [('Block', b) for b in initial.block_poses.keys()]
+        + [('Pose', p) for p in known_poses]
+        + [('AtPose', b, p) for b, p in initial.block_poses.items()]
+        + [('GoalPose', p) for p in tamp_problem.goal_poses.values()]
+    )
 
-    goal = And(('AtConf', initial.conf), *[
-        ('AtPose', b, p) for b, p in tamp_problem.goal_poses.items()
-    ])
+    goal = And(('AtConf', initial.conf), *[('AtPose', b, p) for b, p in tamp_problem.goal_poses.items()])
 
     # TODO: convert to lower case
     stream_map = {
@@ -101,10 +110,12 @@ def pddlstream_from_tamp(tamp_problem):
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 ##################################################
 
+
 def get_shift_one_problem(n_blocks=2, n_poses=MAX_COLS):
-    assert(1 <= n_blocks <= n_poses)
+    assert 1 <= n_blocks <= n_poses
     blocks = [f'b{i}' for i in range(n_blocks)]
     poses = [array([x, 0]) for x in range(n_poses)]
     conf = array([0, -5])
@@ -115,14 +126,16 @@ def get_shift_one_problem(n_blocks=2, n_poses=MAX_COLS):
 
     return DiscreteTAMPProblem(initial, poses, goal_poses)
 
+
 ##################################################
+
 
 def main():
     parser = create_parser()
     args = parser.parse_args()
     print('Arguments:', args)
 
-    problem_fn = get_shift_one_problem # get_shift_one_problem | get_shift_all_problem
+    problem_fn = get_shift_one_problem  # get_shift_one_problem | get_shift_all_problem
     tamp_problem = problem_fn()
     print(tamp_problem)
 
@@ -134,6 +147,7 @@ def main():
     if plan is None:
         return
     apply_plan(tamp_problem, plan)
+
 
 if __name__ == '__main__':
     main()

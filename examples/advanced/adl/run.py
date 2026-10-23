@@ -50,10 +50,10 @@ DOMAIN_PDDL = """
 
 ##################################################
 
+
 def get_problem1():
     value = 10
-    constant_map = {
-    }
+    constant_map = {}
     stream_pddl = None
     stream_map = {}
 
@@ -67,6 +67,7 @@ def get_problem1():
     )
 
     return PDDLProblem(DOMAIN_PDDL, constant_map, stream_pddl, stream_map, init, goal)
+
 
 ##################################################
 
@@ -84,6 +85,7 @@ PROBLEM_PDDL = """
 
 ##################################################
 
+
 def solve_pddlstream():
     parser = create_parser()
     args = parser.parse_args()
@@ -95,10 +97,13 @@ def solve_pddlstream():
     solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit)
     print_solution(solution)
 
+
 ##################################################
+
 
 def main():
     solve_pddlstream()
+
 
 if __name__ == '__main__':
     main()

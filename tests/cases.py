@@ -4,6 +4,7 @@ Each case is an example command (a module under examples/ and its arguments, as 
 plus what its solution must satisfy. Costs are exact for examples whose solutions are reproducible and upper
 bounds for those that sample differently between runs.
 """
+
 from typing import NamedTuple
 
 from pddlstream.utils import INF
@@ -14,15 +15,15 @@ TURTLEBOT_REPLAY_BUG = 'Pre-existing: replay crashes in pybullet-planning visual
 
 class Case(NamedTuple):
     example: str
-    cost: float = None          # Exact cost of the last solve
-    max_cost: float = INF       # Upper bound on the cost of the last solve
-    length: int = None          # Exact plan length of the last solve
-    valid: bool = True          # Validator verdict for PDDLStream plans (None: plans with deferred streams)
-    timeout: float = 120        # Seconds for the whole run, including start-up and display
-    marks: tuple = ()           # gui (needs a display), slow, gurobi (needs the `full` environment)
-    xfail: str = None           # Reason, for known failures
+    cost: float = None  # Exact cost of the last solve
+    max_cost: float = INF  # Upper bound on the cost of the last solve
+    length: int = None  # Exact plan length of the last solve
+    valid: bool = True  # Validator verdict for PDDLStream plans (None: plans with deferred streams)
+    timeout: float = 120  # Seconds for the whole run, including start-up and display
+    marks: tuple = ()  # gui (needs a display), slow, gurobi (needs the `full` environment)
+    xfail: str = None  # Reason, for known failures
     deterministic: bool = True  # Solves with deterministic=True and must reproduce its recorded output
-    bench: bool = False         # Timed by tests/benchmark.py
+    bench: bool = False  # Timed by tests/benchmark.py
 
 
 CASES = [
@@ -75,6 +76,7 @@ CASES = [
     Case('pybullet.tamp.run -n 2', max_cost=50, length=8, timeout=300, marks=('gui',)),
     Case('pybullet.tamp.run -n 3 -teleport', max_cost=80, length=12, timeout=300, marks=('gui',)),
     Case('pybullet.pr2_belief.run', timeout=600, marks=('gui', 'slow')),
-    Case('pybullet.turtlebot_rovers.run', timeout=300, marks=('gui',), xfail=TURTLEBOT_REPLAY_BUG,
-         deterministic=False),  # Its deterministic sampling budget runs out of time
+    Case(
+        'pybullet.turtlebot_rovers.run', timeout=300, marks=('gui',), xfail=TURTLEBOT_REPLAY_BUG, deterministic=False
+    ),  # Its deterministic sampling budget runs out of time
 ]

@@ -1,22 +1,56 @@
 #!/usr/bin/env python
 
 from pddlstream.algorithms.meta import solve, create_parser
-from examples.pybullet.utils.pybullet_tools.kuka_primitives import BodyPose, BodyConf, Command, get_grasp_gen, \
-    get_stable_gen, get_ik_fn, get_free_motion_gen, \
-    get_holding_motion_gen, get_movable_collision_test, get_tool_link
-from examples.pybullet.utils.pybullet_tools.utils import WorldSaver, connect, get_pose, set_pose, Pose, \
-    Point, set_default_camera, stable_z, \
-    BLOCK_URDF, SMALL_BLOCK_URDF, get_configuration, SINK_URDF, STOVE_URDF, load_model, is_placement, get_body_name, \
-    disconnect, DRAKE_IIWA_URDF, get_bodies, HideOutput, wait_for_user, LockRenderer, has_gui, draw_pose, draw_global_system
+from examples.pybullet.utils.pybullet_tools.kuka_primitives import (
+    BodyPose,
+    BodyConf,
+    Command,
+    get_grasp_gen,
+    get_stable_gen,
+    get_ik_fn,
+    get_free_motion_gen,
+    get_holding_motion_gen,
+    get_movable_collision_test,
+    get_tool_link,
+)
+from examples.pybullet.utils.pybullet_tools.utils import (
+    WorldSaver,
+    connect,
+    get_pose,
+    set_pose,
+    Pose,
+    Point,
+    set_default_camera,
+    stable_z,
+    BLOCK_URDF,
+    SMALL_BLOCK_URDF,
+    get_configuration,
+    SINK_URDF,
+    STOVE_URDF,
+    load_model,
+    is_placement,
+    get_body_name,
+    disconnect,
+    DRAKE_IIWA_URDF,
+    get_bodies,
+    HideOutput,
+    wait_for_user,
+    LockRenderer,
+    has_gui,
+    draw_pose,
+    draw_global_system,
+)
 from pddlstream.language.generator import from_gen_fn, from_fn, from_test
 from pddlstream.utils import read, INF, get_file_path, Profiler, str_from_object, negate_test
 from pddlstream.language.constants import print_solution, PDDLProblem
 from examples.pybullet.tamp.streams import get_cfree_pose_pose_test, get_cfree_obj_approach_pose_test
 
+
 def get_fixed(robot, movable):
     rigid = [body for body in get_bodies() if body != robot]
     fixed = [body for body in rigid if body not in movable]
     return fixed
+
 
 def place_movable(certified):
     placed = []
@@ -29,7 +63,9 @@ def place_movable(certified):
                 placed.append(b)
     return placed
 
+
 #######################################################
+
 
 def pddlstream_from_problem(robot, movable=[], teleport=False, grasp_name='top'):
 
@@ -39,19 +75,14 @@ def pddlstream_from_problem(robot, movable=[], teleport=False, grasp_name='top')
 
     print('Robot:', robot)
     conf = BodyConf(robot, get_configuration(robot))
-    init = [('CanMove',),
-            ('Conf', conf),
-            ('AtConf', conf),
-            ('HandEmpty',)]
+    init = [('CanMove',), ('Conf', conf), ('AtConf', conf), ('HandEmpty',)]
 
     fixed = get_fixed(robot, movable)
     print('Movable:', movable)
     print('Fixed:', fixed)
     for body in movable:
         pose = BodyPose(body, get_pose(body))
-        init += [('Graspable', body),
-                 ('Pose', body, pose),
-                 ('AtPose', body, pose)]
+        init += [('Graspable', body), ('Pose', body, pose), ('AtPose', body, pose)]
         for surface in fixed:
             init += [('Stackable', body, surface)]
             if is_placement(body, surface):
@@ -65,9 +96,10 @@ def pddlstream_from_problem(robot, movable=[], teleport=False, grasp_name='top')
             init += [('Stove', body)]
 
     body = movable[0]
-    goal = ('and',
-            ('AtConf', conf),
-            ('Cooked', body),
+    goal = (
+        'and',
+        ('AtConf', conf),
+        ('Cooked', body),
     )
 
     stream_map = {
@@ -76,11 +108,9 @@ def pddlstream_from_problem(robot, movable=[], teleport=False, grasp_name='top')
         'inverse-kinematics': from_fn(get_ik_fn(robot, fixed, teleport)),
         'plan-free-motion': from_fn(get_free_motion_gen(robot, fixed, teleport)),
         'plan-holding-motion': from_fn(get_holding_motion_gen(robot, fixed, teleport)),
-
         'test-cfree-pose-pose': from_test(get_cfree_pose_pose_test()),
         'test-cfree-approach-pose': from_test(get_cfree_obj_approach_pose_test()),
         'test-cfree-traj-pose': from_test(negate_test(get_movable_collision_test())),
-
         'TrajCollision': get_movable_collision_test(),
     }
 
@@ -89,19 +119,20 @@ def pddlstream_from_problem(robot, movable=[], teleport=False, grasp_name='top')
 
 #######################################################
 
+
 def load_world():
     # TODO: store internal world info here to be reloaded
     set_default_camera()
     draw_global_system()
     with HideOutput():
-        robot = load_model(DRAKE_IIWA_URDF, fixed_base=True) # DRAKE_IIWA_URDF | KUKA_IIWA_URDF
+        robot = load_model(DRAKE_IIWA_URDF, fixed_base=True)  # DRAKE_IIWA_URDF | KUKA_IIWA_URDF
         floor = load_model('models/short_floor.urdf')
         sink = load_model(SINK_URDF, pose=Pose(Point(x=-0.5)))
         stove = load_model(STOVE_URDF, pose=Pose(Point(x=+0.5)))
         celery = load_model(BLOCK_URDF, fixed_base=False)
         radish = load_model(SMALL_BLOCK_URDF, fixed_base=False)
 
-    draw_pose(Pose(), parent=robot, parent_link=get_tool_link(robot)) # TODO: not working
+    draw_pose(Pose(), parent=robot, parent_link=get_tool_link(robot))  # TODO: not working
 
     body_names = {
         sink: 'sink',
@@ -116,6 +147,7 @@ def load_world():
 
     return robot, body_names, movable_bodies
 
+
 def postprocess_plan(plan):
     paths = []
     for name, args in plan:
@@ -125,7 +157,9 @@ def postprocess_plan(plan):
             paths += args[-1].body_paths
     return Command(paths)
 
+
 #######################################################
+
 
 def main():
     parser = create_parser()
@@ -165,6 +199,7 @@ def main():
         command.refine(num_steps=10).execute(time_step=0.001)
     wait_for_user('Finish?')
     disconnect()
+
 
 if __name__ == '__main__':
     main()

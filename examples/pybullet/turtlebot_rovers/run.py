@@ -2,8 +2,7 @@
 
 from pddlstream.algorithms.meta import solve, create_parser
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, control_commands, Attach, Detach
-from examples.pybullet.utils.pybullet_tools.utils import connect, disconnect, \
-    HideOutput, LockRenderer, wait_for_user
+from examples.pybullet.utils.pybullet_tools.utils import connect, disconnect, HideOutput, LockRenderer, wait_for_user
 from pddlstream.language.generator import from_gen_fn, from_fn, from_test
 from pddlstream.language.constants import And, print_solution, Exists, PDDLProblem
 from pddlstream.utils import read, INF, get_file_path, Profiler
@@ -13,15 +12,32 @@ from examples.pybullet.pr2_belief.problems import BeliefState
 from examples.pybullet.pr2_belief.primitives import Register, Scan
 
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import apply_commands
-from examples.pybullet.utils.pybullet_tools.utils import draw_base_limits, WorldSaver, get_bodies, RED, has_gui, remove_body
+from examples.pybullet.utils.pybullet_tools.utils import (
+    draw_base_limits,
+    WorldSaver,
+    get_bodies,
+    RED,
+    has_gui,
+    remove_body,
+)
 from examples.pybullet.common import get_custom_limits as get_base_custom_limits
 
 from examples.pybullet.turtlebot_rovers.problems import PROBLEMS, get_base_joints, KINECT_FRAME
-from examples.pybullet.turtlebot_rovers.streams import get_reachable_test, get_inv_vis_gen, get_inv_com_gen, \
-    get_above_gen, get_motion_fn, get_cfree_ray_test, VIS_RANGE
+from examples.pybullet.turtlebot_rovers.streams import (
+    get_reachable_test,
+    get_inv_vis_gen,
+    get_inv_com_gen,
+    get_above_gen,
+    get_motion_fn,
+    get_cfree_ray_test,
+    VIS_RANGE,
+)
 
 CLASSES = [
-    'blue', 'red', 'rock', 'soil',
+    'blue',
+    'red',
+    'rock',
+    'soil',
 ]
 
 BASE_LINK = 'base_link'
@@ -32,6 +48,7 @@ BASE_LINK = 'base_link'
 # Logistics ICAPS domain
 
 #######################################################
+
 
 def pddlstream_from_problem(problem, collisions=True, **kwargs):
     # TODO: push and attach to movable objects
@@ -45,20 +62,17 @@ def pddlstream_from_problem(problem, collisions=True, **kwargs):
 
     init = []
     goal_literals = [
-        Exists(['?rock'], And(('Type', '?rock', 'stone'),
-                              ('ReceivedAnalysis', '?rock'))),
-        Exists(['?soil'], And(('Type', '?soil', 'soil'),
-                              ('ReceivedAnalysis', '?soil'))),
+        Exists(['?rock'], And(('Type', '?rock', 'stone'), ('ReceivedAnalysis', '?rock'))),
+        Exists(['?soil'], And(('Type', '?soil', 'soil'), ('ReceivedAnalysis', '?soil'))),
     ]
 
-    init += [('Type', b, ty)  for b, ty in problem.body_types]
+    init += [('Type', b, ty) for b, ty in problem.body_types]
     init += [('Lander', l) for l in problem.landers]
     init += [('Camera', camera), ('Supports', camera, mode), ('Mode', mode)]
     for rover in problem.rovers:
         base_joints = get_base_joints(rover)
         q0 = Conf(rover, base_joints)
-        init += [('Rover', rover), ('OnBoard', camera, rover),
-                 ('Conf', rover, q0), ('AtConf', rover, q0)]
+        init += [('Rover', rover), ('OnBoard', camera, rover), ('Conf', rover, q0), ('AtConf', rover, q0)]
         goal_literals += [('AtConf', rover, q0)]
     for store in problem.stores:
         init += [('Store', store)]
@@ -78,21 +92,26 @@ def pddlstream_from_problem(problem, collisions=True, **kwargs):
 
     stream_map = {
         'test-cfree-ray-conf': from_test(get_cfree_ray_test(problem, collisions=collisions)),
-        'test-reachable': from_test(get_reachable_test(problem, custom_limits=custom_limits,
-                                                       collisions=collisions,  **kwargs)),
-        'obj-inv-visible': from_gen_fn(get_inv_vis_gen(problem, custom_limits=custom_limits,
-                                                       collisions=collisions,  **kwargs)),
-        'com-inv-visible': from_gen_fn(get_inv_com_gen(problem, custom_limits=custom_limits,
-                                                       collisions=collisions, **kwargs)),
-        'sample-above': from_gen_fn(get_above_gen(problem, custom_limits=custom_limits,
-                                                  collisions=collisions, **kwargs)),
-        'sample-motion': from_fn(get_motion_fn(problem, custom_limits=custom_limits,
-                                               collisions=collisions, **kwargs)),
+        'test-reachable': from_test(
+            get_reachable_test(problem, custom_limits=custom_limits, collisions=collisions, **kwargs)
+        ),
+        'obj-inv-visible': from_gen_fn(
+            get_inv_vis_gen(problem, custom_limits=custom_limits, collisions=collisions, **kwargs)
+        ),
+        'com-inv-visible': from_gen_fn(
+            get_inv_com_gen(problem, custom_limits=custom_limits, collisions=collisions, **kwargs)
+        ),
+        'sample-above': from_gen_fn(
+            get_above_gen(problem, custom_limits=custom_limits, collisions=collisions, **kwargs)
+        ),
+        'sample-motion': from_fn(get_motion_fn(problem, custom_limits=custom_limits, collisions=collisions, **kwargs)),
     }
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal_formula)
 
+
 #######################################################
+
 
 def post_process(problem, plan):
     if plan is None:
@@ -129,7 +148,9 @@ def post_process(problem, plan):
         commands += new_commands
     return commands
 
+
 #######################################################
+
 
 def main():
     parser = create_parser()
@@ -154,8 +175,14 @@ def main():
     saver = WorldSaver()
     draw_base_limits(rovers_problem.limits, color=RED)
 
-    pddlstream_problem = pddlstream_from_problem(rovers_problem, collisions=not args.cfree, teleport=args.teleport,
-                                                 holonomic=False, reversible=True, use_aabb=True)
+    pddlstream_problem = pddlstream_from_problem(
+        rovers_problem,
+        collisions=not args.cfree,
+        teleport=args.teleport,
+        holonomic=False,
+        reversible=True,
+        use_aabb=True,
+    )
     stream_info = {
         'test-cfree-ray-conf': StreamInfo(),
         'test-reachable': StreamInfo(p_success=1e-1),
@@ -177,12 +204,21 @@ def main():
     with Profiler(field='tottime', num=25):
         with LockRenderer(lock=not args.enable):
             # TODO: option to only consider costs during local optimization
-            solution = solve(pddlstream_problem, algorithm=args.algorithm, stream_info=stream_info,
-                             planner=planner, max_planner_time=max_planner_time, debug=False,
-                             unit_costs=args.unit, success_cost=success_cost,
-                             max_time=args.max_time, verbose=True,
-                             unit_efforts=True, effort_weight=1,
-                             search_sample_ratio=search_sample_ratio)
+            solution = solve(
+                pddlstream_problem,
+                algorithm=args.algorithm,
+                stream_info=stream_info,
+                planner=planner,
+                max_planner_time=max_planner_time,
+                debug=False,
+                unit_costs=args.unit,
+                success_cost=success_cost,
+                max_time=args.max_time,
+                verbose=True,
+                unit_efforts=True,
+                effort_weight=1,
+                search_sample_ratio=search_sample_ratio,
+            )
             for body in get_bodies():
                 if body not in saver.bodies:
                     remove_body(body)
@@ -208,6 +244,7 @@ def main():
         apply_commands(BeliefState(rovers_problem), commands, time_step)
     wait_for_user('Finish?')
     disconnect()
+
 
 if __name__ == '__main__':
     main()

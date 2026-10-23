@@ -12,12 +12,14 @@ from pddlstream.utils import safe_zip, HeapElement, safe_apply_mapping
 USE_RELATION = True
 
 # TODO: maybe store unit complexity here as well as a tiebreaker
-Priority = namedtuple('Priority', ['complexity', 'num']) # num ensures FIFO
+Priority = namedtuple('Priority', ['complexity', 'num'])  # num ensures FIFO
+
 
 def is_instance(atom, schema):
-    return (atom.function == schema.function) and \
-            all(is_parameter(b) or (a == b)
-                for a, b in safe_zip(atom.args, schema.args))
+    return (atom.function == schema.function) and all(
+        is_parameter(b) or (a == b) for a, b in safe_zip(atom.args, schema.args)
+    )
+
 
 def test_mapping(atoms1, atoms2):
     mapping = {}
@@ -30,17 +32,19 @@ def test_mapping(atoms1, atoms2):
                 return None
     return mapping
 
+
 ##################################################
 
 # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.43.7049&rep=rep1&type=pdf
 
-class Instantiator(Sized): # Dynamic Instantiator
+
+class Instantiator(Sized):  # Dynamic Instantiator
     def __init__(self, streams, evaluations={}, verbose=False):
         # TODO: lazily instantiate upon demand
         self.streams = streams
         self.verbose = verbose
         self.queue = []
-        self.num_pushes = 0 # shared between the queues
+        self.num_pushes = 0  # shared between the queues
         # TODO: rename atom to head in most places
         self.complexity_from_atom = {}
         self.atoms_from_domain = defaultdict(list)
@@ -59,8 +63,9 @@ class Instantiator(Sized): # Dynamic Instantiator
         return len(self.queue)
 
     def compute_complexity(self, instance):
-        domain_complexity = COMPLEXITY_OP([self.complexity_from_atom[head_from_fact(f)]
-                                           for f in instance.get_domain()] + [0])
+        domain_complexity = COMPLEXITY_OP(
+            [self.complexity_from_atom[head_from_fact(f)] for f in instance.get_domain()] + [0]
+        )
         return domain_complexity + instance.external.get_complexity(instance.num_calls)
 
     def push_instance(self, instance):
@@ -99,10 +104,16 @@ class Instantiator(Sized): # Dynamic Instantiator
         # TODO: might be a bug here?
         domain = list(map(head_from_fact, stream.domain))
         # TODO: compute this first?
-        relations = [Relation(filter(is_parameter, domain[index].args),
-                              [tuple(a for a, b in safe_zip(atom.args, domain[index].args)
-                                     if is_parameter(b)) for atom in atoms[index]])
-                     for index in compute_order(domain, atoms)]
+        relations = [
+            Relation(
+                filter(is_parameter, domain[index].args),
+                [
+                    tuple(a for a, b in safe_zip(atom.args, domain[index].args) if is_parameter(b))
+                    for atom in atoms[index]
+                ],
+            )
+            for index in compute_order(domain, atoms)
+        ]
         solution = solve_satisfaction(relations)
         for element in solution.body:
             mapping = solution.get_mapping(element)
@@ -116,8 +127,10 @@ class Instantiator(Sized): # Dynamic Instantiator
                 if is_instance(new_atom, domain_atom):
                     # TODO: handle domain constants more intelligently
                     self.atoms_from_domain[s_idx, d_idx].append(new_atom)
-                    atoms = [self.atoms_from_domain[s_idx, d2_idx] if d_idx != d2_idx else [new_atom]
-                              for d2_idx in range(len(stream.domain))]
+                    atoms = [
+                        self.atoms_from_domain[s_idx, d2_idx] if d_idx != d2_idx else [new_atom]
+                        for d2_idx in range(len(stream.domain))
+                    ]
                     if USE_RELATION:
                         self._add_combinations_relation(stream, atoms)
                     else:

@@ -4,8 +4,7 @@ import argparse
 
 from pddlstream.algorithms.meta import ALGORITHMS
 from pddlstream.algorithms.satisfaction_planning import solve_pddlstream_satisfaction
-from pddlstream.algorithms.satisfaction import constraint_satisfaction, dump_assignment, \
-    SatisfactionProblem
+from pddlstream.algorithms.satisfaction import constraint_satisfaction, dump_assignment, SatisfactionProblem
 from pddlstream.language.generator import from_test, from_gen_fn, from_fn
 from pddlstream.language.stream import StreamInfo
 from pddlstream.utils import INF
@@ -49,10 +48,12 @@ MAX_INT = 5
 
 pairs = set()
 
+
 def addition(x1, x2):
     pairs.add((x1, x2))
     x2 = x1 + x2
     return (x2,)
+
 
 STREAM_MAP = {
     'positive': from_gen_fn(lambda: ((x,) for x in range(1, MAX_INT + 1))),
@@ -60,27 +61,36 @@ STREAM_MAP = {
     'addition': from_fn(addition),
     'test-large': from_test(lambda x: LARGE <= x),
     'test-small': from_test(lambda x: x <= SMALL),
-    'cost': lambda x: 1. / (abs(x) + 1),
+    'cost': lambda x: 1.0 / (abs(x) + 1),
 }
+
 
 def problem1():
     init = []
-    terms = [('Integer', '?x1'), ('Large', '?x1'), ('Integer', '?x2'),
-             ('minimize', ('Cost', '?x1')), ('minimize', ('Cost', '?x2'))]
+    terms = [
+        ('Integer', '?x1'),
+        ('Large', '?x1'),
+        ('Integer', '?x2'),
+        ('minimize', ('Cost', '?x1')),
+        ('minimize', ('Cost', '?x2')),
+    ]
     return SatisfactionProblem(STREAM_PDDL, STREAM_MAP, init, terms)
+
 
 def problem2():
     init = []
-    terms = [('Sum', '?x1', '?x2', '?x3'), ('Positive', '?x1'), ('Negative', '?x2'),
-             ('minimize', ('Cost', '?x3'))]
+    terms = [('Sum', '?x1', '?x2', '?x3'), ('Positive', '?x1'), ('Negative', '?x2'), ('minimize', ('Cost', '?x3'))]
     return SatisfactionProblem(STREAM_PDDL, STREAM_MAP, init, terms)
+
 
 def problem3():
     init = []
     terms = [('Negative', '?x1'), ('Small', '?x1'), ('Positive', '?x2'), ('Large', '?x2')]
     return SatisfactionProblem(STREAM_PDDL, STREAM_MAP, init, terms)
 
+
 ##################################################
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -90,7 +100,7 @@ def main():
     args = parser.parse_args()
     print('Arguments:', args)
 
-    problem_fn = problem3 # problem1 | problem2 | problem3 # TODO: use --problem
+    problem_fn = problem3  # problem1 | problem2 | problem3 # TODO: use --problem
     satisfaction_problem = problem_fn()
     stream_pddl, stream_map, init, terms = satisfaction_problem
 
@@ -103,13 +113,20 @@ def main():
     }
     success_cost = 0 if args.optimal else INF
     if args.algorithm in ALGORITHMS:
-        solution = solve_pddlstream_satisfaction(satisfaction_problem, algorithm=args.algorithm,
-                                                 stream_info=info, max_time=args.max_time, success_cost=success_cost,
-                                                 visualize=False)
+        solution = solve_pddlstream_satisfaction(
+            satisfaction_problem,
+            algorithm=args.algorithm,
+            stream_info=info,
+            max_time=args.max_time,
+            success_cost=success_cost,
+            visualize=False,
+        )
     else:
-        solution = constraint_satisfaction(satisfaction_problem, stream_info=info,
-                                           max_time=args.max_time, success_cost=success_cost)
+        solution = constraint_satisfaction(
+            satisfaction_problem, stream_info=info, max_time=args.max_time, success_cost=success_cost
+        )
     dump_assignment(solution)
+
 
 if __name__ == '__main__':
     main()

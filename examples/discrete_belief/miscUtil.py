@@ -1,5 +1,3 @@
-
-
 class SymbolGenerator:
     """
     Generate new symbols guaranteed to be different from one another
@@ -34,6 +32,7 @@ gensym = SymbolGenerator().gensym
 # into the same string
 
 # if eq = True, use 6 digits otherwise 3
+
 
 def clip(v, vMin, vMax):
     """
@@ -124,7 +123,7 @@ applyBindings = applyBindings1
 
 # A string starting with an upper case letter is a planning operator
 # schema variable
-'''
+"""
 # Assumes funTable is monotonic
 def inverseTableLookup(pQuery, table):
     for i in range(len(table)):
@@ -137,7 +136,7 @@ def inverseTableLookup(pQuery, table):
             rate = (r - rp) / (p - pp)
             return pp + (pQuery - pp) * rate
     return table[-1][p]
-'''
+"""
 
 
 # Variable name manipulation

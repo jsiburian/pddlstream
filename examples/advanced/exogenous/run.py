@@ -3,6 +3,7 @@
 import numpy as np
 
 import pddlstream.language.exogenous as exogenous
+
 exogenous.EXOGENOUS_AXIOMS = True
 exogenous.REPLACE_STREAM = False
 
@@ -13,33 +14,41 @@ from pddlstream.utils import read, get_file_path, Profiler
 from pddlstream.language.constants import print_solution, PDDLProblem
 from pddlstream.language.external import defer_shared, never_defer
 
+
 class Latent:
     pass
+
 
 class Uncertain(Latent):
     def __init__(self, mode=None, confidence=None):
         # Point estimate, interval estimate
         self.mode = mode
         self.confidence = confidence
+
     def __repr__(self):
         return f'L({self.mode})'
+
 
 class Derived(Latent):
     def __init__(self, fn, inputs):
         self.fn = fn
         self.inputs = tuple(inputs)
+
     def __repr__(self):
         return '{}({})'.format(self.fn.__name__, ', '.join(map(repr, self.inputs)))
 
+
 ##################################################
+
 
 def ik_fn(*inputs):
     if any(isinstance(inp, Latent) for inp in inputs):
         q = Derived(ik_fn, inputs)
         return (q,)
-    p, = inputs
+    (p,) = inputs
     q = p + np.array([0, 1])
     return (q,)
+
 
 def motion_fn(*inputs):
     if any(isinstance(inp, Latent) for inp in inputs):
@@ -50,7 +59,9 @@ def motion_fn(*inputs):
     t = [y * (q2 - q1) + q1 for y in [0, 1]]
     return (t,)
 
+
 ##################################################
+
 
 def pddlstream_from_belief():
     domain_pddl = read(get_file_path(__file__, 'domain.pddl'))
@@ -71,11 +82,10 @@ def pddlstream_from_belief():
     conf = np.array([0, 1])
 
     init = [
-        ('Initial',), # Forces move first
+        ('Initial',),  # Forces move first
         ('Conf', conf),
         ('AtConf', conf),
         ('HandEmpty',),
-
         ('Block', block),
         ('Pose', pose),
         ('AtPose', block, pose),
@@ -84,7 +94,9 @@ def pddlstream_from_belief():
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 ##################################################
+
 
 def main(planner='max-astar', defer=False):
     parser = create_parser()
@@ -103,8 +115,14 @@ def main(planner='max-astar', defer=False):
     replan_actions = set()
 
     with Profiler(field='tottime', num=5):
-        solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit, planner=planner,
-                         stream_info=stream_info, replan_actions=replan_actions)
+        solution = solve(
+            problem,
+            algorithm=args.algorithm,
+            unit_costs=args.unit,
+            planner=planner,
+            stream_info=stream_info,
+            replan_actions=replan_actions,
+        )
     print_solution(solution)
 
 

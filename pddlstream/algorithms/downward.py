@@ -5,11 +5,41 @@ import subprocess
 from collections import namedtuple, defaultdict
 from time import time
 
-from pddlstream.language.constants import EQ, NOT, Head, Evaluation, get_prefix, get_args, OBJECT, TOTAL_COST, Action, Not
-from pddlstream.language.conversion import is_atom, is_negated_atom, objects_from_evaluations, pddl_from_object, \
-    pddl_list_from_expression, obj_from_pddl
-from pddlstream.utils import read, write, INF, clear_dir, get_file_path, MockSet, find_unique, int_ceil, \
-    safe_remove, safe_zip, elapsed_time, get_clock, SEARCH_WORK
+from pddlstream.language.constants import (
+    EQ,
+    NOT,
+    Head,
+    Evaluation,
+    get_prefix,
+    get_args,
+    OBJECT,
+    TOTAL_COST,
+    Action,
+    Not,
+)
+from pddlstream.language.conversion import (
+    is_atom,
+    is_negated_atom,
+    objects_from_evaluations,
+    pddl_from_object,
+    pddl_list_from_expression,
+    obj_from_pddl,
+)
+from pddlstream.utils import (
+    read,
+    write,
+    INF,
+    clear_dir,
+    get_file_path,
+    MockSet,
+    find_unique,
+    int_ceil,
+    safe_remove,
+    safe_zip,
+    elapsed_time,
+    get_clock,
+    SEARCH_WORK,
+)
 
 ##################################################
 
@@ -17,14 +47,18 @@ filepath = os.path.abspath(__file__)
 if ' ' in filepath:
     raise RuntimeError('The path to pddlstream cannot include spaces')
 
+
 def find_build(fd_path):
     for release in ['release', 'release64', 'release32']:  # TODO: list the directory
         path = os.path.join(fd_path, f'builds/{release}/')
         if os.path.exists(path):
             return path
     # TODO: could also just automatically compile
-    raise RuntimeError(f'FastDownward is not compiled in {fd_path}. Run [.../pddlstream$ pixi run setup] '
-                       '(pddlstream must be installed in editable mode)')
+    raise RuntimeError(
+        f'FastDownward is not compiled in {fd_path}. Run [.../pddlstream$ pixi run setup] '
+        '(pddlstream must be installed in editable mode)'
+    )
+
 
 # TODO: check at runtime so users can use utils without FD
 FD_PATH = get_file_path(__file__, '../../downward/')
@@ -45,9 +79,10 @@ import instantiate
 import pddl_parser.lisp_parser
 import normalize
 import pddl_parser
-from pddl_parser.parsing_functions import parse_domain_pddl, parse_task_pddl, \
-    parse_condition, check_for_duplicates
+from pddl_parser.parsing_functions import parse_domain_pddl, parse_task_pddl, parse_condition, check_for_duplicates
+
 sys.argv = original_argv
+
 
 def hash_conditions_by_class_name():
     # The translator hashes conditions as hash((self.__class__, ...)), and classes hash by memory address, so sets of
@@ -85,6 +120,7 @@ def hash_conditions_by_class_name():
     pddl.conditions.Literal.__init__ = literal_init
     pddl.f_expression.PrimitiveNumericExpression.__init__ = numeric_expression_init
 
+
 hash_conditions_by_class_name()
 
 TEMP_DIR = 'temp/'
@@ -92,10 +128,10 @@ TRANSLATE_OUTPUT = 'output.sas'
 SEARCH_OUTPUT = 'sas_plan'
 SEARCH_COMMAND = 'downward --internal-plan-file {} {} < {}'
 INFINITY = 'infinity'
-GOAL_NAME = '@goal' # @goal-reachable
+GOAL_NAME = '@goal'  # @goal-reachable
 
-INTERNAL_AXIOM = 'new-axiom' # @0
-IDENTICAL = "identical" # lowercase is critical (!= instead?)
+INTERNAL_AXIOM = 'new-axiom'  # @0
+IDENTICAL = 'identical'  # lowercase is critical (!= instead?)
 ##################################################
 
 # TODO: cost_type=PLUSONE can lead to suboptimality but often doesn't in practice due to COST_SCALE
@@ -110,70 +146,65 @@ SEARCH_OPTIONS = {
     # See FastDownward's documentation for more configurations
     # http://www.fast-downward.org/Doc/Evaluator
     # http://www.fast-downward.org/Doc/SearchEngine
-
     # Optimal (when cost_type=NORMAL)
     'dijkstra': '--heuristic "h=blind(transform=adapt_costs(cost_type=PLUSONE))" '
-                '--search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
+    '--search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
     'max-astar': '--heuristic "h=hmax(transform=adapt_costs(cost_type=PLUSONE))"'
-                 ' --search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"', # cost_type=PLUSONE
+    ' --search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',  # cost_type=PLUSONE
     'lmcut-astar': '--heuristic "h=lmcut(transform=adapt_costs(cost_type=PLUSONE))"'
-                 ' --search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
-
+    ' --search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
     # Suboptimal
     'ff-astar': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-                '--search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
+    '--search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
     'ff-eager': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-                '--search "eager_greedy([h],max_time=%s,bound=%s)"',
+    '--search "eager_greedy([h],max_time=%s,bound=%s)"',
     'ff-eager-pref': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-                     '--search "eager_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
+    '--search "eager_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
     'ff-lazy': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-               '--search "lazy_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
+    '--search "lazy_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
     'goal-lazy': '--heuristic "h=goalcount(transform=no_transform())" '
-                 '--search "lazy_greedy([h],randomize_successors=True,max_time=%s,bound=%s)"',
+    '--search "lazy_greedy([h],randomize_successors=True,max_time=%s,bound=%s)"',
     'add-random-lazy': '--heuristic "h=add(transform=adapt_costs(cost_type=PLUSONE))" '
-                       '--search "lazy_greedy([h],randomize_successors=True,max_time=%s,bound=%s)"',
-
+    '--search "lazy_greedy([h],randomize_successors=True,max_time=%s,bound=%s)"',
     'ff-eager-tiebreak': '--heuristic "h=ff(transform=no_transform())" '
-                         '--search "eager(tiebreaking([h, g()]),reopen_closed=false,'
-                         'cost_type=PLUSONE,max_time=%s,bound=%s, f_eval=sum([g(), h]))"', # preferred=[h],
+    '--search "eager(tiebreaking([h, g()]),reopen_closed=false,'
+    'cost_type=PLUSONE,max_time=%s,bound=%s, f_eval=sum([g(), h]))"',  # preferred=[h],
     'ff-lazy-tiebreak': '--heuristic "h=ff(transform=no_transform())" '
-                        '--search "lazy(tiebreaking([h, g()]),reopen_closed=false,'
-                        'randomize_successors=True,cost_type=PLUSONE,max_time=%s,bound=%s)"',  # preferred=[h],
+    '--search "lazy(tiebreaking([h, g()]),reopen_closed=false,'
+    'randomize_successors=True,cost_type=PLUSONE,max_time=%s,bound=%s)"',  # preferred=[h],
     # TODO: eagerly evaluate goal count but lazily compute relaxed plan
-
     'ff-ehc': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-              '--search "ehc(h,preferred=[h],preferred_usage=RANK_PREFERRED_FIRST,'
-              'cost_type=PLUSONE,max_time=%s,bound=%s)"',
+    '--search "ehc(h,preferred=[h],preferred_usage=RANK_PREFERRED_FIRST,'
+    'cost_type=PLUSONE,max_time=%s,bound=%s)"',
     # The key difference is that ehc resets the open list upon finding an improvement
-
     # TODO: iterated search
 }
 # TODO: do I want to sort operators in FD hill-climbing search?
 # TODO: greedily prioritize operators with less cost. Useful when prioritizing actions that have no stream cost
 
-for w in range(1, 1+5):
-    SEARCH_OPTIONS.update({
-        # TODO: specify whether lazy or eager
-        f'ff-wastar{w}': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-                  f'--search "lazy_wastar([h],preferred=[h],reopen_closed=true,boost=100,w={w},'
-                  'randomize_successors=false,preferred_successors_first=true,random_seed=-1,'
-                  'cost_type=PLUSONE,max_time=%s,bound=%s)"',
-
-        f'cea-wastar{w}': '--heuristic "h=cea(transform=adapt_costs(cost_type=PLUSONE))" '
-                   f'--search "lazy_wastar([h],preferred=[h],reopen_closed=false,boost=1000,w={w},'
-                   'randomize_successors=false,preferred_successors_first=true,random_seed=-1,'
-                   'cost_type=PLUSONE,max_time=%s,bound=%s)"',
-
-        # TODO: eager_wastar
-        # http://www.fast-downward.org/Doc/SearchEngine#Eager_weighted_A.2A_search
-        f'ff-astar{w}': '--evaluator "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-                                   f'--search "eager(alt([single(sum([g(), weight(h,{w})])),'
-                                   f'single(sum([g(),weight(h,{w})]),pref_only=true)]),'
-                                   'preferred=[h],cost_type=PLUSONE,max_time=%s,bound=%s)"',
-    })
+for w in range(1, 1 + 5):
+    SEARCH_OPTIONS.update(
+        {
+            # TODO: specify whether lazy or eager
+            f'ff-wastar{w}': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
+            f'--search "lazy_wastar([h],preferred=[h],reopen_closed=true,boost=100,w={w},'
+            'randomize_successors=false,preferred_successors_first=true,random_seed=-1,'
+            'cost_type=PLUSONE,max_time=%s,bound=%s)"',
+            f'cea-wastar{w}': '--heuristic "h=cea(transform=adapt_costs(cost_type=PLUSONE))" '
+            f'--search "lazy_wastar([h],preferred=[h],reopen_closed=false,boost=1000,w={w},'
+            'randomize_successors=false,preferred_successors_first=true,random_seed=-1,'
+            'cost_type=PLUSONE,max_time=%s,bound=%s)"',
+            # TODO: eager_wastar
+            # http://www.fast-downward.org/Doc/SearchEngine#Eager_weighted_A.2A_search
+            f'ff-astar{w}': '--evaluator "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
+            f'--search "eager(alt([single(sum([g(), weight(h,{w})])),'
+            f'single(sum([g(),weight(h,{w})]),pref_only=true)]),'
+            'preferred=[h],cost_type=PLUSONE,max_time=%s,bound=%s)"',
+        }
+    )
 
 # TODO: throw a warning if max_planner_time is met
-DEFAULT_MAX_TIME = 30 # INF
+DEFAULT_MAX_TIME = 30  # INF
 DEFAULT_GREEDY_PLANNER = 'ff-astar2'
 DEFAULT_PLANNER = DEFAULT_GREEDY_PLANNER
 
@@ -182,32 +213,54 @@ DEFAULT_PLANNER = DEFAULT_GREEDY_PLANNER
 # WARNING: overflow on h^add! Costs clamped to 100000000
 MAX_FD_COST = 1e8
 
+
 def get_cost_scale():
     return pddl.f_expression.COST_SCALE
 
+
 def set_cost_scale(cost_scale):
     pddl.f_expression.COST_SCALE = cost_scale
+
 
 def convert_value(value):
     if value == INF:
         return INFINITY
     return int_ceil(value)
 
+
 def scale_cost(cost):
     if cost == INF:
         return INF
     return int_ceil(get_cost_scale() * float(cost))
 
-set_cost_scale(cost_scale=1e3) # TODO: make unit costs be equivalent to cost scale = 0
+
+set_cost_scale(cost_scale=1e3)  # TODO: make unit costs be equivalent to cost scale = 0
 
 ##################################################
+
 
 def parse_lisp(lisp):
     return pddl_parser.lisp_parser.parse_nested_list(lisp.splitlines())
 
+
 # TODO: dynamically generate type_dict and predicate_dict
-Domain = namedtuple('Domain', ['name', 'requirements', 'types', 'type_dict', 'constants',
-                               'predicates', 'predicate_dict', 'functions', 'actions', 'axioms', 'pddl'])
+Domain = namedtuple(
+    'Domain',
+    [
+        'name',
+        'requirements',
+        'types',
+        'type_dict',
+        'constants',
+        'predicates',
+        'predicate_dict',
+        'functions',
+        'actions',
+        'axioms',
+        'pddl',
+    ],
+)
+
 
 def parse_sequential_domain(domain_pddl):
     if isinstance(domain_pddl, Domain):
@@ -216,8 +269,11 @@ def parse_sequential_domain(domain_pddl):
     domain = Domain(*args)
     return domain
 
-Problem = namedtuple('Problem', ['task_name', 'task_domain_name', 'task_requirements',
-                                 'objects', 'init', 'goal', 'use_metric', 'pddl'])
+
+Problem = namedtuple(
+    'Problem', ['task_name', 'task_domain_name', 'task_requirements', 'objects', 'init', 'goal', 'use_metric', 'pddl']
+)
+
 
 def parse_problem(domain, problem_pddl):
     if isinstance(problem_pddl, Problem):
@@ -230,6 +286,7 @@ def parse_problem(domain, problem_pddl):
 
 # fact -> evaluation -> fd
 
+
 def fd_from_fact(fact):
     # TODO: convert to evaluation?
     prefix = get_prefix(fact)
@@ -238,10 +295,12 @@ def fd_from_fact(fact):
     args = list(map(pddl_from_object, get_args(fact)))
     return pddl.Atom(prefix, args)
 
+
 def fact_from_fd(fd):
-    assert(isinstance(fd, pddl.Literal))
+    assert isinstance(fd, pddl.Literal)
     atom = (fd.predicate,) + tuple(map(obj_from_pddl, fd.args))
     return Not(atom) if fd.negated else atom
+
 
 def evaluation_from_fd(fd):
     if isinstance(fd, pddl.Literal):
@@ -251,6 +310,7 @@ def evaluation_from_fd(fd):
         head = Head(fd.fluent.symbol, tuple(map(obj_from_pddl, fd.fluent.args)))
         return Evaluation(head, float(fd.expression.value) / get_cost_scale())  # Need to be careful due to rounding
     raise ValueError(fd)
+
 
 def fd_from_evaluation(evaluation):
     name = evaluation.head.function
@@ -263,14 +323,17 @@ def fd_from_evaluation(evaluation):
     expression = pddl.f_expression.NumericConstant(evaluation.value)
     return pddl.f_expression.Assign(fluent, expression)
 
+
 def fd_from_evaluations(evaluations):
     return [fd_from_evaluation(e) for e in evaluations if not is_negated_atom(e)]
 
+
 ##################################################
 
+
 def parse_goal(goal_exp, domain):
-    return parse_condition(pddl_list_from_expression(goal_exp),
-                           domain.type_dict, domain.predicate_dict).simplified()
+    return parse_condition(pddl_list_from_expression(goal_exp), domain.type_dict, domain.predicate_dict).simplified()
+
 
 def get_problem(evaluations, goal_exp, domain, unit_costs=False):
     objects = objects_from_evaluations(evaluations)
@@ -280,10 +343,17 @@ def get_problem(evaluations, goal_exp, domain, unit_costs=False):
     goal = pddl.Truth() if goal_exp is None else parse_goal(goal_exp, domain)
     problem_pddl = None
     write_pddl(domain.pddl, problem_pddl, temp_dir=TEMP_DIR)
-    return Problem(task_name=domain.name, task_domain_name=domain.name,
-                   objects=sorted(typed_objects, key=lambda o: o.name),
-                   task_requirements=pddl.tasks.Requirements([]), init=init, goal=goal,
-                   use_metric=not unit_costs, pddl=problem_pddl)
+    return Problem(
+        task_name=domain.name,
+        task_domain_name=domain.name,
+        objects=sorted(typed_objects, key=lambda o: o.name),
+        task_requirements=pddl.tasks.Requirements([]),
+        init=init,
+        goal=goal,
+        use_metric=not unit_costs,
+        pddl=problem_pddl,
+    )
+
 
 def get_identical_atoms(objects):
     # TODO: optimistically evaluate (not (= ?o1 ?o2))
@@ -296,35 +366,51 @@ def get_identical_atoms(objects):
             assert obj.is_shared()
     return init
 
+
 def task_from_domain_problem(domain, problem, add_identical=True):
     # TODO: prune evaluation that aren't needed in actions
     task_name, task_domain_name, task_requirements, objects, init, goal, use_metric, problem_pddl = problem
 
     assert domain.name == task_domain_name
-    requirements = pddl.Requirements(sorted(set(domain.requirements.requirements +
-                                                task_requirements.requirements)))
+    requirements = pddl.Requirements(sorted(set(domain.requirements.requirements + task_requirements.requirements)))
     objects = domain.constants + objects
-    check_for_duplicates([o.name for o in objects],
-        errmsg="error: duplicate object %r",
-        finalmsg="please check :constants and :objects definitions")
+    check_for_duplicates(
+        [o.name for o in objects],
+        errmsg='error: duplicate object %r',
+        finalmsg='please check :constants and :objects definitions',
+    )
     init.extend(pddl.Atom(EQ, (obj.name, obj.name)) for obj in objects)
     if add_identical:
         init.extend(get_identical_atoms(objects))
 
-    task = pddl.Task(domain.name, task_name, requirements, domain.types, objects,
-                     domain.predicates, domain.functions, init, goal,
-                     domain.actions, domain.axioms, use_metric)
+    task = pddl.Task(
+        domain.name,
+        task_name,
+        requirements,
+        domain.types,
+        objects,
+        domain.predicates,
+        domain.functions,
+        init,
+        goal,
+        domain.actions,
+        domain.axioms,
+        use_metric,
+    )
     normalize.normalize(task)
     # task.add_axiom
     return task
 
+
 ##################################################
+
 
 def get_derived_predicates(axioms):
     axioms_from_name = defaultdict(list)
     for axiom in axioms:
         axioms_from_name[axiom.name].append(axiom)
     return axioms_from_name
+
 
 def get_fluents(domain):
     fluent_predicates = set(get_derived_predicates(domain.axioms))
@@ -333,8 +419,10 @@ def get_fluents(domain):
             fluent_predicates.add(effect.literal.predicate)
     return fluent_predicates
 
+
 def is_literal(condition):
     return isinstance(condition, pddl.Literal)
+
 
 def get_literals(condition):
     if is_literal(condition):
@@ -348,14 +436,18 @@ def get_literals(condition):
         return literals
     raise ValueError(condition)
 
+
 def get_conjunctive_parts(condition):
     # TODO: apply recursively
     return condition.parts if isinstance(condition, pddl.Conjunction) else [condition]
 
+
 def get_disjunctive_parts(condition):
     return condition.parts if isinstance(condition, pddl.Disjunction) else [condition]
 
+
 ##################################################
+
 
 def normalize_domain_goal(domain, goal_exp):
     evaluations = []
@@ -364,8 +456,8 @@ def normalize_domain_goal(domain, goal_exp):
     normalize.normalize(task)
     return task
 
-def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_TIME,
-               max_cost=INF, debug=False):
+
+def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_TIME, max_cost=INF, debug=False):
     """
     Runs FastDownward's search phase on translated SAS+ problem TRANSLATE_OUTPUT
     :param temp_dir: the directory for temporary FastDownward input and output files
@@ -383,13 +475,13 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
     search = os.path.abspath(os.path.join(FD_BIN, SEARCH_COMMAND))
     planner_config = SEARCH_OPTIONS[planner] % (max_time, max_cost)
     temp_dir = os.path.abspath(temp_dir)
-    command = search.format(os.path.join(temp_dir, SEARCH_OUTPUT), planner_config,
-                            os.path.join(temp_dir, TRANSLATE_OUTPUT))
+    command = search.format(
+        os.path.join(temp_dir, SEARCH_OUTPUT), planner_config, os.path.join(temp_dir, TRANSLATE_OUTPUT)
+    )
     if debug:
         print('Search command:', command)
 
-
-    temp_path = os.path.join(os.getcwd(), TEMP_DIR) # TODO: temp dir?
+    temp_path = os.path.join(os.getcwd(), TEMP_DIR)  # TODO: temp dir?
     for filename in os.listdir(temp_path):
         if filename.startswith(SEARCH_OUTPUT):
             safe_remove(os.path.join(temp_path, filename))
@@ -404,13 +496,16 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
     print('Plans:', plan_files)
     return parse_solutions(temp_path, plan_files)
 
+
 ##################################################
+
 
 def parse_action(line):
     entries = line.strip('( )').split(' ')
     name = entries[0]
     args = tuple(entries[1:])
     return Action(name, args)
+
 
 def parse_solution(solution):
     cost = INF
@@ -425,6 +520,7 @@ def parse_solution(solution):
     plan = list(map(parse_action, lines))
     return plan, cost
 
+
 def parse_solutions(temp_path, plan_files):
     # TODO: return multiple solutions for focused
     best_plan, best_cost = None, INF
@@ -434,6 +530,7 @@ def parse_solutions(temp_path, plan_files):
         if cost < best_cost:
             best_plan, best_cost = plan, cost
     return best_plan, best_cost
+
 
 def write_pddl(domain_pddl=None, problem_pddl=None, temp_dir=TEMP_DIR):
     clear_dir(temp_dir)
@@ -445,13 +542,17 @@ def write_pddl(domain_pddl=None, problem_pddl=None, temp_dir=TEMP_DIR):
         write(problem_path, problem_pddl)
     return domain_path, problem_path
 
+
 ##################################################
+
 
 def literal_holds(state, literal):
     return (literal.positive() in state) != literal.negated
 
+
 def conditions_hold(state, conditions):
     return all(literal_holds(state, cond) for cond in conditions)
+
 
 def get_precondition(operator):
     if isinstance(operator, pddl.Action) or isinstance(operator, pddl.PropositionalAction):
@@ -460,16 +561,19 @@ def get_precondition(operator):
         return operator.condition
     raise ValueError(operator)
 
+
 def get_conditional_effects(operator):
     if isinstance(operator, pddl.PropositionalAction):
-        return [(cond, effect.negate()) for cond, effect in operator.del_effects] + \
-               [(cond, effect) for cond, effect in operator.add_effects]
+        return [(cond, effect.negate()) for cond, effect in operator.del_effects] + [
+            (cond, effect) for cond, effect in operator.add_effects
+        ]
     elif isinstance(operator, pddl.PropositionalAxiom):
         return [([], operator.effect)]
     raise ValueError(operator)
 
+
 def apply_action(state, action):
-    assert(isinstance(action, pddl.PropositionalAction))
+    assert isinstance(action, pddl.PropositionalAction)
     # TODO: signed literals
     # TODO: relaxed_apply_action
     for conditions, effect in action.del_effects:
@@ -482,9 +586,10 @@ def apply_action(state, action):
 
 ##################################################
 
+
 def get_function_assignments(task):
-    return {f.fluent: f.expression for f in task.init
-            if isinstance(f, pddl.f_expression.FunctionAssignment)}
+    return {f.fluent: f.expression for f in task.init if isinstance(f, pddl.f_expression.FunctionAssignment)}
+
 
 def get_action_instances(task, action_plan):
     type_to_objects = instantiate.get_objects_by_type(task.objects, task.types)
@@ -500,13 +605,22 @@ def get_action_instances(task, action_plan):
         action = find_unique(lambda a: a.name == name, task.actions)
         args = list(map(pddl_from_object, objects))
         variable_mapping = {p.name: a for p, a in safe_zip(action.parameters, args)}
-        instance = action.instantiate(variable_mapping, init_facts, function_assignments, fluent_facts,
-                                      type_to_objects, task.use_min_cost_metric, predicate_to_atoms)
-        assert (instance is not None)
+        instance = action.instantiate(
+            variable_mapping,
+            init_facts,
+            function_assignments,
+            fluent_facts,
+            type_to_objects,
+            task.use_min_cost_metric,
+            predicate_to_atoms,
+        )
+        assert instance is not None
         action_instances.append(instance)
     return action_instances
 
+
 ##################################################
+
 
 def add_preimage_condition(condition, preimage, i):
     for literal in condition:
@@ -518,8 +632,8 @@ def add_preimage_effect(effect, preimage):
 
 
 def action_preimage(action, preimage, i):
-    for conditions, effect in (action.add_effects + action.del_effects):
-        assert(not conditions)
+    for conditions, effect in action.add_effects + action.del_effects:
+        assert not conditions
         # TODO: can later select which conditional effects are used
         # TODO: might need to truely decide whether one should hold or not for a preimage
         # Maybe I should do that here
@@ -546,7 +660,9 @@ def plan_preimage(combined_plan, goal=[]):
             raise ValueError(operator)
     return preimage
 
+
 ##################################################
+
 
 def add_predicate(domain, predicate):
     if predicate.name in domain.predicate_dict:
@@ -573,8 +689,8 @@ def make_preconditions(preconditions):
 
 
 def make_effects(effects):
-    return [pddl.Effect(parameters=[], condition=pddl.Truth(),
-                        literal=fd_from_fact(fact)) for fact in effects]
+    return [pddl.Effect(parameters=[], condition=pddl.Truth(), literal=fd_from_fact(fact)) for fact in effects]
+
 
 def make_cost(cost):
     if cost is None:
@@ -584,8 +700,10 @@ def make_cost(cost):
         expression = pddl.NumericConstant(cost)
     except TypeError:
         expression = pddl.PrimitiveNumericExpression(
-            symbol=get_prefix(cost), args=list(map(pddl_from_object, get_args(cost))))
+            symbol=get_prefix(cost), args=list(map(pddl_from_object, get_args(cost)))
+        )
     return pddl.Increase(fluent=fluent, expression=expression)
+
 
 def has_costs(domain):
     for action in domain.actions:
@@ -593,19 +711,23 @@ def has_costs(domain):
             return True
     return False
 
+
 def set_unit_costs(domain):
     # Cost of None becomes zero if metric = True
     for action in domain.actions:
         action.cost = make_cost(1)
 
+
 def make_action(name, parameters, preconditions, effects, cost=None):
     # Usually all parameters are external
-    return pddl.Action(name=name,
-                       parameters=make_parameters(parameters),
-                       num_external_parameters=len(parameters),
-                       precondition=make_preconditions(preconditions),
-                       effects=make_effects(effects),
-                       cost=make_cost(cost))
+    return pddl.Action(
+        name=name,
+        parameters=make_parameters(parameters),
+        num_external_parameters=len(parameters),
+        precondition=make_preconditions(preconditions),
+        effects=make_effects(effects),
+        cost=make_cost(cost),
+    )
 
 
 def make_axiom(parameters, preconditions, derived):
@@ -613,23 +735,33 @@ def make_axiom(parameters, preconditions, derived):
     external_parameters = list(get_args(derived))
     internal_parameters = [p for p in parameters if p not in external_parameters]
     parameters = external_parameters + internal_parameters
-    return pddl.Axiom(name=predicate,
-                      parameters=make_parameters(parameters),
-                      num_external_parameters=len(external_parameters),
-                      condition=make_preconditions(preconditions))
+    return pddl.Axiom(
+        name=predicate,
+        parameters=make_parameters(parameters),
+        num_external_parameters=len(external_parameters),
+        condition=make_preconditions(preconditions),
+    )
 
 
 def make_domain(constants=[], predicates=[], functions=[], actions=[], axioms=[]):
     types = [pddl.Type(OBJECT)]
     pddl_parser.parsing_functions.set_supertypes(types)
-    return Domain(name='', requirements=pddl.Requirements([]),
-             types=types, type_dict={ty.name: ty for ty in types}, constants=constants,
-             predicates=predicates, predicate_dict={p.name: p for p in predicates},
-             functions=functions, actions=actions, axioms=axioms, pddl=None)
+    return Domain(
+        name='',
+        requirements=pddl.Requirements([]),
+        types=types,
+        type_dict={ty.name: ty for ty in types},
+        constants=constants,
+        predicates=predicates,
+        predicate_dict={p.name: p for p in predicates},
+        functions=functions,
+        actions=actions,
+        axioms=axioms,
+        pddl=None,
+    )
 
 
 def pddl_from_instance(instance):
     action = instance.action
-    args = [instance.var_mapping[p.name]
-            for p in action.parameters[:action.num_external_parameters]]
+    args = [instance.var_mapping[p.name] for p in action.parameters[: action.num_external_parameters]]
     return Action(action.name, args)

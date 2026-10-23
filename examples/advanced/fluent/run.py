@@ -7,18 +7,21 @@ from pddlstream.utils import read, get_file_path
 
 TRAJ = [0, 1]
 
+
 def feasibility_test(o, fluents=set()):
     for fact in fluents:
         if fact[0] == 'ontable':
-            o2, = fact[1:]
+            (o2,) = fact[1:]
             if (o != o2) and (o2 == 'b2'):
                 return False
     return True
+
 
 def feasibility_fn(o, fluents=set()):
     if not feasibility_test(o, fluents=fluents):
         return None
     return Output(TRAJ)
+
 
 def get_pddlstream_problem():
     # TODO: bug where a trajectory sample could be used in a different state than anticipated (don't return the sample)
@@ -31,7 +34,7 @@ def get_pddlstream_problem():
     stream_pddl = read(get_file_path(__file__, 'stream.pddl'))
     stream_map = {
         'sample-pickable': from_fn(feasibility_fn),
-        'test-cleanable': from_test(universe_test), # TODO: bug because this stream is never called
+        'test-cleanable': from_test(universe_test),  # TODO: bug because this stream is never called
     }
 
     # Currently tests whether one can clean twice
@@ -49,7 +52,9 @@ def get_pddlstream_problem():
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 ##################################################
+
 
 def main():
     parser = create_parser()
@@ -60,6 +65,7 @@ def main():
     problem = get_pddlstream_problem()
     solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit)
     print_solution(solution)
+
 
 if __name__ == '__main__':
     main()

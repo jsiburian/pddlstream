@@ -15,10 +15,12 @@ UNIVERSAL_TO_CONDITIONAL = False
 
 def get_predicates(expression):
     import pddl.conditions
+
     if isinstance(expression, pddl.conditions.ConstantCondition):
         return set()
-    if isinstance(expression, pddl.conditions.JunctorCondition) or \
-            isinstance(expression, pddl.conditions.QuantifiedCondition):
+    if isinstance(expression, pddl.conditions.JunctorCondition) or isinstance(
+        expression, pddl.conditions.QuantifiedCondition
+    ):
         predicates = set()
         for part in expression.parts:
             predicates.update(get_predicates(part))
@@ -30,6 +32,7 @@ def get_predicates(expression):
 
 def universal_to_conditional(action):
     import pddl
+
     new_parts = []
     unsatisfiable = fd_from_fact((UNSATISFIABLE,))
     for quant in get_conjunctive_parts(action.precondition):
@@ -45,6 +48,7 @@ def universal_to_conditional(action):
 
 def process_conditional_effect(effect, negative_from_predicate):
     import pddl
+
     new_parts = []
     stream_facts = []
     for disjunctive in get_conjunctive_parts(effect.condition):
@@ -66,6 +70,7 @@ def process_conditional_effect(effect, negative_from_predicate):
 
 def optimizer_conditional_effects(domain, externals):
     import pddl
+
     # TODO: extend this to predicates
     if UNIVERSAL_TO_CONDITIONAL:
         negative_streams = list(filter(lambda e: e.is_negated, externals))
@@ -102,7 +107,9 @@ def enforce_simultaneous(domain, externals):
             if predicates & axiom_predicates:
                 external.info.simultaneous = True
 
+
 ##################################################
+
 
 def get_domain_predicates(external):
     return set(map(get_prefix, external.domain))
@@ -126,7 +133,8 @@ def get_interacting_externals(externals):
                 external_pairs.add((external1, external2))
                 if external1.is_negated:
                     raise ValueError(
-                        f'Stream [{external1.name}] can certify [{external2.name}] and thus cannot be negated')
+                        f'Stream [{external1.name}] can certify [{external2.name}] and thus cannot be negated'
+                    )
     return external_pairs
 
 
@@ -141,6 +149,7 @@ def get_certifiers(externals):
 def get_negated_predicates(domain):
     # TODO: generalize to more complicated formulas and recursive axioms
     import pddl
+
     negated_action_preconditions = set()
     for action in domain.actions:
         for part in get_conjunctive_parts(action.precondition):
@@ -163,10 +172,17 @@ def automatically_negate_externals(domain, externals):
     producers = {e1 for e1, _ in get_interacting_externals(externals)}
     non_producers = set(externals) - producers
     for external in non_producers:
-        if isinstance(external, Stream) and not external.is_negated \
-                and external.is_test and not external.is_fluent and external.could_succeed() \
-                and all((predicate in negated_predicates) and (len(certifiers[predicate]) == 1)
-                        for predicate in get_certified_predicates(external)):
+        if (
+            isinstance(external, Stream)
+            and not external.is_negated
+            and external.is_test
+            and not external.is_fluent
+            and external.could_succeed()
+            and all(
+                (predicate in negated_predicates) and (len(certifiers[predicate]) == 1)
+                for predicate in get_certified_predicates(external)
+            )
+        ):
             # TODO: could instead only negate if in a negative axiom
             external.info.negate = True
             print(f'Setting negate={external.is_negated} for stream [{external.name}]')

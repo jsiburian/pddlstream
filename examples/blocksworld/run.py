@@ -12,7 +12,9 @@ def read_pddl(filename):
     directory = os.path.dirname(os.path.abspath(__file__))
     return read(os.path.join(directory, filename))
 
+
 ##################################################
+
 
 def solve_pddl():
     domain_pddl = read_pddl('domain.pddl')
@@ -22,7 +24,9 @@ def solve_pddl():
     print('Plan:', plan)
     print('Cost:', cost)
 
+
 ##################################################
+
 
 def get_problem():
     domain_pddl = read_pddl('domain.pddl')
@@ -40,6 +44,7 @@ def get_problem():
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 def solve_pddlstream(debug=False):
     parser = create_parser()
     args = parser.parse_args()
@@ -50,10 +55,13 @@ def solve_pddlstream(debug=False):
     solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit, planner=planner, debug=debug)
     print_solution(solution)
 
+
 ##################################################
+
 
 def main():
     solve_pddlstream()
+
 
 if __name__ == '__main__':
     main()

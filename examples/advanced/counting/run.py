@@ -52,12 +52,13 @@ STREAM_PDDL = """
 
 ##################################################
 
+
 def get_problem1(n=5):
     # TODO: consider even/odd and version with infinite generator
     # TODO: replicate the effect where a stream fails
     constant_map = {}
     stream_map = {
-        'increment': from_fn(lambda x: (x + 1,)), # Increment by different amounts
+        'increment': from_fn(lambda x: (x + 1,)),  # Increment by different amounts
         'decrement': from_fn(lambda x: (x - 1,)),
         'test-large': from_test(lambda x: n <= x),
         'test-small': from_test(lambda x: x <= -n),
@@ -66,14 +67,14 @@ def get_problem1(n=5):
     init = [
         ('Integer', 0),
     ]
-    goal = Or(
-        ('Goal',)
-    )
+    goal = Or(('Goal',))
     # TODO: sort actions when renaming to make deterministic
 
     return PDDLProblem(DOMAIN_PDDL, constant_map, STREAM_PDDL, stream_map, init, goal)
 
+
 ##################################################
+
 
 def main():
     parser = create_parser()
@@ -90,9 +91,11 @@ def main():
         'decrement': StreamInfo(p_success=1, overhead=1),
     }
 
-    solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit,
-                     stream_info=info, planner='max-astar', effort_weight=1)
+    solution = solve(
+        problem, algorithm=args.algorithm, unit_costs=args.unit, stream_info=info, planner='max-astar', effort_weight=1
+    )
     print_solution(solution)
+
 
 if __name__ == '__main__':
     main()

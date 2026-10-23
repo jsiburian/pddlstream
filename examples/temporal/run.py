@@ -42,7 +42,8 @@ STREAM_PDDL = """
 
 ##################################################
 
-def create_problem(max_t=20., n_foods=3, n_stoves=2):
+
+def create_problem(max_t=20.0, n_foods=3, n_stoves=2):
     constant_map = {}
     stream_map = {
         # TODO: compute the sequence of times and/or length
@@ -55,9 +56,9 @@ def create_problem(max_t=20., n_foods=3, n_stoves=2):
     foods = [f'f{i}' for i in range(n_foods)]
     stoves = [f's{i}' for i in range(n_stoves)]
 
-    t0 = 0.
+    t0 = 0.0
     goal_t = 5
-    discretize_dt = None # TODO: set to None if not all times are StartTimes
+    discretize_dt = None  # TODO: set to None if not all times are StartTimes
     # TODO: iteratively increase max_t and/or discretize_dt
 
     # TODO: min_dt is the min of all the durations
@@ -72,27 +73,30 @@ def create_problem(max_t=20., n_foods=3, n_stoves=2):
         ('Time', goal_t),
     ]
     if discretize_dt is not None:
-        for t in np.arange(t0, max_t, step=1./3):
+        for t in np.arange(t0, max_t, step=1.0 / 3):
             t = round(t, 3)
-            init.extend([
-                ('Time', t),
-                ('StartTime', t),
-            ])
+            init.extend(
+                [
+                    ('Time', t),
+                    ('StartTime', t),
+                ]
+            )
 
     # TODO: extract all initial times as important times
     # TODO: support timed initial literals
 
-    cook_dt = 2.
+    cook_dt = 2.0
     for food, stove in product(foods, stoves):
-        init.extend([
-            ('Food', food),
-            ('Stove', stove),
-            ('CookDuration', cook_dt, food, stove),
-            ('Duration', cook_dt),
-        ])
+        init.extend(
+            [
+                ('Food', food),
+                ('Stove', stove),
+                ('CookDuration', cook_dt, food, stove),
+                ('Duration', cook_dt),
+            ]
+        )
 
-    goal_expressions = [
-    ]
+    goal_expressions = []
     for food in foods:
         goal_expressions.append(('Cooked', food))
     goal = And(*goal_expressions)
@@ -102,7 +106,9 @@ def create_problem(max_t=20., n_foods=3, n_stoves=2):
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 ##################################################
+
 
 def main():
     # TODO: previous domains with dynamics: rocket domain, car domain, ..
@@ -142,10 +148,19 @@ def main():
     }
 
     # TODO: eager for incremental
-    solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit,
-                     stream_info=info, planner='dijkstra', initial_complexity=INF,
-                     effort_weight=None, debug=True, verbose=False)
+    solution = solve(
+        problem,
+        algorithm=args.algorithm,
+        unit_costs=args.unit,
+        stream_info=info,
+        planner='dijkstra',
+        initial_complexity=INF,
+        effort_weight=None,
+        debug=True,
+        verbose=False,
+    )
     print_solution(solution)
+
 
 if __name__ == '__main__':
     main()

@@ -2,8 +2,15 @@
 
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, control_commands
 from examples.pybullet.utils.pybullet_tools.pr2_utils import get_group_joints
-from examples.pybullet.utils.pybullet_tools.utils import connect, disconnect, \
-    HideOutput, LockRenderer, wait_for_user, RED, has_gui
+from examples.pybullet.utils.pybullet_tools.utils import (
+    connect,
+    disconnect,
+    HideOutput,
+    LockRenderer,
+    wait_for_user,
+    RED,
+    has_gui,
+)
 
 from pddlstream.algorithms.meta import solve, create_parser
 from pddlstream.language.generator import from_gen_fn, from_fn, from_test
@@ -19,8 +26,14 @@ from examples.pybullet.utils.pybullet_tools.utils import draw_base_limits, World
 from examples.pybullet.common import get_custom_limits as get_base_custom_limits
 
 from examples.pybullet.pr2_rovers.problems import PROBLEMS
-from examples.pybullet.pr2_rovers.streams import get_reachable_test, get_inv_vis_gen, get_inv_com_gen, get_above_gen, \
-    get_base_motion_fn, get_head_motion_fn
+from examples.pybullet.pr2_rovers.streams import (
+    get_reachable_test,
+    get_inv_vis_gen,
+    get_inv_com_gen,
+    get_above_gen,
+    get_base_motion_fn,
+    get_head_motion_fn,
+)
 
 CLASSES = ['blue', 'red', 'rock', 'soil']
 
@@ -33,6 +46,7 @@ CLASSES = ['blue', 'red', 'rock', 'soil']
 
 #######################################################
 
+
 def pddlstream_from_problem(problem, collisions=True, teleport=False):
 
     domain_pddl = read(get_file_path(__file__, 'domain.pddl'))
@@ -43,8 +57,7 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
     mode = 'color'  # highres | lowres | color | depth
 
     init = []
-    goal_literals = [
-    ]
+    goal_literals = []
 
     init += [('Lander', l) for l in problem.landers]
     init += [('Camera', camera), ('Supports', camera, mode), ('Mode', mode)]
@@ -53,9 +66,14 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
         bq0 = Conf(rover, base_joints)
         head_joints = get_group_joints(rover, 'head')
         hq0 = Conf(rover, head_joints)
-        init += [('Rover', rover), ('OnBoard', camera, rover),
-                 ('BConf', bq0), ('AtBConf', rover, bq0),
-                 ('HConf', hq0), ('AtHConf', rover, hq0)]
+        init += [
+            ('Rover', rover),
+            ('OnBoard', camera, rover),
+            ('BConf', bq0),
+            ('AtBConf', rover, bq0),
+            ('HConf', hq0),
+            ('AtHConf', rover, hq0),
+        ]
     for name in problem.stores:
         init += [('Store', name)]
         init += [('Free', rover, name) for rover in problem.rovers]
@@ -83,7 +101,9 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal_formula)
 
+
 #######################################################
+
 
 def post_process(problem, plan, teleport=False):
     if plan is None:
@@ -112,7 +132,9 @@ def post_process(problem, plan, teleport=False):
         commands += new_commands
     return commands
 
+
 #######################################################
+
 
 def main():
     parser = create_parser()
@@ -151,14 +173,23 @@ def main():
     search_sample_ratio = 1
     max_planner_time = 10
 
-    with Profiler(field='cumtime', num=25): # cumtime | tottime
+    with Profiler(field='cumtime', num=25):  # cumtime | tottime
         with LockRenderer(lock=not args.enable):
-            solution = solve(pddlstream_problem, algorithm=args.algorithm, stream_info=stream_info,
-                                     planner=planner, max_planner_time=max_planner_time,
-                                     unit_costs=args.unit, success_cost=success_cost,
-                                     max_time=args.max_time, verbose=True, debug=False,
-                                     unit_efforts=True, effort_weight=1,
-                                     search_sample_ratio=search_sample_ratio)
+            solution = solve(
+                pddlstream_problem,
+                algorithm=args.algorithm,
+                stream_info=stream_info,
+                planner=planner,
+                max_planner_time=max_planner_time,
+                unit_costs=args.unit,
+                success_cost=success_cost,
+                max_time=args.max_time,
+                verbose=True,
+                debug=False,
+                unit_efforts=True,
+                effort_weight=1,
+                search_sample_ratio=search_sample_ratio,
+            )
             saver.restore()
     print_solution(solution)
     plan, cost, evaluations = solution
@@ -179,6 +210,7 @@ def main():
         apply_commands(BeliefState(problem), commands, time_step)
     wait_for_user()
     disconnect()
+
 
 if __name__ == '__main__':
     main()

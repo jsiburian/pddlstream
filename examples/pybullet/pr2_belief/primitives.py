@@ -1,21 +1,64 @@
 import numpy as np
 
 from examples.discrete_belief.dist import DDist
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import Command, Pose, Conf, Trajectory, \
-    create_trajectory, Attach, Detach, get_target_path, SELF_COLLISIONS
+from examples.pybullet.utils.pybullet_tools.pr2_primitives import (
+    Command,
+    Pose,
+    Conf,
+    Trajectory,
+    create_trajectory,
+    Attach,
+    Detach,
+    get_target_path,
+    SELF_COLLISIONS,
+)
 from examples.pybullet.utils.pybullet_tools.pr2_problems import get_fixed_bodies
-from examples.pybullet.utils.pybullet_tools.pr2_utils import HEAD_LINK_NAME, get_visual_detections, \
-    visible_base_generator, inverse_visibility, get_kinect_registrations, get_detection_cone, get_viewcone, \
-    MAX_KINECT_DISTANCE, plan_scan_path, get_group_joints, get_group_conf, set_group_conf
-from examples.pybullet.utils.pybullet_tools.utils import link_from_name, create_mesh, set_pose, get_link_pose, \
-    wait_for_duration, unit_pose, remove_body, is_center_stable, get_body_name, get_name, point_from_pose, \
-    plan_waypoints_joint_motion, pairwise_collision, plan_direct_joint_motion, BodySaver, get_length, wait_for_user, LockRenderer, RED, GREEN, apply_alpha, get_link_subtree, child_link_from_joint
+from examples.pybullet.utils.pybullet_tools.pr2_utils import (
+    HEAD_LINK_NAME,
+    get_visual_detections,
+    visible_base_generator,
+    inverse_visibility,
+    get_kinect_registrations,
+    get_detection_cone,
+    get_viewcone,
+    MAX_KINECT_DISTANCE,
+    plan_scan_path,
+    get_group_joints,
+    get_group_conf,
+    set_group_conf,
+)
+from examples.pybullet.utils.pybullet_tools.utils import (
+    link_from_name,
+    create_mesh,
+    set_pose,
+    get_link_pose,
+    wait_for_duration,
+    unit_pose,
+    remove_body,
+    is_center_stable,
+    get_body_name,
+    get_name,
+    point_from_pose,
+    plan_waypoints_joint_motion,
+    pairwise_collision,
+    plan_direct_joint_motion,
+    BodySaver,
+    get_length,
+    wait_for_user,
+    LockRenderer,
+    RED,
+    GREEN,
+    apply_alpha,
+    get_link_subtree,
+    child_link_from_joint,
+)
 
 VIS_RANGE = (0.5, 1.5)
 REG_RANGE = (0.5, 1.5)
 ROOM_SCAN_TILT = np.pi / 6
 P_LOOK_FP = 0
-P_LOOK_FN = 0 # 1e-1
+P_LOOK_FN = 0  # 1e-1
+
 
 def get_in_range_test(task, range):
     # TODO: could just test different visibility w/o ranges
@@ -25,7 +68,9 @@ def get_in_range_test(task, range):
         target_xy = point_from_pose(p.value)[:2]
         base_xy = bq.values[:2]
         return range[0] <= get_length(np.array(target_xy) - base_xy) <= range[1]
+
     return test
+
 
 def get_vis_base_gen(task, base_range, collisions=False):
     robot = task.robot
@@ -33,7 +78,7 @@ def get_vis_base_gen(task, base_range, collisions=False):
     obstacles = get_fixed_bodies(task) if collisions else []
 
     def gen(o, p):
-        if o in task.rooms: # TODO: predicate instead
+        if o in task.rooms:  # TODO: predicate instead
             return
         # TODO: check collisions with fixed links
         target_point = point_from_pose(p.value)
@@ -46,8 +91,10 @@ def get_vis_base_gen(task, base_range, collisions=False):
                 yield None
             else:
                 yield (bq,)
+
     # TODO: return list_fn & accelerated
     return gen
+
 
 def get_inverse_visibility_fn(task, collisions=True):
     robot = task.robot
@@ -55,13 +102,14 @@ def get_inverse_visibility_fn(task, collisions=True):
     obstacles = get_fixed_bodies(task) if collisions else []
 
     def fn(o, p, bq):
-        set_pose(o, p.value) # p.assign()
+        set_pose(o, p.value)  # p.assign()
         bq.assign()
         if o in task.rooms:
             waypoints = plan_scan_path(task.robot, tilt=ROOM_SCAN_TILT)
             set_group_conf(robot, 'head', waypoints[0])
-            path = plan_waypoints_joint_motion(robot, head_joints, waypoints[1:],
-                                          obstacles=obstacles, self_collisions=SELF_COLLISIONS)
+            path = plan_waypoints_joint_motion(
+                robot, head_joints, waypoints[1:], obstacles=obstacles, self_collisions=SELF_COLLISIONS
+            )
             if path is None:
                 return None
             ht = create_trajectory(robot, head_joints, path)
@@ -69,23 +117,28 @@ def get_inverse_visibility_fn(task, collisions=True):
         else:
             target_point = point_from_pose(p.value)
             head_conf = inverse_visibility(robot, target_point)
-            if head_conf is None: # TODO: test if visible
+            if head_conf is None:  # TODO: test if visible
                 return None
             hq = Conf(robot, head_joints, head_conf)
             ht = Trajectory([hq])
         return (hq, ht)
+
     return fn
+
 
 #######################################################
 
+
 def plan_head_traj(task, head_conf):
     robot = task.robot
-    obstacles = get_fixed_bodies(task) # TODO: movable objects
+    obstacles = get_fixed_bodies(task)  # TODO: movable objects
     head_joints = get_group_joints(robot, 'head')
-    head_path = plan_direct_joint_motion(robot, head_joints, head_conf,
-                                  obstacles=obstacles, self_collisions=SELF_COLLISIONS)
-    assert(head_path is not None)
+    head_path = plan_direct_joint_motion(
+        robot, head_joints, head_conf, obstacles=obstacles, self_collisions=SELF_COLLISIONS
+    )
+    assert head_path is not None
     return create_trajectory(robot, head_joints, head_path)
+
 
 def move_look_trajectory(task, trajectory, max_tilt=np.pi / 6):  # max_tilt=INF):
     # TODO: implement a minimum distance instead of max_tilt
@@ -93,19 +146,19 @@ def move_look_trajectory(task, trajectory, max_tilt=np.pi / 6):  # max_tilt=INF)
     base_path = trajectory.path
     if not base_path:
         return trajectory
-    obstacles = get_fixed_bodies(task) # TODO: movable objects
+    obstacles = get_fixed_bodies(task)  # TODO: movable objects
     robot = base_path[0].body
     target_path = get_target_path(trajectory)
     waypoints = []
     index = 0
     with BodySaver(robot):
-        for i, conf in enumerate(base_path): # TODO: just do two loops?
+        for i, conf in enumerate(base_path):  # TODO: just do two loops?
             conf.assign()
             while index < len(target_path):
                 if i < index:
                     # Don't look at past or current conf
                     target_point = target_path[index]
-                    head_conf = inverse_visibility(robot, target_point) # TODO: this is slightly slow
+                    head_conf = inverse_visibility(robot, target_point)  # TODO: this is slightly slow
                     if (head_conf is not None) and (head_conf[1] < max_tilt):
                         break
                 index += 1
@@ -114,17 +167,19 @@ def move_look_trajectory(task, trajectory, max_tilt=np.pi / 6):  # max_tilt=INF)
             set_group_conf(robot, 'head', head_conf)
             waypoints.append(np.concatenate([conf.values, head_conf]))
     joints = tuple(base_path[0].joints) + tuple(get_group_joints(robot, 'head'))
-    path = plan_waypoints_joint_motion(robot, joints, waypoints,
-                                       obstacles=obstacles, self_collisions=SELF_COLLISIONS)
+    path = plan_waypoints_joint_motion(robot, joints, waypoints, obstacles=obstacles, self_collisions=SELF_COLLISIONS)
     return create_trajectory(robot, joints, path)
+
 
 #######################################################
 
-class AttachCone(Command): # TODO: make extend Attach?
+
+class AttachCone(Command):  # TODO: make extend Attach?
     def __init__(self, robot):
         self.robot = robot
         self.group = 'head'
         self.cone = None
+
     def apply(self, state, **kwargs):
         with LockRenderer():
             self.cone = get_viewcone(color=apply_alpha(RED, 0.5))
@@ -135,12 +190,15 @@ class AttachCone(Command): # TODO: make extend Attach?
             wait_for_duration(1e-2)
         for _ in attach.apply(state, **kwargs):
             yield
+
     def __repr__(self):
         return f'{self.__class__.__name__}()'
 
-class DetachCone(Command): # TODO: make extend Detach?
+
+class DetachCone(Command):  # TODO: make extend Detach?
     def __init__(self, attach):
         self.attach = attach
+
     def apply(self, state, **kwargs):
         cone = self.attach.cone
         detach = Detach(self.attach.robot, self.attach.group, cone)
@@ -149,28 +207,33 @@ class DetachCone(Command): # TODO: make extend Detach?
         del state.poses[cone]
         remove_body(cone)
         wait_for_duration(1e-2)
+
     def __repr__(self):
         return f'{self.__class__.__name__}()'
+
 
 def get_cone_commands(robot):
     attach = AttachCone(robot)
     detach = DetachCone(attach)
     return attach, detach
 
+
 #######################################################
+
 
 def get_observation_fn(surface, p_look_fp=P_LOOK_FP, p_look_fn=P_LOOK_FN):
     # TODO: clip probabilities so doesn't become zero
     def fn(s):
         # P(obs | s1=loc1, a=control_loc)
         if s == surface:
-            return DDist({True: 1 - p_look_fn,
-                          False: p_look_fn})
-        return DDist({True: p_look_fp,
-                      False: 1 - p_look_fp})
+            return DDist({True: 1 - p_look_fn, False: p_look_fn})
+        return DDist({True: p_look_fp, False: 1 - p_look_fp})
+
     return fn
 
+
 # TODO: update whether localized on scene
+
 
 class Scan(Command):
     _duration = 0.5
@@ -188,7 +251,7 @@ class Scan(Command):
             cone = get_viewcone(color=apply_alpha(RED, 0.5))
             set_pose(cone, get_link_pose(self.robot, self.link))
             wait_for_duration(1e-2)
-        wait_for_duration(self._duration) # TODO: don't sleep if no viewer?
+        wait_for_duration(self._duration)  # TODO: don't sleep if no viewer?
         remove_body(cone)
         wait_for_duration(1e-2)
 
@@ -197,7 +260,11 @@ class Scan(Command):
             # TODO: free the renderer
             head_joints = get_group_joints(self.robot, 'head')
             exclude_links = set(get_link_subtree(self.robot, child_link_from_joint(head_joints[-1])))
-            detections = get_visual_detections(self.robot, camera_link=self.camera_frame, exclude_links=exclude_links,)
+            detections = get_visual_detections(
+                self.robot,
+                camera_link=self.camera_frame,
+                exclude_links=exclude_links,
+            )
             print('Detections:', detections)
             for body, dist in state.b_on.items():
                 obs = (body in detections) and (is_center_stable(body, self.surface))
@@ -219,7 +286,7 @@ class ScanRoom(Command):
         self.surface = surface
 
     def apply(self, state, **kwargs):
-        assert(self.surface in state.task.rooms)
+        assert self.surface in state.task.rooms
         obs_fn = get_observation_fn(self.surface)
         for body, dist in state.b_on.items():
             if 0 < dist.prob(self.surface):
@@ -229,7 +296,9 @@ class ScanRoom(Command):
     def __repr__(self):
         return f'{self.__class__.__name__}({get_body_name(self.surface)})'
 
+
 #######################################################
+
 
 class Detect(Command):
     def __init__(self, robot, surface, body):
@@ -263,7 +332,7 @@ class Register(Command):
         mesh, _ = get_detection_cone(self.robot, self.body, camera_link=self.camera_frame, depth=self.max_depth)
         if mesh is None:
             wait_for_user()
-        assert(mesh is not None) # TODO: is_visible_aabb(body_aabb, **kwargs)=False sometimes without collisions
+        assert mesh is not None  # TODO: is_visible_aabb(body_aabb, **kwargs)=False sometimes without collisions
         with LockRenderer():
             cone = create_mesh(mesh, color=apply_alpha(GREEN, 0.5))
             set_pose(cone, get_link_pose(self.robot, self.link))

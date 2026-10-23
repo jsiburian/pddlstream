@@ -4,8 +4,13 @@ import os
 import numpy as np
 
 from pddlstream.algorithms.meta import solve, create_parser
-from examples.discrete_tamp.primitives import GRASP, collision_test, distance_fn, DiscreteTAMPState, \
-    get_shift_one_problem
+from examples.discrete_tamp.primitives import (
+    GRASP,
+    collision_test,
+    distance_fn,
+    DiscreteTAMPState,
+    get_shift_one_problem,
+)
 from examples.discrete_tamp.viewer import DiscreteTAMPViewer, COLORS
 from pddlstream.language.constants import And, Equal, TOTAL_COST, print_solution, PDDLProblem
 from pddlstream.language.generator import from_gen_fn, from_fn, from_test
@@ -14,12 +19,12 @@ from pddlstream.utils import user_input, read
 
 # TODO: Can infer domain from usage or from specification
 
+
 def pddlstream_from_tamp(tamp_problem):
     initial = tamp_problem.initial
-    assert(initial.holding is None)
+    assert initial.holding is None
 
-    known_poses = list(initial.block_poses.values()) + \
-                  list(tamp_problem.goal_poses.values())
+    known_poses = list(initial.block_poses.values()) + list(tamp_problem.goal_poses.values())
 
     directory = os.path.dirname(os.path.abspath(__file__))
     domain_pddl = read(os.path.join(directory, 'domain.pddl'))
@@ -27,28 +32,29 @@ def pddlstream_from_tamp(tamp_problem):
 
     q100 = np.array([100, 100])
     constant_map = {
-        'q100': q100, # As an example
+        'q100': q100,  # As an example
     }
 
-    init = [
-        ('CanMove',),
-        ('Conf', q100),
-        ('Conf', initial.conf),
-        ('AtConf', initial.conf),
-        ('HandEmpty',),
-        Equal((TOTAL_COST,), 0)] + \
-           [('Block', b) for b in initial.block_poses.keys()] + \
-           [('Pose', p) for p in known_poses] + \
-           [('AtPose', b, p) for b, p in initial.block_poses.items()]
+    init = (
+        [
+            ('CanMove',),
+            ('Conf', q100),
+            ('Conf', initial.conf),
+            ('AtConf', initial.conf),
+            ('HandEmpty',),
+            Equal((TOTAL_COST,), 0),
+        ]
+        + [('Block', b) for b in initial.block_poses.keys()]
+        + [('Pose', p) for p in known_poses]
+        + [('AtPose', b, p) for b, p in initial.block_poses.items()]
+    )
 
-    goal = And(*[
-        ('AtPose', b, p) for b, p in tamp_problem.goal_poses.items()
-    ])
+    goal = And(*[('AtPose', b, p) for b, p in tamp_problem.goal_poses.items()])
 
     # TODO: convert to lower case
     stream_map = {
         'sample-pose': from_gen_fn(lambda: ((p,) for p in tamp_problem.poses)),
-        'inverse-kinematics':  from_fn(lambda p: (p + GRASP,)),
+        'inverse-kinematics': from_fn(lambda p: (p + GRASP,)),
         'test-cfree': from_test(lambda *args: not collision_test(*args)),
         'collision': collision_test,
         'distance': distance_fn,
@@ -56,7 +62,9 @@ def pddlstream_from_tamp(tamp_problem):
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 ##################################################
+
 
 def draw_state(viewer, state, colors):
     viewer.clear()
@@ -69,6 +77,7 @@ def draw_state(viewer, state, colors):
         pose = state.conf - GRASP
         r, c = pose[::-1]
         viewer.draw_block(r, c, name=state.holding, color=colors[state.holding])
+
 
 def apply_action(state, action):
     conf, holding, block_poses = state
@@ -91,6 +100,7 @@ def apply_action(state, action):
         raise ValueError(name)
     return DiscreteTAMPState(conf, holding, block_poses)
 
+
 def apply_plan(tamp_problem, plan):
     colors = dict(zip(tamp_problem.initial.block_poses, COLORS))
     viewer = DiscreteTAMPViewer(1, len(tamp_problem.poses), title='Initial')
@@ -104,7 +114,9 @@ def apply_plan(tamp_problem, plan):
         draw_state(viewer, state, colors)
     user_input('Finish?')
 
+
 ##################################################
+
 
 def main():
     parser = create_parser()
@@ -116,8 +128,12 @@ def main():
     print(tamp_problem)
 
     pddlstream_problem = pddlstream_from_tamp(tamp_problem)
-    solution = solve(pddlstream_problem, algorithm=args.algorithm, unit_costs=args.unit, debug=False,
-                    )
+    solution = solve(
+        pddlstream_problem,
+        algorithm=args.algorithm,
+        unit_costs=args.unit,
+        debug=False,
+    )
 
     print_solution(solution)
     plan, cost, evaluations = solution

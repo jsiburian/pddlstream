@@ -9,9 +9,25 @@ from itertools import product
 
 from pddlstream.algorithms.meta import solve, create_parser
 from examples.continuous_tamp.optimizer.optimizer import cfree_motion_fn, get_optimize_fn
-from examples.continuous_tamp.primitives import get_pose_gen, collision_test, distance_fn, inverse_kin_fn, \
-    get_region_test, plan_motion, PROBLEMS, draw_state, get_random_seed, SUCTION_HEIGHT, MOVE_COST, GRASP, \
-    update_state, ENVIRONMENT_NAMES, STOVE_NAMES, duration_fn, apply_action
+from examples.continuous_tamp.primitives import (
+    get_pose_gen,
+    collision_test,
+    distance_fn,
+    inverse_kin_fn,
+    get_region_test,
+    plan_motion,
+    PROBLEMS,
+    draw_state,
+    get_random_seed,
+    SUCTION_HEIGHT,
+    MOVE_COST,
+    GRASP,
+    update_state,
+    ENVIRONMENT_NAMES,
+    STOVE_NAMES,
+    duration_fn,
+    apply_action,
+)
 from pddlstream.algorithms.downward import get_cost_scale
 from pddlstream.algorithms.constraints import PlanConstraints, WILD
 from pddlstream.algorithms.visualization import VISUALIZATIONS_DIR
@@ -21,23 +37,38 @@ from pddlstream.language.function import FunctionInfo
 from pddlstream.language.generator import from_gen_fn, from_list_fn, from_test, from_fn
 from pddlstream.language.stream import StreamInfo
 from pddlstream.language.temporal import get_end, compute_duration, retime_plan
-from pddlstream.utils import ensure_dir, safe_rm_dir, user_input, read, INF, get_file_path, str_from_object, \
-    sorted_str_from_list, implies, inclusive_range, Profiler
+from pddlstream.utils import (
+    ensure_dir,
+    safe_rm_dir,
+    user_input,
+    read,
+    INF,
+    get_file_path,
+    str_from_object,
+    sorted_str_from_list,
+    implies,
+    inclusive_range,
+    Profiler,
+)
 
 
 ##################################################
 
-def create_problem(tamp_problem, hand_empty=False, manipulate_cost=1.):
-    initial = tamp_problem.initial
-    assert(not initial.holding)
 
-    init = [
-       Equal(('Cost',), manipulate_cost),
-       Equal((TOTAL_COST,), 0)] + \
-           [('Stove', r) for r in STOVE_NAMES if r in tamp_problem.regions] + \
-           [('Placeable', b, r) for b in initial.block_poses.keys()
-            for r in tamp_problem.regions if (r in ENVIRONMENT_NAMES) or
-            ((b in tamp_problem.goal_cooked) and (r in STOVE_NAMES))]
+def create_problem(tamp_problem, hand_empty=False, manipulate_cost=1.0):
+    initial = tamp_problem.initial
+    assert not initial.holding
+
+    init = (
+        [Equal(('Cost',), manipulate_cost), Equal((TOTAL_COST,), 0)]
+        + [('Stove', r) for r in STOVE_NAMES if r in tamp_problem.regions]
+        + [
+            ('Placeable', b, r)
+            for b in initial.block_poses.keys()
+            for r in tamp_problem.regions
+            if (r in ENVIRONMENT_NAMES) or ((b in tamp_problem.goal_cooked) and (r in STOVE_NAMES))
+        ]
+    )
 
     for b, p in initial.block_poses.items():
         init += [
@@ -46,8 +77,7 @@ def create_problem(tamp_problem, hand_empty=False, manipulate_cost=1.):
             ('AtPose', b, p),
         ]
 
-    goal_literals = [] + \
-                    [('Cooked', b) for b in tamp_problem.goal_cooked] # Placeable for the stove
+    goal_literals = [] + [('Cooked', b) for b in tamp_problem.goal_cooked]  # Placeable for the stove
     for b, r in tamp_problem.goal_regions.items():
         if isinstance(r, np.ndarray):
             init += [('Pose', b, r)]
@@ -78,6 +108,7 @@ def create_problem(tamp_problem, hand_empty=False, manipulate_cost=1.):
 
     return init, goal
 
+
 def pddlstream_from_tamp(tamp_problem, use_stream=True, use_optimizer=False, collisions=True):
 
     domain_pddl = read(get_file_path(__file__, 'domain.pddl'))
@@ -85,7 +116,7 @@ def pddlstream_from_tamp(tamp_problem, use_stream=True, use_optimizer=False, col
     if use_stream:
         external_paths.append(get_file_path(__file__, 'stream.pddl'))
     if use_optimizer:
-        external_paths.append(get_file_path(__file__, 'optimizer/optimizer.pddl')) # optimizer | optimizer_hard
+        external_paths.append(get_file_path(__file__, 'optimizer/optimizer.pddl'))  # optimizer | optimizer_hard
     external_pddl = [read(path) for path in external_paths]
 
     constant_map = {}
@@ -97,14 +128,16 @@ def pddlstream_from_tamp(tamp_problem, use_stream=True, use_optimizer=False, col
         't-region': from_test(get_region_test(tamp_problem.regions)),
         't-cfree': from_test(lambda *args: implies(collisions, not collision_test(*args))),
         'dist': distance_fn,
-        'duration': duration_fn, # temporal
+        'duration': duration_fn,  # temporal
     }
     if use_optimizer:
         # To avoid loading gurobi
-        stream_map.update({
-            'gurobi': from_list_fn(get_optimize_fn(tamp_problem.regions, collisions=collisions)),
-            'rrt': from_fn(cfree_motion_fn),
-        })
+        stream_map.update(
+            {
+                'gurobi': from_list_fn(get_optimize_fn(tamp_problem.regions, collisions=collisions)),
+                'rrt': from_fn(cfree_motion_fn),
+            }
+        )
 
     init, goal = create_problem(tamp_problem)
     if not use_stream:
@@ -113,15 +146,18 @@ def pddlstream_from_tamp(tamp_problem, use_stream=True, use_optimizer=False, col
 
     return PDDLProblem(domain_pddl, constant_map, external_pddl, stream_map, init, goal)
 
+
 ##################################################
+
 
 def step_plan(tamp_problem, plan):
     """Shows a plan action by action, waiting for the user after each step."""
     from examples.continuous_tamp.viewer import ContinuousTMPViewer
     from examples.discrete_tamp.viewer import COLORS
+
     if plan is None:
         return
-    colors =dict(zip(sorted(tamp_problem.initial.block_poses.keys()), COLORS))
+    colors = dict(zip(sorted(tamp_problem.initial.block_poses.keys()), COLORS))
     viewer = ContinuousTMPViewer(SUCTION_HEIGHT, tamp_problem.regions, title='Continuous TAMP')
     state = tamp_problem.initial
     print()
@@ -136,6 +172,7 @@ def step_plan(tamp_problem, plan):
             draw_state(viewer, state, colors)
             user_input('Continue?')
     user_input('Finish?')
+
 
 def display_plan(tamp_problem, plan, display=True, save=False, time_step=0.025, sec_per_step=1e-3):
     from examples.continuous_tamp.viewer import ContinuousTMPViewer
@@ -177,6 +214,7 @@ def display_plan(tamp_problem, plan, display=True, save=False, time_step=0.025, 
         user_input('Finish?')
     return state
 
+
 ##################################################
 
 TIGHT_SKELETON = [
@@ -184,7 +222,6 @@ TIGHT_SKELETON = [
     ('pick', ['r0', 'B', '?p0', '?g0', '?q1']),
     ('move', ['r0', '?q1', WILD, '?q2']),
     ('place', ['r0', 'B', '?p1', '?g0', '?q2']),
-
     ('move', ['r0', '?q2', WILD, '?q3']),
     ('pick', ['r0', 'A', '?p2', '?g1', '?q3']),
     ('move', ['r0', '?q3', WILD, '?q4']),
@@ -193,6 +230,7 @@ TIGHT_SKELETON = [
 ]
 
 ##################################################
+
 
 def get_stream_info(defer_fn=defer_shared):
     """Stream settings used by main(): when each stream may be deferred, eagerness and success estimates."""
@@ -207,9 +245,11 @@ def get_stream_info(defer_fn=defer_shared):
         'gurobi-cfree': StreamInfo(eager=False, negate=True),
     }
 
+
 def set_deterministic(seed=0):
     random.seed(seed)
     np.random.seed(seed=seed)
+
 
 def initialize(parser):
     parser.add_argument('-c', '--cfree', action='store_true', help='Disables collisions')
@@ -235,11 +275,14 @@ def initialize(parser):
     print(tamp_problem)
     return tamp_problem, args
 
+
 def dump_pddlstream(pddlstream_problem):
     print('Initial:', sorted_str_from_list(pddlstream_problem.init))
     print('Goal:', str_from_object(pddlstream_problem.goal))
 
+
 ##################################################
+
 
 def main():
     # TODO: side grasps (horizontal gripper, one finger, forklift)
@@ -251,37 +294,50 @@ def main():
 
     stream_info = get_stream_info()
 
-    hierarchy = [
-    ]
+    hierarchy = []
 
     skeletons = [TIGHT_SKELETON] if args.skeleton else None
     assert implies(args.skeleton, args.problem == 'tight')
-    max_cost = INF # 8*MOVE_COST
-    constraints = PlanConstraints(skeletons=skeletons,
-                                  exact=True,
-                                  max_cost=max_cost)
+    max_cost = INF  # 8*MOVE_COST
+    constraints = PlanConstraints(skeletons=skeletons, exact=True, max_cost=max_cost)
     replan_actions = set()
 
-    pddlstream_problem = pddlstream_from_tamp(tamp_problem, collisions=not args.cfree,
-                                              use_stream=not args.gurobi, use_optimizer=args.gurobi)
+    pddlstream_problem = pddlstream_from_tamp(
+        tamp_problem, collisions=not args.cfree, use_stream=not args.gurobi, use_optimizer=args.gurobi
+    )
     dump_pddlstream(pddlstream_problem)
 
     success_cost = 0 if args.optimal else INF
     planner = 'max-astar'
-    effort_weight = 1. / get_cost_scale()
+    effort_weight = 1.0 / get_cost_scale()
 
     with Profiler(field='cumtime', num=20):
-        solution = solve(pddlstream_problem, algorithm=args.algorithm, constraints=constraints, stream_info=stream_info,
-                         replan_actions=replan_actions, planner=planner, max_planner_time=10, hierarchy=hierarchy,
-                         max_time=args.max_time, max_iterations=INF, debug=False, verbose=True,
-                         unit_costs=args.unit, success_cost=success_cost,
-                         unit_efforts=True, effort_weight=effort_weight,
-                         search_sample_ratio=1, visualize=args.visualize) # TODO: solve_serialized
+        solution = solve(
+            pddlstream_problem,
+            algorithm=args.algorithm,
+            constraints=constraints,
+            stream_info=stream_info,
+            replan_actions=replan_actions,
+            planner=planner,
+            max_planner_time=10,
+            hierarchy=hierarchy,
+            max_time=args.max_time,
+            max_iterations=INF,
+            debug=False,
+            verbose=True,
+            unit_costs=args.unit,
+            success_cost=success_cost,
+            unit_efforts=True,
+            effort_weight=effort_weight,
+            search_sample_ratio=1,
+            visualize=args.visualize,
+        )  # TODO: solve_serialized
 
     print_solution(solution)
     plan, cost, evaluations = solution
     if plan is not None:
         display_plan(tamp_problem, retime_plan(plan))
+
 
 if __name__ == '__main__':
     main()

@@ -9,36 +9,43 @@ USE_OPT_STR = True
 OPT_PREFIX = '#'
 PREFIX_LEN = 1
 
+
 class Object(CreationHash):
     _prefix = 'v'
     _obj_from_id = {}
     _obj_from_value = {}
     _obj_from_name = {}
+
     def __init__(self, value, stream_instance=None, name=None):
         self.value = value
         self.index = len(Object._obj_from_name)
         if name is None:
             name = f'{self._prefix}{self.index}'
         self.pddl = name
-        self.stream_instance = stream_instance # TODO: store first created stream instance
+        self.stream_instance = stream_instance  # TODO: store first created stream instance
         Object._obj_from_id[id(self.value)] = self
         Object._obj_from_name[self.pddl] = self
         if is_hashable(value):
             Object._obj_from_value[self.value] = self
+
     def is_unique(self):
         return True
+
     def is_shared(self):
         return False
+
     @staticmethod
     def from_id(value):
         if id(value) not in Object._obj_from_id:
             return Object(value)
         return Object._obj_from_id[id(value)]
+
     @staticmethod
     def has_value(value):
         if USE_HASH and not is_hashable(value):
             return id(value) in Object._obj_from_id
         return value in Object._obj_from_value
+
     @staticmethod
     def from_value(value):
         if USE_HASH and not is_hashable(value):
@@ -46,63 +53,79 @@ class Object(CreationHash):
         if value not in Object._obj_from_value:
             return Object(value)
         return Object._obj_from_value[value]
+
     @staticmethod
     def from_name(name):
         return Object._obj_from_name[name]
+
     @staticmethod
     def reset():
         Object._obj_from_id.clear()
         Object._obj_from_value.clear()
         Object._obj_from_name.clear()
-    def __lt__(self, other): # For heapq on python3
+
+    def __lt__(self, other):  # For heapq on python3
         return self.index < other.index
+
     def __repr__(self):
         if USE_OBJ_STR:
-            return str_from_object(self.value) # str
+            return str_from_object(self.value)  # str
         return self.pddl
 
+
 ##################################################
+
 
 class UniqueOptValue(namedtuple('UniqueOptTuple', ['instance', 'sequence_index', 'output'])):
     @property
     def parameter(self):
         return self.output
 
+
 class SharedOptValue(namedtuple('SharedOptTuple', ['stream', 'inputs', 'input_objects', 'output'])):
     @property
     def values(self):
         return tuple(obj.value for obj in self.input_objects)
 
+
 ##################################################
 
-class DebugValue: # TODO: could just do an object
+
+class DebugValue:  # TODO: could just do an object
     _output_counts = defaultdict(count)
-    _prefix = '@' # $ | @
+    _prefix = '@'  # $ | @
+
     def __init__(self, stream, input_values, output_parameter):
         self.stream = stream
         self.input_values = input_values
         self.output_parameter = output_parameter
         self.index = next(self._output_counts[output_parameter])
+
     def __repr__(self):
         # Can also just return first letter of the prefix
         return f'{self._prefix}{get_parameter_name(self.output_parameter)}{self.index}'
 
+
 class SharedDebugValue(namedtuple('SharedDebugValue', ['stream', 'output_parameter'])):
     # TODO: this alone doesn't refining at the shared object level
-    _prefix = '&' # $ | @ | &
+    _prefix = '&'  # $ | @ | &
+
     def __repr__(self):
         return f'{self._prefix}{get_parameter_name(self.output_parameter)}'
+
 
 ##################################################
 
 # TODO: just one object class or have Optimistic extend Object
 # TODO: make a parameter class that has access to some underlying value
 
+
 class OptimisticObject(CreationHash):
-    _prefix = f'{OPT_PREFIX}o' # $ % #
+    _prefix = f'{OPT_PREFIX}o'  # $ % #
     _obj_from_inputs = {}
     _obj_from_name = {}
     _count_from_prefix = {}
+
     def __init__(self, value, param):
         # TODO: store first created instance
         self.value = value
@@ -120,10 +143,13 @@ class OptimisticObject(CreationHash):
             self.repr_name = self.pddl
         OptimisticObject._obj_from_inputs[(value, param)] = self
         OptimisticObject._obj_from_name[self.pddl] = self
+
     def is_unique(self):
         return isinstance(self.param, UniqueOptValue)
+
     def is_shared(self):
-        return not isinstance(self.param, UniqueOptValue) # OptValue
+        return not isinstance(self.param, UniqueOptValue)  # OptValue
+
     @staticmethod
     def from_opt(value, param):
         # TODO: make param have a default value?
@@ -131,15 +157,19 @@ class OptimisticObject(CreationHash):
         if key not in OptimisticObject._obj_from_inputs:
             return OptimisticObject(value, param)
         return OptimisticObject._obj_from_inputs[key]
+
     @staticmethod
     def from_name(name):
         return OptimisticObject._obj_from_name[name]
+
     @staticmethod
     def reset():
         OptimisticObject._obj_from_inputs.clear()
         OptimisticObject._obj_from_name.clear()
         OptimisticObject._count_from_prefix.clear()
-    def __lt__(self, other): # For heapq on python3
+
+    def __lt__(self, other):  # For heapq on python3
         return self.index < other.index
+
     def __repr__(self):
         return self.repr_name

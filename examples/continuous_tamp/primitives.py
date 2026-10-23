@@ -9,27 +9,27 @@ from pddlstream.utils import str_eq
 GROUND_NAME = 'grey'
 BLOCK_WIDTH = 2
 BLOCK_HEIGHT = BLOCK_WIDTH
-SUCTION_HEIGHT = 1.
-GRASP = -np.array([0, BLOCK_HEIGHT + SUCTION_HEIGHT/2]) # TODO: side grasps
-CARRY_Y = 2*BLOCK_WIDTH+SUCTION_HEIGHT
+SUCTION_HEIGHT = 1.0
+GRASP = -np.array([0, BLOCK_HEIGHT + SUCTION_HEIGHT / 2])  # TODO: side grasps
+CARRY_Y = 2 * BLOCK_WIDTH + SUCTION_HEIGHT
 APPROACH = -np.array([0, CARRY_Y]) - GRASP
 
-MOVE_COST = 10.
-COST_PER_DIST = 1.
+MOVE_COST = 10.0
+COST_PER_DIST = 1.0
 DISTANCE_PER_TIME = 4.0
 
+
 def get_block_box(b, p=np.zeros(2)):
-    extent = np.array([BLOCK_WIDTH, BLOCK_HEIGHT]) # TODO: vary per block
-    lower = p - extent/2.
-    upper = p + extent/2.
+    extent = np.array([BLOCK_WIDTH, BLOCK_HEIGHT])  # TODO: vary per block
+    lower = p - extent / 2.0
+    upper = p + extent / 2.0
     return lower, upper
 
 
 def boxes_overlap(box1, box2):
     lower1, upper1 = box1
     lower2, upper2 = box2
-    return np.less_equal(lower1, upper2).all() and \
-           np.less_equal(lower2, upper1).all()
+    return np.less_equal(lower1, upper2).all() and np.less_equal(lower2, upper1).all()
 
 
 def interval_contains(i1, i2):
@@ -49,18 +49,19 @@ def get_block_interval(b, p):
     lower, upper = get_block_box(b, p)
     return lower[0], upper[0]
 
+
 ##################################################
+
 
 def collision_test(b1, p1, b2, p2):
     if b1 == b2:
         return False
-    return interval_overlap(get_block_interval(b1, p1),
-                            get_block_interval(b2, p2))
+    return interval_overlap(get_block_interval(b1, p1), get_block_interval(b2, p2))
 
 
 def distance_fn(q1, q2):
     ord = 1  # 1 | 2
-    return MOVE_COST + COST_PER_DIST*np.linalg.norm(q2 - q1, ord=ord)
+    return MOVE_COST + COST_PER_DIST * np.linalg.norm(q2 - q1, ord=ord)
 
 
 def duration_fn(traj):
@@ -92,6 +93,7 @@ def inverse_kin_fn(b, p, g):
 def get_region_test(regions):
     def test(b, p, r):
         return interval_contains(regions[r], get_block_interval(b, p))
+
     return test
 
 
@@ -114,7 +116,7 @@ def rejection_sample_region(b, region, placed={}, max_attempts=10):
 
 
 def rejection_sample_placed(block_poses={}, block_regions={}, regions={}, max_attempts=10):
-    assert(not set(block_poses.keys()) & set(block_regions.keys()))
+    assert not set(block_poses.keys()) & set(block_regions.keys())
     for _ in range(max_attempts):
         placed = block_poses.copy()
         remaining = list(block_regions.items())
@@ -136,6 +138,7 @@ def get_pose_gen(regions):
             if p is None:
                 break
             yield (p,)
+
     return gen_fn
 
 
@@ -172,14 +175,15 @@ def plan_motion(q1, q2, fluents=[]):
                 return None
     return (t,)
 
+
 def test_reachable(*args, **kwargs):
     return plan_motion(*args, **kwargs) is not None
+
 
 ##################################################
 
 TAMPState = namedtuple('TAMPState', ['robot_confs', 'holding', 'block_poses'])
-TAMPProblem = namedtuple('TAMPProblem', ['initial', 'regions',
-                                         'goal_conf', 'goal_regions', 'goal_cooked'])
+TAMPProblem = namedtuple('TAMPProblem', ['initial', 'regions', 'goal_conf', 'goal_regions', 'goal_cooked'])
 
 GOAL_NAME = 'red'
 STOVE_NAME = 'stove'
@@ -196,11 +200,13 @@ REGIONS = {
 ENVIRONMENT_NAMES = [GROUND_NAME]
 STOVE_NAMES = [STOVE_NAME]
 
+
 def make_blocks(num):
     return [string.ascii_uppercase[i] for i in range(num)]
 
+
 def mirror(n_blocks=1, n_robots=2):
-    confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
+    confs = [INITIAL_CONF, np.array([-1, 1]) * INITIAL_CONF]
     robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
@@ -215,8 +221,9 @@ def mirror(n_blocks=1, n_robots=2):
 
     return TAMPProblem(initial, REGIONS, GOAL_CONF, goal_regions, goal_cooked)
 
+
 def tight(n_blocks=2, n_goals=2, n_robots=1):
-    confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
+    confs = [INITIAL_CONF, np.array([-1, 1]) * INITIAL_CONF]
     robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
@@ -224,13 +231,14 @@ def tight(n_blocks=2, n_goals=2, n_robots=1):
     blocks = make_blocks(len(poses))
 
     initial = TAMPState(initial_confs, {}, dict(zip(blocks, poses)))
-    goal_regions = {block: GOAL_NAME for block in blocks[:n_goals]} # GROUND_NAME
+    goal_regions = {block: GOAL_NAME for block in blocks[:n_goals]}  # GROUND_NAME
     goal_cooked = {}
 
     return TAMPProblem(initial, REGIONS, GOAL_CONF, goal_regions, goal_cooked)
 
+
 def blocked(n_blocks=3, n_robots=1, deterministic=True):
-    confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
+    confs = [INITIAL_CONF, np.array([-1, 1]) * INITIAL_CONF]
     robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
@@ -238,8 +246,9 @@ def blocked(n_blocks=3, n_robots=1, deterministic=True):
     if deterministic:
         lower, upper = REGIONS[GROUND_NAME]
         poses = [np.zeros(2), np.array([7.5, 0])]
-        poses.extend(np.array([lower + BLOCK_WIDTH/2 + (BLOCK_WIDTH + 1) * x, 0])
-                     for x in range(n_blocks-len(poses)))
+        poses.extend(
+            np.array([lower + BLOCK_WIDTH / 2 + (BLOCK_WIDTH + 1) * x, 0]) for x in range(n_blocks - len(poses))
+        )
         block_poses = dict(zip(blocks, poses))
     else:
         block_regions = {blocks[0]: GROUND_NAME}
@@ -253,8 +262,9 @@ def blocked(n_blocks=3, n_robots=1, deterministic=True):
 
     return TAMPProblem(initial, REGIONS, GOAL_CONF, goal_regions, goal_cooked)
 
+
 def blocked_cost(n_blocks=2, n_robots=1):
-    confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
+    confs = [INITIAL_CONF, np.array([-1, 1]) * INITIAL_CONF]
     robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
@@ -266,9 +276,8 @@ def blocked_cost(n_blocks=2, n_robots=1):
 
     blocks = make_blocks(n_blocks)
     lower, upper = REGIONS[GROUND_NAME]
-    poses = [np.zeros(2), np.array([goal_region[0] + 3*BLOCK_WIDTH/2, 0.])]
-    poses.extend(np.array([lower + BLOCK_WIDTH/2 + (BLOCK_WIDTH + 1) * x, 0])
-                 for x in range(n_blocks-len(poses)))
+    poses = [np.zeros(2), np.array([goal_region[0] + 3 * BLOCK_WIDTH / 2, 0.0])]
+    poses.extend(np.array([lower + BLOCK_WIDTH / 2 + (BLOCK_WIDTH + 1) * x, 0]) for x in range(n_blocks - len(poses)))
     block_poses = dict(zip(blocks, poses))
 
     initial = TAMPState(initial_confs, {}, block_poses)
@@ -276,6 +285,7 @@ def blocked_cost(n_blocks=2, n_robots=1):
     goal_cooked = {}
 
     return TAMPProblem(initial, regions, GOAL_CONF, goal_regions, goal_cooked)
+
 
 def dual(n_blocks=2, n_goals=2, n_robots=1, goal_regions=['red', 'green']):
     regions = {
@@ -285,7 +295,7 @@ def dual(n_blocks=2, n_goals=2, n_robots=1, goal_regions=['red', 'green']):
     }
     # TODO: geometric reachability
 
-    confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
+    confs = [INITIAL_CONF, np.array([-1, 1]) * INITIAL_CONF]
     robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
@@ -298,16 +308,17 @@ def dual(n_blocks=2, n_goals=2, n_robots=1, goal_regions=['red', 'green']):
 
     return TAMPProblem(initial, regions, GOAL_CONF, goal_regions, goal_cooked)
 
+
 def cook(n_blocks=2, n_goals=1, n_robots=1):
     # TODO: render using PyBullet
     regions = {
-        GROUND_NAME: (-10, -5), # 'shelf'
+        GROUND_NAME: (-10, -5),  # 'shelf'
         TABLE_NAME: (-2, 2),
         STOVE_NAME: (5, 10),
     }
 
     robots = [f'r{x}' for x in range(n_robots)]
-    confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
+    confs = [INITIAL_CONF, np.array([-1, 1]) * INITIAL_CONF]
 
     blocks = make_blocks(n_blocks)
     goal_blocks = blocks[:n_goals]
@@ -336,13 +347,16 @@ PROBLEMS = [
 
 ##################################################
 
+
 def draw_robot(viewer, robot, pose, **kwargs):
     x, y = pose
     viewer.draw_robot(x, y, name=robot, **kwargs)
 
+
 def draw_block(viewer, block, pose, **kwargs):
     x, y = pose
     viewer.draw_block(x, y, BLOCK_WIDTH, BLOCK_HEIGHT, name=block, **kwargs)
+
 
 def draw_state(viewer, state, colors):
     # TODO: could draw the current time
@@ -358,10 +372,13 @@ def draw_state(viewer, state, colors):
         draw_block(viewer, block, pose, color=colors[block])
     viewer.tk.update()
 
+
 def get_random_seed():
     return np.random.get_state()[1][0]
 
+
 ##################################################
+
 
 def apply_action(state, action):
     robot_confs, holding, block_poses = state
@@ -390,7 +407,9 @@ def apply_action(state, action):
     else:
         raise ValueError(name)
 
+
 ##################################################
+
 
 def prune_duplicates(traj):
     # TODO: could use the more general sparcify function
@@ -400,12 +419,12 @@ def prune_duplicates(traj):
             new_traj.append(conf)
     return new_traj
 
+
 def get_value_at_time(traj, fraction):
     waypoints = prune_duplicates(traj)
     if len(waypoints) == 1:
         return waypoints[0]
-    distances = [0.] + [np.linalg.norm(np.array(q2) - np.array(q1))
-                        for q1, q2 in zip(waypoints, waypoints[1:])]
+    distances = [0.0] + [np.linalg.norm(np.array(q2) - np.array(q1)) for q1, q2 in zip(waypoints, waypoints[1:])]
     cum_distances = np.cumsum(distances)
     cum_fractions = np.minimum(cum_distances / cum_distances[-1], np.ones(cum_distances.shape))
     index = np.digitize(fraction, cum_fractions, right=False)
@@ -415,6 +434,7 @@ def get_value_at_time(traj, fraction):
     waypoint1, waypoint2 = np.array(waypoints[index - 1]), np.array(waypoints[index])
     conf = (1 - waypoint_fraction) * waypoint1 + waypoint_fraction * waypoint2
     return conf
+
 
 def update_state(state, action, t):
     robot_confs, holding, block_poses = state

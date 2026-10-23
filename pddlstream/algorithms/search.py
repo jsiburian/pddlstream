@@ -14,18 +14,20 @@ from pddlstream.utils import INF, Verbose, safe_rm_dir, elapsed_time
 # TODO: recursive application of these
 # TODO: write the domain and problem PDDL files that are used for debugging purposes
 
+
 def solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=False, hierarchy=[], **search_args):
     # TODO: can solve using another planner and then still translate using FastDownward
     # Can apply plan constraints (skeleton constraints) here as well
     start_time = time()
     with Verbose(debug):
-        print('\n' + 50*'-' + '\n')
+        print('\n' + 50 * '-' + '\n')
         write_sas_task(sas_task, temp_dir)
         solution = run_search(temp_dir, debug=True, **search_args)
         if clean:
             safe_rm_dir(temp_dir)
         print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return solution
+
 
 def solve_from_pddl(domain_pddl, problem_pddl, temp_dir=TEMP_DIR, clean=False, debug=False, **search_kwargs):
     # TODO: combine with solve_from_task
@@ -39,7 +41,9 @@ def solve_from_pddl(domain_pddl, problem_pddl, temp_dir=TEMP_DIR, clean=False, d
         print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return solution
 
+
 ##################################################
+
 
 def apply_sas_operator(init, op):
     for var, pre, post, cond in op.pre_post:
@@ -51,17 +55,20 @@ def apply_sas_operator(init, op):
 def name_from_action(action, args):
     return '({})'.format(' '.join((action,) + args))
 
+
 def parse_sas_plan(sas_task, plan):
-    op_from_name = {op.name: op for op in sas_task.operators} # No need to keep repeats
+    op_from_name = {op.name: op for op in sas_task.operators}  # No need to keep repeats
     sas_plan = []
     for action, args in plan:
         name = name_from_action(action, args)
         sas_plan.append(op_from_name[name])
     return sas_plan
 
+
 ##################################################
 
 SERIALIZE = 'serialize'
+
 
 def plan_subgoals(sas_task, subgoal_plan, temp_dir, **kwargs):
     full_plan = []
@@ -84,15 +91,17 @@ def serialized_solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=F
     # TODO: version that solves for all disjuctive subgoals at once
     start_time = time()
     with Verbose(debug):
-        print('\n' + 50*'-' + '\n')
-        subgoal_plan = [sas_task.goal.pairs[:i+1] for i in range(len(sas_task.goal.pairs))]
+        print('\n' + 50 * '-' + '\n')
+        subgoal_plan = [sas_task.goal.pairs[: i + 1] for i in range(len(sas_task.goal.pairs))]
         plan, cost = plan_subgoals(sas_task, subgoal_plan, temp_dir, **kwargs)
         if clean:
             safe_rm_dir(temp_dir)
         print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return plan, cost
 
+
 ##################################################
+
 
 class ABSTRIPSLayer:
     def __init__(self, pos_pre=[], neg_pre=[], pos_eff=[], neg_eff=[], horizon=INF):
@@ -100,14 +109,16 @@ class ABSTRIPSLayer:
         self.neg_pre = neg_pre
         self.pos_eff = pos_eff
         self.neg_eff = neg_eff
-        self.horizon = horizon # TODO: cost units instead?
+        self.horizon = horizon  # TODO: cost units instead?
         assert 1 <= self.horizon
         if self.pos_eff:
             raise NotImplementedError()
         if self.neg_eff:
             raise NotImplementedError()
 
+
 ##################################################
+
 
 def prune_hierarchy_pre_eff(sas_task, layers):
     positive_template = 'Atom {}('
@@ -138,8 +149,7 @@ def add_subgoals(sas_task, subgoal_plan):
     subgoal_range = len(subgoal_plan) + 1
     sas_task.variables.ranges.append(subgoal_range)
     sas_task.variables.axiom_layers.append(-1)
-    sas_task.variables.value_names.append(
-        [f'subgoal{i}' for i in range(subgoal_range)])
+    sas_task.variables.value_names.append([f'subgoal{i}' for i in range(subgoal_range)])
     sas_task.init.values.append(0)
     sas_task.goal.pairs.append((subgoal_var, subgoal_range - 1))
 
@@ -166,11 +176,11 @@ def abstrips_solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=Fal
     start_time = time()
     plan, cost = None, INF
     with Verbose(debug):
-        print('\n' + 50*'-' + '\n')
+        print('\n' + 50 * '-' + '\n')
         last_plan = []
-        for level in range(len(hierarchy)+1):
+        for level in range(len(hierarchy) + 1):
             local_sas_task = deepcopy(sas_task)
-            prune_hierarchy_pre_eff(local_sas_task, hierarchy[level:]) # TODO: break if no pruned
+            prune_hierarchy_pre_eff(local_sas_task, hierarchy[level:])  # TODO: break if no pruned
             add_subgoals(local_sas_task, last_plan)
             write_sas_task(local_sas_task, temp_dir)
             plan, cost = run_search(temp_dir, debug=True, **kwargs)
@@ -183,9 +193,9 @@ def abstrips_solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=Fal
         print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return plan, cost
 
+
 ##################################################
 
 # TODO: can structure these subproblems prioritizing depth rather than width
 # TODO: reconcile shared objects on each level
 # Each operator in the hierarchy is a legal "operator" that may need to be refined
-

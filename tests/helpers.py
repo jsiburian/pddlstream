@@ -1,4 +1,5 @@
 """Helpers for running examples in isolated subprocesses."""
+
 import json
 import os
 import pathlib
@@ -28,8 +29,9 @@ def run_python(args, cwd, timeout=600, display=False):
     command = [sys.executable, *args]
     if display:
         command = XVFB_COMMAND + command
-    return subprocess.run(command, cwd=cwd, env=subprocess_env(), input='\n' * 100,
-                          capture_output=True, text=True, timeout=timeout)
+    return subprocess.run(
+        command, cwd=cwd, env=subprocess_env(), input='\n' * 100, capture_output=True, text=True, timeout=timeout
+    )
 
 
 def output_tail(result, num_chars=3000):
@@ -42,5 +44,5 @@ def run_case(example, cwd, timeout=600, display=False, wall_clock=False):
     result = run_python([str(HARNESS), *flags, *example.split()], cwd=cwd, timeout=timeout, display=display)
     for line in reversed(result.stdout.splitlines()):
         if line.startswith(RESULT_PREFIX):
-            return json.loads(line[len(RESULT_PREFIX):])
+            return json.loads(line[len(RESULT_PREFIX) :])
     raise RuntimeError(f'{example} produced no result (exit code {result.returncode}):\n{output_tail(result)}')

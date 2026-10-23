@@ -1,4 +1,5 @@
 """Independent checks of solutions returned by the solvers."""
+
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.language.constants import Action, PDDLProblem, is_plan
@@ -23,10 +24,15 @@ def validate_solution(problem, solution, unit_costs=False, max_time=60, **search
     if not all(isinstance(action, Action) for action in plan) or not all_facts:
         return None, INF
     domain_pddl, constant_map, _, _, init, goal = problem
-    replay_problem = PDDLProblem(domain_pddl, constant_map, None, {},
-                                 list(init) + list(all_facts), goal)
+    replay_problem = PDDLProblem(domain_pddl, constant_map, None, {}, list(init) + list(all_facts), goal)
     skeleton = [(action.name, list(action.args)) for action in plan]
     constraints = PlanConstraints(skeletons=[skeleton], exact=True)
-    replay, cost, _ = solve_incremental(replay_problem, constraints=constraints, unit_costs=unit_costs,
-                                        max_time=max_time, verbose=False, **search_kwargs)
+    replay, cost, _ = solve_incremental(
+        replay_problem,
+        constraints=constraints,
+        unit_costs=unit_costs,
+        max_time=max_time,
+        verbose=False,
+        **search_kwargs,
+    )
     return is_plan(replay), cost

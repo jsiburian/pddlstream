@@ -1,8 +1,16 @@
 #!/usr/bin/env python
 
 from pddlstream.algorithms.meta import create_parser, solve
-from examples.continuous_tamp.primitives import get_pose_gen, distance_fn, inverse_kin, \
-    get_region_test, plan_motion, MOVE_COST, test_reachable, GRASP
+from examples.continuous_tamp.primitives import (
+    get_pose_gen,
+    distance_fn,
+    inverse_kin,
+    get_region_test,
+    plan_motion,
+    MOVE_COST,
+    test_reachable,
+    GRASP,
+)
 from examples.continuous_tamp.run import initialize, create_problem, dump_pddlstream, step_plan
 from pddlstream.language.constants import PDDLProblem, print_solution
 from pddlstream.language.function import FunctionInfo
@@ -30,6 +38,7 @@ def pddlstream_from_tamp(tamp_problem):
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 def main():
     parser = create_parser()
     parser.add_argument('-attachments', action='store_true')
@@ -47,16 +56,26 @@ def main():
     success_cost = 0 if args.optimal else INF
     planner = 'max-astar'
     with Profiler():
-        solution = solve(pddlstream_problem, stream_info=stream_info,
-                         planner=planner, max_planner_time=10, debug=False,
-                         max_time=args.max_time, max_iterations=INF, verbose=True,
-                         unit_costs=args.unit, success_cost=success_cost,
-                         unit_efforts=False, effort_weight=0,
-                         visualize=args.visualize)
+        solution = solve(
+            pddlstream_problem,
+            stream_info=stream_info,
+            planner=planner,
+            max_planner_time=10,
+            debug=False,
+            max_time=args.max_time,
+            max_iterations=INF,
+            verbose=True,
+            unit_costs=args.unit,
+            success_cost=success_cost,
+            unit_efforts=False,
+            effort_weight=0,
+            visualize=args.visualize,
+        )
 
     print_solution(solution)
     plan, cost, evaluations = solution
     step_plan(tamp_problem, plan)
+
 
 if __name__ == '__main__':
     main()

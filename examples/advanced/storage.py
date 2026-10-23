@@ -76,6 +76,7 @@ STREAM_PDDL = None
 
 ##################################################
 
+
 def get_problem1(n_regions=0, n_cylinders=3, n_boxes=3):
     constant_map = {}
     stream_map = DEBUG
@@ -85,8 +86,7 @@ def get_problem1(n_regions=0, n_cylinders=3, n_boxes=3):
     prepushA = 'prepushA'
     shelfB = 'shelfB'
 
-    regions = [initial, shelfA, prepushA, shelfB] + \
-              [f'region{i}' for i in range(n_regions)]
+    regions = [initial, shelfA, prepushA, shelfB] + [f'region{i}' for i in range(n_regions)]
     cylinders = [f'cylinder{i}' for i in range(n_cylinders)]
     boxes = [f'box{i}' for i in range(n_boxes)]
 
@@ -97,8 +97,9 @@ def get_problem1(n_regions=0, n_cylinders=3, n_boxes=3):
     init += [('Region', region) for region in regions]
     init += [('Cylinder', cylinder) for cylinder in cylinders]
     init += [('Box', box) for box in boxes]
-    init.extend(flatten([('Movable', movable), ('On', movable, initial), ('Clear', movable)]
-                        for movable in (cylinders + boxes)))
+    init.extend(
+        flatten([('Movable', movable), ('On', movable, initial), ('Clear', movable)] for movable in (cylinders + boxes))
+    )
     init += [('Thing', thing) for thing in (regions + cylinders + boxes)]
 
     goal = And(
@@ -108,7 +109,9 @@ def get_problem1(n_regions=0, n_cylinders=3, n_boxes=3):
 
     return PDDLProblem(DOMAIN_PDDL, constant_map, STREAM_PDDL, stream_map, init, goal)
 
+
 ##################################################
+
 
 def main():
     parser = create_parser()
@@ -120,18 +123,25 @@ def main():
     print('Init:', sorted(problem.init))
     print('Goal:', problem.goal)
 
-    print(analyze_goal(problem, debug=True, use_actions=True, blocked_predicates=[
-        # TODO: make sure to use lowercase
-        'handempty',
-        'clear',
-        # These are conditions that you can always reachieve?
-    ]))
+    print(
+        analyze_goal(
+            problem,
+            debug=True,
+            use_actions=True,
+            blocked_predicates=[
+                # TODO: make sure to use lowercase
+                'handempty',
+                'clear',
+                # These are conditions that you can always reachieve?
+            ],
+        )
+    )
     print(SEPARATOR)
 
     with Profiler():
-        solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit,
-                         planner='ff-wastar1', debug=True)
+        solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit, planner='ff-wastar1', debug=True)
     print_solution(solution)
+
 
 if __name__ == '__main__':
     main()

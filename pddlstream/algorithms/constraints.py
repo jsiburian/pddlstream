@@ -2,55 +2,70 @@ from collections import namedtuple
 from copy import deepcopy
 
 from pddlstream.algorithms.common import add_fact, INTERNAL_EVALUATION
-from pddlstream.algorithms.downward import make_predicate, make_preconditions, make_effects, add_predicate, \
-    fd_from_fact
+from pddlstream.algorithms.downward import make_predicate, make_preconditions, make_effects, add_predicate, fd_from_fact
 from pddlstream.language.constants import Or, And, is_parameter, Not, str_from_plan, EQ
 from pddlstream.language.object import Object, OptimisticObject
-from pddlstream.utils import find_unique, safe_zip, str_from_object, INF, is_hashable, neighbors_from_orders, \
-    get_ancestors, get_descendants
+from pddlstream.utils import (
+    find_unique,
+    safe_zip,
+    str_from_object,
+    INF,
+    is_hashable,
+    neighbors_from_orders,
+    get_ancestors,
+    get_descendants,
+)
 
-OrderedSkeleton = namedtuple('OrderedSkeleton', ['actions', 'orders']) # TODO: AND/OR tree
+OrderedSkeleton = namedtuple('OrderedSkeleton', ['actions', 'orders'])  # TODO: AND/OR tree
 
-INTERNAL_PREFIX = '_' # TODO: possibly apply elsewhere
+INTERNAL_PREFIX = '_'  # TODO: possibly apply elsewhere
 
 WILD = '*'
 ASSIGNED_PREDICATE = '{}assigned'
-BOUND_PREDICATE = '{}bound' # TODO: switch with assigned
+BOUND_PREDICATE = '{}bound'  # TODO: switch with assigned
 GROUP_PREDICATE = '{}group'
 ORDER_PREDICATE = '{}order'
 
 GOAL_INDEX = -1
 
+
 def linear_order(actions):
     if not actions:
         return set()
-    return {(i, i+1) for i in range(len(actions)-1)} \
-           | {(len(actions)-1, GOAL_INDEX)}
+    return {(i, i + 1) for i in range(len(actions) - 1)} | {(len(actions) - 1, GOAL_INDEX)}
+
 
 class PlanConstraints:
     def __init__(self, skeletons=None, groups={}, exact=True, hint=False, max_cost=INF):
         # TODO: constraint that the skeleton is the tail of the plan
         if skeletons is not None:
-            skeletons = [skeleton if isinstance(skeleton, OrderedSkeleton)
-                         else OrderedSkeleton(skeleton, linear_order(skeleton)) for skeleton in skeletons]
+            skeletons = [
+                skeleton if isinstance(skeleton, OrderedSkeleton) else OrderedSkeleton(skeleton, linear_order(skeleton))
+                for skeleton in skeletons
+            ]
         self.skeletons = skeletons
-        self.groups = groups # Could make this a list of lists
+        self.groups = groups  # Could make this a list of lists
         self.exact = exact
         self.max_cost = max_cost
+
     def dump(self):
         print(f'{self.__class__.__name__}(exact={self.exact}, max_cost={self.max_cost})')
         if self.skeletons is None:
             return
         for i, skeleton in enumerate(self.skeletons):
             print(i, str_from_plan(skeleton))
+
     def __repr__(self):
         return f'{self.__class__.__name__}{str_from_object(self.__dict__)}'
 
+
 # TODO: rename other costs to be terminate_cost (or decision cost)
+
 
 def to_constant(parameter):
     name = parameter[1:]
     return to_obj(f'@{name}')
+
 
 def to_obj(value):
     # Allows both raw values as well as objects to be specified
@@ -58,25 +73,32 @@ def to_obj(value):
         return value
     return Object.from_value(value)
 
+
 def get_internal_prefix(domain, internal):
     # Lengthens the prefix until the constraint predicates don't collide with the domain's (or an outer layer's)
     names = {predicate.name for predicate in domain.predicates}
     prefix = INTERNAL_PREFIX if internal else ''
-    while any(template.format(prefix) in names for template in
-              [ASSIGNED_PREDICATE, BOUND_PREDICATE, GROUP_PREDICATE, ORDER_PREDICATE]):
+    while any(
+        template.format(prefix) in names
+        for template in [ASSIGNED_PREDICATE, BOUND_PREDICATE, GROUP_PREDICATE, ORDER_PREDICATE]
+    ):
         prefix += INTERNAL_PREFIX
     return prefix
+
 
 def is_constant(arg):
     # Only strings can be parameters or the wildcard; other values (e.g. numpy arrays) are always constants
     return not (isinstance(arg, str) and (is_parameter(arg) or arg == WILD))
 
+
 ##################################################
+
 
 def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=False):
     if (constraints is None) or (constraints.skeletons is None):
         return goal_exp
     import pddl
+
     # TODO: unify this with the constraint ordering
     # TODO: can constrain to use a plan prefix
     prefix = get_internal_prefix(domain, internal)
@@ -95,8 +117,7 @@ def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=Fa
     for num, skeleton in enumerate(constraints.skeletons):
         actions, orders = skeleton
         incoming_orders, _ = neighbors_from_orders(orders)
-        order_facts = [(order_predicate, to_obj(f'n{num}'), to_obj(f't{step}'))
-                       for step in range(len(actions))]
+        order_facts = [(order_predicate, to_obj(f'n{num}'), to_obj(f't{step}')) for step in range(len(actions))]
         for step, (name, args) in enumerate(actions):
             # TODO: could also just remove the free parameter from the action
             new_action = deepcopy(find_unique(lambda a: a.name == name, domain.actions))
@@ -106,23 +127,43 @@ def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=Fa
             parallel = set(range(len(actions))) - ancestors - descendants - {step}
 
             parameters = set(filter(is_parameter, args))
-            ancestor_parameters = parameters & set(filter(is_parameter, (p for idx in ancestors for p in actions[idx][1])))
-            parallel_parameters = parameters & set(filter(is_parameter, (p for idx in parallel for p in actions[idx][1])))
+            ancestor_parameters = parameters & set(
+                filter(is_parameter, (p for idx in ancestors for p in actions[idx][1]))
+            )
+            parallel_parameters = parameters & set(
+                filter(is_parameter, (p for idx in parallel for p in actions[idx][1]))
+            )
 
-            bound_condition = pddl.Conjunction([pddl.Disjunction(map(fd_from_fact, [
-                Not((bound_predicate, to_constant(p))), (assigned_predicate, to_constant(p), local_from_global[p])
-            ])) for p in parallel_parameters])
-            existing_preconditions = [(assigned_predicate, to_constant(p), local_from_global[p])
-                                      for p in ancestor_parameters]
+            bound_condition = pddl.Conjunction(
+                [
+                    pddl.Disjunction(
+                        map(
+                            fd_from_fact,
+                            [
+                                Not((bound_predicate, to_constant(p))),
+                                (assigned_predicate, to_constant(p), local_from_global[p]),
+                            ],
+                        )
+                    )
+                    for p in parallel_parameters
+                ]
+            )
+            existing_preconditions = [
+                (assigned_predicate, to_constant(p), local_from_global[p]) for p in ancestor_parameters
+            ]
 
             constant_pairs = [(a, p.name) for a, p in safe_zip(args, new_action.parameters) if is_constant(a)]
-            group_preconditions = [(group_predicate if is_hashable(a) and (a in constraints.groups) else EQ, to_obj(a), p)
-                                   for a, p in constant_pairs]
+            group_preconditions = [
+                (group_predicate if is_hashable(a) and (a in constraints.groups) else EQ, to_obj(a), p)
+                for a, p in constant_pairs
+            ]
             order_preconditions = [order_facts[idx] for idx in incoming_orders[step]]
-            new_preconditions = existing_preconditions + group_preconditions + order_preconditions + [Not(order_facts[step])]
+            new_preconditions = (
+                existing_preconditions + group_preconditions + order_preconditions + [Not(order_facts[step])]
+            )
             new_action.precondition = pddl.Conjunction(
-                [new_action.precondition, bound_condition,
-                 make_preconditions(new_preconditions)]).simplified()
+                [new_action.precondition, bound_condition, make_preconditions(new_preconditions)]
+            ).simplified()
 
             new_parameters = parameters - ancestors
             bound_facts = [(bound_predicate, to_constant(p)) for p in new_parameters]

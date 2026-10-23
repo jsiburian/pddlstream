@@ -52,12 +52,15 @@ PROBLEM_PDDL = """
 
 ##################################################
 
+
 def solve_pddl():
     plan, cost = solve_from_pddl(DOMAIN_PDDL, PROBLEM_PDDL)
     print('Plan:', plan)
     print('Cost:', cost)
 
+
 ##################################################
+
 
 def get_problem():
     constant_map = {}
@@ -69,9 +72,10 @@ def get_problem():
         ('on', 'b', 'a'),
         ('arm-empty',),
     ]
-    goal =  ('on', 'a', 'b')
+    goal = ('on', 'a', 'b')
 
     return PDDLProblem(DOMAIN_PDDL, constant_map, stream_pddl, stream_map, init, goal)
+
 
 def solve_pddlstream(focused=False, unit_costs=True, debug=False):
     pddlstream_problem = get_problem()
@@ -81,10 +85,13 @@ def solve_pddlstream(focused=False, unit_costs=True, debug=False):
         solution = solve_incremental(pddlstream_problem, unit_costs=unit_costs, debug=debug)
     print_solution(solution)
 
+
 ##################################################
+
 
 def main():
     solve_pddlstream()
+
 
 if __name__ == '__main__':
     main()

@@ -5,8 +5,7 @@ from pddlstream.language.constants import get_args, is_parameter, get_prefix, Fa
 from pddlstream.language.conversion import values_from_objects, substitute_fact
 from pddlstream.language.object import Object, OptimisticObject
 from pddlstream.language.statistics import Performance, PerformanceInfo, DEFAULT_SEARCH_OVERHEAD
-from pddlstream.utils import get_mapping, INF, safe_apply_mapping, Score, CreationHash, get_clock, \
-    CALL_WORK
+from pddlstream.utils import get_mapping, INF, safe_apply_mapping, Score, CreationHash, get_clock, CALL_WORK
 
 DEBUG = 'debug'
 SHARED_DEBUG = 'shared_debug'
@@ -16,11 +15,13 @@ never_defer = lambda *args, **kwargs: False
 defer_unique = lambda result, *args, **kwargs: result.is_refined()
 defer_shared = lambda *args, **kwargs: True
 
+
 def select_inputs(instance, inputs):
     external = instance.external
     assert set(inputs) <= set(external.inputs)
     mapping = get_mapping(external.inputs, instance.input_objects)
     return safe_apply_mapping(inputs, mapping)
+
 
 def get_defer_any_unbound(unique=False):
     def defer_any_unbound(result, bound_objects=set(), *args, **kwargs):
@@ -28,28 +29,36 @@ def get_defer_any_unbound(unique=False):
         if unique and not defer_unique(result):
             return False
         return not all(isinstance(obj, Object) or (obj in bound_objects) for obj in result.input_objects)
+
     return defer_any_unbound
 
-def get_defer_all_unbound(inputs='', unique=False): # TODO: shortcut for all inputs
+
+def get_defer_all_unbound(inputs='', unique=False):  # TODO: shortcut for all inputs
     inputs = tuple(inputs.split())
     # Empty implies defer_shared
 
     def defer_all_unbound(result, bound_objects=set(), *args, **kwargs):
         if unique and not defer_unique(result):
             return False
-        return not any(isinstance(obj, Object) or (obj in bound_objects)
-                       for obj in select_inputs(result.instance, inputs))
+        return not any(
+            isinstance(obj, Object) or (obj in bound_objects) for obj in select_inputs(result.instance, inputs)
+        )
+
     return defer_all_unbound
+
 
 def get_domain_predicates(streams):
     return {get_prefix(a) for s in streams for a in s.domain}
+
 
 def convert_constants(fact):
     # TODO: take the constant map as an input
     # TODO: throw an error if undefined
     return Fact(get_prefix(fact), [p if is_parameter(p) else Object.from_name(p) for p in get_args(fact)])
 
+
 ##################################################
+
 
 class ExternalInfo(PerformanceInfo):
     def __init__(self, eager=False, eager_skeleton=False, defer_fn=never_defer, **kwargs):
@@ -57,11 +66,13 @@ class ExternalInfo(PerformanceInfo):
         # TODO: enable eager=True for inexpensive test streams by default
         # TODO: change p_success and overhead if it's a function or test stream
         self.eager = eager
-        self.eager_skeleton = eager_skeleton # TODO: apply in binding and adaptive
+        self.eager_skeleton = eager_skeleton  # TODO: apply in binding and adaptive
         # TODO: automatically set tests and costs to be eager
-        self.defer_fn = defer_fn # Old syntax was defer=True
+        self.defer_fn = defer_fn  # Old syntax was defer=True
+
 
 ##################################################
+
 
 class Result(CreationHash):
     def __init__(self, instance, opt_index, call_index, optimistic):
@@ -69,44 +80,61 @@ class Result(CreationHash):
         self.opt_index = opt_index
         self.call_index = call_index
         self.optimistic = optimistic
+
     @property
     def external(self):
         return self.instance.external
+
     @property
     def info(self):
         return self.external.info
+
     @property
     def name(self):
         return self.external.name
+
     @property
     def input_objects(self):
         return self.instance.input_objects
+
     @property
     def domain(self):
         return self.instance.domain
+
     def is_refined(self):
         # TODO: result.opt_index is None
-        return self.opt_index == 0 # TODO: base on output objects instead
+        return self.opt_index == 0  # TODO: base on output objects instead
+
     def is_deferrable(self, *args, **kwargs):
         return self.info.defer_fn(self, *args, **kwargs)
+
     def get_domain(self):
         return self.instance.get_domain()
+
     def get_certified(self):
         raise NotImplementedError()
+
     def get_components(self):
         return [self]
+
     def get_unsatisfiable(self):
         return [self.get_components()]
+
     def get_action(self):
         raise NotImplementedError()
+
     def remap_inputs(self, bindings):
         raise NotImplementedError()
+
     def is_successful(self):
         raise NotImplementedError()
+
     def compute_complexity(self, evaluations, **kwargs):
         # Should be constant
-        return compute_complexity(evaluations, self.get_domain(), **kwargs) + \
-               self.external.get_complexity(self.call_index)
+        return compute_complexity(evaluations, self.get_domain(), **kwargs) + self.external.get_complexity(
+            self.call_index
+        )
+
     def get_effort(self, **kwargs):
         if not self.optimistic:
             return 0  # Unit efforts?
@@ -114,60 +142,76 @@ class Result(CreationHash):
             return 0
         # TODO: this should be the min of all instances
         return self.instance.get_effort(**kwargs)
-    def success_heuristic(self): # High is likely to succeed
+
+    def success_heuristic(self):  # High is likely to succeed
         # self.external.is_function
         num_free = sum(isinstance(obj, OptimisticObject) for obj in self.input_objects)
-        return Score(num_free, -len(self.external.inputs)) # TODO: treat objects in the same domain as a unit
-    def overhead_heuristic(self): # Low is cheap
+        return Score(num_free, -len(self.external.inputs))  # TODO: treat objects in the same domain as a unit
+
+    def overhead_heuristic(self):  # Low is cheap
         return self.external.overhead_heuristic()
-    def stats_heuristic(self): # Low is cheap and unlikely to succeed
+
+    def stats_heuristic(self):  # Low is cheap and unlikely to succeed
         return Score(self.overhead_heuristic(), self.success_heuristic())
-    def effort_heuristic(self): # Low is cheap and likely to succeed
+
+    def effort_heuristic(self):  # Low is cheap and likely to succeed
         return Score(self.overhead_heuristic(), -self.success_heuristic())
+
 
 ##################################################
 
+
 class Instance(CreationHash):
     _Result = None
+
     def __init__(self, external, input_objects):
         self.external = external
         self.input_objects = tuple(input_objects)
-        self.disabled = False # TODO: perform disabled using complexity
-        self.history = [] # TODO: facts history
+        self.disabled = False  # TODO: perform disabled using complexity
+        self.history = []  # TODO: facts history
         self.results_history = []
         self._mapping = None
         self._domain = None
         self.reset()
+
     @property
     def info(self):
         return self.external.info
+
     @property
     def mapping(self):
         if self._mapping is None:
             self._mapping = get_mapping(self.external.inputs, self.input_objects)
         return self._mapping
+
     @property
     def domain(self):
         if self._domain is None:
-            self._domain = tuple(substitute_fact(atom, self.mapping)
-                                 for atom in self.external.domain)
+            self._domain = tuple(substitute_fact(atom, self.mapping) for atom in self.external.domain)
         return self._domain
+
     def get_iteration(self):
         return INF if self.enumerated else self.num_calls
+
     def get_domain(self):
         return self.domain
+
     def get_all_input_objects(self):
         return set(self.input_objects)
+
     def get_input_values(self):
         return values_from_objects(self.input_objects)
+
     def reset(self):
         self.disabled = False
         self.opt_index = self.external.num_opt_fns
         self.num_calls = 0
         self.enumerated = False
         self.successful = False
+
     def is_refined(self):
         return self.opt_index == 0
+
     def refine(self):
         # TODO: could instead create a new Instance per opt_index
         if not self.is_refined():
@@ -200,8 +244,9 @@ class Instance(CreationHash):
 
     def compute_complexity(self, evaluations, **kwargs):
         # Will change as self.num_calls increases
-        return compute_complexity(evaluations, self.get_domain(), **kwargs) + \
-               self.external.get_complexity(self.num_calls)
+        return compute_complexity(evaluations, self.get_domain(), **kwargs) + self.external.get_complexity(
+            self.num_calls
+        )
 
     def get_effort(self, search_overhead=DEFAULT_SEARCH_OVERHEAD):
         # TODO: handle case where resampled several times before the next search (search every ith time)
@@ -225,10 +270,13 @@ class Instance(CreationHash):
     def enable(self, evaluations, domain):
         self.disabled = False
 
+
 ##################################################
+
 
 class External(Performance):
     _Instance = None
+
     def __init__(self, name, info, inputs, domain):
         super().__init__(name, info)
         self.inputs = tuple(inputs)
@@ -240,63 +288,80 @@ class External(Performance):
             if c != 1:
                 raise ValueError(f'Input [{p}] for stream [{name}] is not unique')
         parameters = {a for i in self.domain for a in get_args(i) if is_parameter(a)}
-        for p in (parameters - set(self.inputs)):
+        for p in parameters - set(self.inputs):
             raise ValueError(f'Parameter [{p}] for stream [{name}] is not included within inputs')
-        for p in (set(self.inputs) - parameters):
+        for p in set(self.inputs) - parameters:
             print(f'Warning! Input [{p}] for stream [{name}] is not covered by a domain condition')
         self.constants = {a for i in self.domain for a in get_args(i) if not is_parameter(a)}
         self.instances = {}
+
     def reset(self, *args, **kwargs):
         for instance in self.instances.values():
             instance.reset(*args, **kwargs)
+
     # TODO: naming convention for statics and fluents
     @property
     def has_outputs(self):
         raise NotImplementedError()
+
     @property
     def is_fluent(self):
         raise NotImplementedError()
+
     @property
     def is_negated(self):
         raise NotImplementedError()
+
     @property
     def is_special(self):
         return self.is_fluent or self.is_negated
+
     @property
     def is_function(self):
         raise NotImplementedError()
+
     @property
     def is_cost(self):
         return False
+
     @property
     def zero_complexity(self):
         return self.is_special or not self.has_outputs
+
     def get_complexity(self, num_calls=0):
         if self.zero_complexity:
             return 0
         return num_calls + 1
+
     def get_instance(self, input_objects):
         input_objects = tuple(input_objects)
         assert len(input_objects) == len(self.inputs)
         if input_objects not in self.instances:
             self.instances[input_objects] = self._Instance(self, input_objects)
         return self.instances[input_objects]
-    def overhead_heuristic(self): # Low is little overhead
+
+    def overhead_heuristic(self):  # Low is little overhead
         # TODO: infer other properties from use in the context of a stream plan
         # TODO: use num_certified (only those that are in another stream) instead of num_outputs?
-        return Score(self.is_fluent, not self.is_function, self.has_outputs, len(self.inputs)) # structural/relational overhead
+        return Score(
+            self.is_fluent, not self.is_function, self.has_outputs, len(self.inputs)
+        )  # structural/relational overhead
+
 
 ##################################################
 
+
 def get_procedure_fn(stream_map, name):
-    if not isinstance(stream_map, dict): # DEBUG_MODES
+    if not isinstance(stream_map, dict):  # DEBUG_MODES
         return stream_map
     if name not in stream_map:
         raise ValueError(f'Undefined external procedure: {name}')
     return stream_map[name]
 
+
 def is_attribute(attribute):
     return isinstance(attribute, str) and attribute.startswith(':')
+
 
 def parse_lisp_list(lisp_list):
     attributes = [lisp_list[i] for i in range(0, len(lisp_list), 2)]

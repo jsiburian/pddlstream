@@ -12,7 +12,7 @@ from pddlstream.utils import INF, elapsed_time, check_memory, get_clock
 # Complexity could incorporate how likely something is to help with a task in general though
 # Effort relates to future expected time while complexity refers to past time
 
-COMPLEXITY_OP = max # max | sum
+COMPLEXITY_OP = max  # max | sum
 INIT_EVALUATION = None
 INTERNAL_EVALUATION = False
 UNKNOWN_EVALUATION = 'unknown'
@@ -20,7 +20,8 @@ UNKNOWN_EVALUATION = 'unknown'
 EvaluationNode = namedtuple('EvaluationNode', ['complexity', 'result'])
 Solution = namedtuple('Solution', ['plan', 'cost', 'time'])
 
-SOLUTIONS = [] # TODO: remove global variable
+SOLUTIONS = []  # TODO: remove global variable
+
 
 class SolutionStore:
     def __init__(self, evaluations, max_time, success_cost, verbose, max_memory=INF):
@@ -29,41 +30,52 @@ class SolutionStore:
         # TODO: determine when the plan converges
         self.evaluations = evaluations
         self.start_time = time.time()
-        self.clock_start = get_clock().now() # Search and sample times are measured with the solve's clock
+        self.clock_start = get_clock().now()  # Search and sample times are measured with the solve's clock
         self.max_time = max_time
         self.max_memory = max_memory
-        self.success_cost = success_cost # Inclusive
+        self.success_cost = success_cost  # Inclusive
         self.verbose = verbose
         self.solutions = []
-        self.sample_time = 0.
+        self.sample_time = 0.0
+
     @property
     def search_time(self):
         return (get_clock().now() - self.clock_start) - self.sample_time
+
     @property
     def best_plan(self):
         # TODO: return INFEASIBLE if can prove no solution
         return self.solutions[-1].plan if self.solutions else FAILED
+
     @property
     def best_cost(self):
         return self.solutions[-1].cost if self.solutions else INF
+
     def add_plan(self, plan, cost):
         # TODO: double-check that plan is a solution
         if is_plan(plan) and (cost < self.best_cost):
             self.solutions.append(Solution(plan, cost, elapsed_time(self.start_time)))
+
     def has_solution(self):
         return is_plan(self.best_plan)
+
     def is_solved(self):
         return self.has_solution() and (self.best_cost <= self.success_cost)
+
     def elapsed_time(self):
         return elapsed_time(self.start_time)
+
     def is_timeout(self):
         return (self.max_time <= self.elapsed_time()) or not check_memory(self.max_memory)
+
     def is_terminated(self):
         return self.is_solved() or self.is_timeout()
+
     def extract_solution(self):
         SOLUTIONS[:] = self.solutions
         return revert_solution(self.best_plan, self.best_cost, self.evaluations)
-    def export_summary(self): # TODO: log, etc...
+
+    def export_summary(self):  # TODO: log, etc...
         # TODO: SOLUTIONS
         return {
             'solved': self.is_solved(),
@@ -77,7 +89,9 @@ class SolutionStore:
             'timeout': self.is_timeout(),
         }
 
+
 ##################################################
+
 
 def add_fact(evaluations, fact, result=INIT_EVALUATION, complexity=0):
     evaluation = evaluation_from_fact(fact)
@@ -113,8 +127,8 @@ def compute_complexity(evaluations, facts, complexity_op=COMPLEXITY_OP):
         return 0
     return complexity_op(evaluations[evaluation_from_fact(fact)].complexity for fact in facts)
 
-##################################################
 
+##################################################
 
 
 def stream_plan_preimage(stream_plan):
@@ -128,5 +142,4 @@ def stream_plan_preimage(stream_plan):
 
 
 def is_instance_ready(evaluations, instance):
-    return all(evaluation_from_fact(f) in evaluations
-               for f in instance.get_domain())
+    return all(evaluation_from_fact(f) in evaluations for f in instance.get_domain())

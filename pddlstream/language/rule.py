@@ -11,24 +11,31 @@ from pddlstream.language.conversion import list_from_conjunction, substitute_exp
 # TODO: prune unnecessary preconditions using rules
 from pddlstream.utils import get_mapping
 
-RULES = [] # TODO: no global
+RULES = []  # TODO: no global
+
 
 def parse_rule(lisp_list, stream_map, stream_info):
     value_from_attribute = parse_lisp_list(lisp_list[1:])
     assert set(value_from_attribute) <= {':inputs', ':domain', ':certified'}
     # TODO: if len(certified) == 1, augment existing streams
-    RULES.append(Stream(name=f'rule{len(RULES)}',
-                        gen_fn=from_test(universe_test),
-                        inputs=value_from_attribute.get(':inputs', []),
-                        domain=list_from_conjunction(value_from_attribute.get(':domain', [])),
-                        fluents=[],
-                        outputs=[],
-                        certified=list_from_conjunction(value_from_attribute.get(':certified', [])),
-                        info=StreamInfo(eager=True, p_success=1, overhead=0, verbose=False)))
+    RULES.append(
+        Stream(
+            name=f'rule{len(RULES)}',
+            gen_fn=from_test(universe_test),
+            inputs=value_from_attribute.get(':inputs', []),
+            domain=list_from_conjunction(value_from_attribute.get(':domain', [])),
+            fluents=[],
+            outputs=[],
+            certified=list_from_conjunction(value_from_attribute.get(':certified', [])),
+            info=StreamInfo(eager=True, p_success=1, overhead=0, verbose=False),
+        )
+    )
     return RULES[-1]
     # TODO: could make p_success=0 to prevent use in search
 
+
 ##################################################
+
 
 def apply_rules_to_streams(rules, streams):
     # TODO: can actually this with multiple condition if stream certified contains all
@@ -39,7 +46,7 @@ def apply_rules_to_streams(rules, streams):
         if len(rule.domain) != 1:
             continue
         [rule_fact] = rule.domain
-        rule.info.p_success = 0 # Need not be applied
+        rule.info.p_success = 0  # Need not be applied
         for stream in streams:
             if not isinstance(stream, Stream):
                 continue
@@ -49,4 +56,4 @@ def apply_rules_to_streams(rules, streams):
                     new_facts = set(substitute_expression(rule.certified, mapping)) - set(stream.certified)
                     stream.certified = stream.certified + tuple(new_facts)
                     if new_facts and (stream in rules):
-                            processed_rules.append(stream)
+                        processed_rules.append(stream)

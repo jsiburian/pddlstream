@@ -1,8 +1,15 @@
 import os
 
 from pddlstream.algorithms.reorder import get_partial_orders
-from pddlstream.language.constants import EQ, get_prefix, get_args, str_from_plan, is_parameter, \
-    partition_facts, is_plan
+from pddlstream.language.constants import (
+    EQ,
+    get_prefix,
+    get_args,
+    str_from_plan,
+    is_parameter,
+    partition_facts,
+    is_plan,
+)
 from pddlstream.language.conversion import str_from_fact, evaluation_from_fact
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.object import OptimisticObject
@@ -10,7 +17,7 @@ from pddlstream.utils import clear_dir, ensure_dir, str_from_object, flatten
 
 # https://www.graphviz.org/doc/info/
 
-DEFAULT_EXTENSION = '.png' # png | pdf
+DEFAULT_EXTENSION = '.png'  # png | pdf
 
 PARAMETER_COLOR = 'LightGreen'
 CONSTRAINT_COLOR = 'LightBlue'
@@ -28,6 +35,7 @@ OPTIMIZER_TEMPLATE = '{}_{}' + DEFAULT_EXTENSION
 
 ##################################################
 
+
 def has_pygraphviz():
     # TODO: networkx
     # https://github.com/caelan/pddlstream/blob/82ee5e363585d0af8ff9532ecc14641687d5b56b/examples/fault_tolerant/data_network/run.py#L189
@@ -37,31 +45,39 @@ def has_pygraphviz():
         return False
     return True
 
+
 def reset_visualizations():
     clear_dir(VISUALIZATIONS_DIR)
     ensure_dir(CONSTRAINT_NETWORK_DIR)
     ensure_dir(STREAM_PLAN_DIR)
 
+
 def decompose_result(result):
     # An optimizer's result stands for the stream plan it was compiled from
     from pddlstream.language.optimizer import OptimizerResult
+
     if isinstance(result, OptimizerResult):
         return result.external.stream_plan
     return [result]
+
 
 def decompose_stream_plan(stream_plan):
     if not is_plan(stream_plan):
         return stream_plan
     return [component for result in stream_plan for component in decompose_result(result)]
 
+
 def log_plans(stream_plan, action_plan, iteration):
     # TODO: do this within the focused algorithm itself?
     decomposed_plan = decompose_stream_plan(stream_plan)
     with open(PLAN_LOG_FILE, 'a+') as f:
-        f.write(f'Iteration: {iteration}\n'
-                f'Component plan: {decomposed_plan}\n'
-                f'Stream plan: {stream_plan}\n'
-                f'Action plan: {str_from_plan(action_plan)}\n\n')
+        f.write(
+            f'Iteration: {iteration}\n'
+            f'Component plan: {decomposed_plan}\n'
+            f'Stream plan: {stream_plan}\n'
+            f'Action plan: {str_from_plan(action_plan)}\n\n'
+        )
+
 
 def create_optimizer_visualizations(result, iteration):
     stream_plan = decompose_result(result)
@@ -72,6 +88,7 @@ def create_optimizer_visualizations(result, iteration):
     visualize_constraints(result.get_objectives(), os.path.join(CONSTRAINT_NETWORK_DIR, filename))
     visualize_stream_plan_bipartite(stream_plan, os.path.join(STREAM_PLAN_DIR, filename))
 
+
 def create_visualizations(evaluations, stream_plan, iteration):
     # TODO: place it in the temp_dir?
     # TODO: decompose any joint streams
@@ -79,7 +96,7 @@ def create_visualizations(evaluations, stream_plan, iteration):
         create_optimizer_visualizations(result, iteration)
     filename = ITERATION_TEMPLATE.format(iteration)
 
-    constraints = set() # TODO: approximates needed facts using produced ones
+    constraints = set()  # TODO: approximates needed facts using produced ones
     for stream in stream_plan:
         constraints.update(filter(lambda f: evaluation_from_fact(f) not in evaluations, stream.get_certified()))
     print('Constraints:', str_from_object(constraints))
@@ -91,9 +108,11 @@ def create_visualizations(evaluations, stream_plan, iteration):
 
     visualize_stream_plan(stream_plan, os.path.join(STREAM_PLAN_DIR, 'fused_' + filename))
 
+
 ##################################################
 
-def visualize_constraints(constraints, filename='constraint_network'+DEFAULT_EXTENSION, use_functions=True):
+
+def visualize_constraints(constraints, filename='constraint_network' + DEFAULT_EXTENSION, use_functions=True):
     from pygraphviz import AGraph
 
     graph = AGraph(strict=True, directed=False)
@@ -101,7 +120,7 @@ def visualize_constraints(constraints, filename='constraint_network'+DEFAULT_EXT
     graph.node_attr['colorscheme'] = 'SVG'
     graph.edge_attr['colorscheme'] = 'SVG'
     graph.node_attr['width'] = 0
-    graph.node_attr['height'] = 0.02 # Minimum height is 0.02
+    graph.node_attr['height'] = 0.02  # Minimum height is 0.02
     graph.node_attr['margin'] = 0
     graph.graph_attr['rankdir'] = 'RL'
     graph.graph_attr['nodesep'] = 0.05
@@ -110,7 +129,7 @@ def visualize_constraints(constraints, filename='constraint_network'+DEFAULT_EXT
     graph.graph_attr['dpi'] = 300
 
     positive, negated, functions = partition_facts(constraints)
-    for head in (positive + negated + functions):
+    for head in positive + negated + functions:
         # TODO: prune values w/o free parameters?
         name = str_from_fact(head)
         if head in functions:
@@ -128,21 +147,24 @@ def visualize_constraints(constraints, filename='constraint_network'+DEFAULT_EXT
                 graph.add_node(arg_name, shape='circle', color=PARAMETER_COLOR)
                 graph.add_edge(name, arg_name)
 
-    graph.draw(filename, prog='dot') # neato | dot | twopi | circo | fdp | nop
+    graph.draw(filename, prog='dot')  # neato | dot | twopi | circo | fdp | nop
     print('Saved', filename)
     return graph
 
+
 ##################################################
 
-def visualize_stream_orders(orders, streams=[], filename='stream_orders'+DEFAULT_EXTENSION):
+
+def visualize_stream_orders(orders, streams=[], filename='stream_orders' + DEFAULT_EXTENSION):
     from pygraphviz import AGraph
+
     graph = AGraph(strict=True, directed=True)
     graph.node_attr['style'] = 'filled'
     graph.node_attr['shape'] = 'box'
     graph.node_attr['color'] = STREAM_COLOR
     graph.node_attr['fontcolor'] = 'black'
     graph.node_attr['width'] = 0
-    graph.node_attr['height'] = 0.02 # Minimum height is 0.02
+    graph.node_attr['height'] = 0.02  # Minimum height is 0.02
     graph.node_attr['margin'] = 0
     graph.graph_attr['outputMode'] = 'nodesfirst'
     graph.graph_attr['dpi'] = 300
@@ -159,19 +181,23 @@ def visualize_stream_orders(orders, streams=[], filename='stream_orders'+DEFAULT
     print('Saved', filename)
     return graph
 
-def visualize_stream_plan(stream_plan, filename='stream_plan'+DEFAULT_EXTENSION):
+
+def visualize_stream_plan(stream_plan, filename='stream_plan' + DEFAULT_EXTENSION):
     return visualize_stream_orders(get_partial_orders(stream_plan), streams=stream_plan, filename=filename)
+
 
 ##################################################
 
-def visualize_stream_plan_bipartite(stream_plan, filename='stream_plan'+DEFAULT_EXTENSION, use_functions=False):
+
+def visualize_stream_plan_bipartite(stream_plan, filename='stream_plan' + DEFAULT_EXTENSION, use_functions=False):
     from pygraphviz import AGraph
+
     graph = AGraph(strict=True, directed=True)
     graph.node_attr['style'] = 'filled'
     graph.node_attr['shape'] = 'box'
     graph.node_attr['fontcolor'] = 'black'
     graph.node_attr['width'] = 0
-    graph.node_attr['height'] = 0.02 # Minimum height is 0.02
+    graph.node_attr['height'] = 0.02  # Minimum height is 0.02
     graph.node_attr['margin'] = 0
     graph.graph_attr['nodesep'] = 0.1
     graph.graph_attr['ranksep'] = 0.25
@@ -201,9 +227,9 @@ def visualize_stream_plan_bipartite(stream_plan, filename='stream_plan'+DEFAULT_
         for fact in stream.instance.get_domain():
             if fact in achieved_facts:
                 s_fact = add_fact(fact)
-                graph.add_edge(s_fact, s_stream) # Add initial facts?
+                graph.add_edge(s_fact, s_stream)  # Add initial facts?
         for fact in stream.get_certified():
-            if fact not in achieved_facts: # Ensures DAG
+            if fact not in achieved_facts:  # Ensures DAG
                 s_fact = add_fact(fact)
                 graph.add_edge(s_stream, s_fact)
                 achieved_facts.add(fact)

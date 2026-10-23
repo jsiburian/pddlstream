@@ -71,22 +71,25 @@ STREAM_PDDL = """
 
 ##################################################
 
+
 # TODO: compose functions
 def to_tuple(*x):
     return tuple(x)
 
+
 def convex_combo(x1, x2, lamb=0.5):
-    return lamb*x1 + (1-lamb)*x2
+    return lamb * x1 + (1 - lamb) * x2
+
 
 def compute_split(pair, s):
     x1, x2 = pair
-    return [(x1, convex_combo(x1, x2, s)),
-            (convex_combo(x1, x2, s), x2)]
+    return [(x1, convex_combo(x1, x2, s)), (convex_combo(x1, x2, s), x2)]
+
 
 def compute_cost(pair, s):
     x1, x2 = pair
-    return round(1./(min(convex_combo(x1, x2, s) - x1,
-                         x2 - convex_combo(x1, x2, s))), 3)
+    return round(1.0 / (min(convex_combo(x1, x2, s) - x1, x2 - convex_combo(x1, x2, s))), 3)
+
 
 def get_problem(num=3):
     constant_map = {}
@@ -97,19 +100,19 @@ def get_problem(num=3):
     }
 
     locations = [f'loc{i}' for i in range(num)]
-    init_carrot = (0., 1.)
+    init_carrot = (0.0, 1.0)
     init = [
         ('Carrot', init_carrot),
         ('AtLoc', init_carrot, 'loc0'),
     ] + [('Loc', loc) for loc in locations]
 
-
-    goal = And(*[Exists(['?c'], And(('Loc', loc), ('AtLoc', '?c', loc)))
-                 for loc in locations])
+    goal = And(*[Exists(['?c'], And(('Loc', loc), ('AtLoc', '?c', loc))) for loc in locations])
 
     return PDDLProblem(DOMAIN_PDDL, constant_map, STREAM_PDDL, stream_map, init, goal)
 
+
 ##################################################
+
 
 def main():
     parser = create_parser()
@@ -125,10 +128,18 @@ def main():
         'increment': StreamInfo(p_success=0.01, overhead=1),
         'decrement': StreamInfo(p_success=1, overhead=1),
     }
-    solution = solve(problem, algorithm=args.algorithm, planner='max-astar', unit_costs=args.unit,
-                     stream_info=info, effort_weight=1,
-                     debug=False, verbose=True)
+    solution = solve(
+        problem,
+        algorithm=args.algorithm,
+        planner='max-astar',
+        unit_costs=args.unit,
+        stream_info=info,
+        effort_weight=1,
+        debug=False,
+        verbose=True,
+    )
     print_solution(solution)
+
 
 if __name__ == '__main__':
     main()

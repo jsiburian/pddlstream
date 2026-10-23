@@ -58,14 +58,17 @@ STREAM_PDDL = """
 
 COST_CONSTANT = 1
 
+
 def harmonic(x):
-    return 1./(x + 1)
+    return 1.0 / (x + 1)
+
 
 def cost_fn(x):
     cost = COST_CONSTANT
     if type(x) not in [UniqueOptValue, SharedOptValue]:
         cost += harmonic(x)
     return cost
+
 
 def main():
     parser = create_parser()
@@ -82,9 +85,14 @@ def main():
         'Cost': FunctionInfo(opt_fn=cost_fn),
     }
 
-    stream_map, stream_info = add_opt_function(name='Cost', base_fn=harmonic,
-                                               stream_map=stream_map, stream_info=stream_info,
-                                               constant=COST_CONSTANT, coefficient=1.)
+    stream_map, stream_info = add_opt_function(
+        name='Cost',
+        base_fn=harmonic,
+        stream_map=stream_map,
+        stream_info=stream_info,
+        constant=COST_CONSTANT,
+        coefficient=1.0,
+    )
     # TODO: cost fn that takes in a list of terms and sums them
 
     init = []
@@ -100,10 +108,18 @@ def main():
     problem = PDDLProblem(DOMAIN_PDDL, constant_map, STREAM_PDDL, stream_map, init, goal)
 
     with Profiler():
-        solution = solve(problem, stream_info=stream_info, algorithm=args.algorithm, unit_costs=args.unit, max_time=1,
-                         success_cost=INF,
-                         planner='max-astar', debug=False)
+        solution = solve(
+            problem,
+            stream_info=stream_info,
+            algorithm=args.algorithm,
+            unit_costs=args.unit,
+            max_time=1,
+            success_cost=INF,
+            planner='max-astar',
+            debug=False,
+        )
     print_solution(solution)
+
 
 if __name__ == '__main__':
     main()

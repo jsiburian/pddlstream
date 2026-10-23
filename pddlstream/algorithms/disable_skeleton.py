@@ -8,6 +8,7 @@ from pddlstream.utils import grow_component, adjacent_from_edges, incoming_from_
 
 from collections import Counter
 
+
 def increase_free_variables(stream_plan):
     # TODO: could decrease the number of variables if a cluster is removed
     free_objects = Counter(flatten(result.instance.input_objects for result in stream_plan))
@@ -25,14 +26,15 @@ def create_disable_axiom(external_plan, use_parameters=True):
     # TODO: better mix optimization and sampling by determining a splitting point
     # TODO: be careful about the shared objects as parameters
     # TODO: need to block functions & predicates
-    stream_plan, _  = partition_external_plan(external_plan)
+    stream_plan, _ = partition_external_plan(external_plan)
     assert stream_plan
     [unsatisfiable] = stream_plan[-1].get_unsatisfiable()
     component_plan = list(flatten(r.get_components() for r in stream_plan[:-1])) + list(unsatisfiable)
     increase_free_variables(component_plan)
     constraints = [result.stream_fact for result in component_plan]
-    optimistic_objects = {o for f in constraints for o in get_args(f)
-                          if isinstance(o, OptimisticObject)} # TODO: consider case when variables are free
+    optimistic_objects = {
+        o for f in constraints for o in get_args(f) if isinstance(o, OptimisticObject)
+    }  # TODO: consider case when variables are free
     free_objects = optimistic_objects
     parameters = [f'?p{i}' for i in range(len(free_objects))]
     param_from_obj = get_mapping(free_objects, parameters)
@@ -54,7 +56,7 @@ def compute_failed_indices(skeleton):
 def current_failed_cluster(binding):
     assert 1 <= binding.visits
     failed_result = binding.skeleton.stream_plan[binding.index]
-    successful_results = binding.skeleton.stream_plan[:binding.index] # Results bound so far
+    successful_results = binding.skeleton.stream_plan[: binding.index]  # Results bound so far
     stream_plan = successful_results + [failed_result]
     partial_orders = get_partial_orders(stream_plan)
     # Only the failed connected component
@@ -107,6 +109,7 @@ def extract_disabled_clusters(queue, full_cluster=False):
             ordered_clusters.append(cluster_plan)
     # TODO: could instead prune at this stage
     return ordered_clusters
+
 
 def create_disabled_axioms(queue, last_clusters=None, **kwargs):
     clusters = extract_disabled_clusters(queue)

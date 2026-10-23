@@ -1,24 +1,55 @@
 #!/usr/bin/env python
 
 from pddlstream.algorithms.meta import solve, create_parser
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import Pose, Conf, get_ik_ir_gen, get_motion_gen, \
-    get_stable_gen, get_grasp_gen, Attach, Detach, Clean, Cook, control_commands, \
-    get_gripper_joints, GripperCommand, apply_commands, State
+from examples.pybullet.utils.pybullet_tools.pr2_primitives import (
+    Pose,
+    Conf,
+    get_ik_ir_gen,
+    get_motion_gen,
+    get_stable_gen,
+    get_grasp_gen,
+    Attach,
+    Detach,
+    Clean,
+    Cook,
+    control_commands,
+    get_gripper_joints,
+    GripperCommand,
+    apply_commands,
+    State,
+)
 from examples.pybullet.utils.pybullet_tools.pr2_problems import cooking_problem
 from examples.pybullet.utils.pybullet_tools.pr2_utils import get_arm_joints, ARM_NAMES, get_group_joints, get_group_conf
-from examples.pybullet.utils.pybullet_tools.utils import connect, get_pose, is_placement, disconnect, get_joint_positions, HideOutput, \
-    LockRenderer, get_max_limit, has_gui, WorldSaver, wait_if_gui, SEPARATOR
+from examples.pybullet.utils.pybullet_tools.utils import (
+    connect,
+    get_pose,
+    is_placement,
+    disconnect,
+    get_joint_positions,
+    HideOutput,
+    LockRenderer,
+    get_max_limit,
+    has_gui,
+    WorldSaver,
+    wait_if_gui,
+    SEPARATOR,
+)
 from pddlstream.language.generator import from_gen_fn, from_list_fn, from_fn, from_test
 from pddlstream.language.constants import Equal, AND, print_solution, PDDLProblem
 from pddlstream.utils import read, INF, get_file_path, Profiler, str_from_object
 from pddlstream.language.function import FunctionInfo
 from pddlstream.language.stream import StreamInfo, PartialInputs
 from pddlstream.language.external import defer_shared, never_defer
-from examples.pybullet.tamp.streams import get_cfree_approach_pose_test, get_cfree_pose_pose_test, get_cfree_traj_pose_test
+from examples.pybullet.tamp.streams import (
+    get_cfree_approach_pose_test,
+    get_cfree_pose_pose_test,
+    get_cfree_traj_pose_test,
+)
 from collections import namedtuple
 
 BASE_CONSTANT = 1
 BASE_VELOCITY = 0.5
+
 
 def place_movable(certified):
     for literal in certified:
@@ -39,29 +70,37 @@ def place_movable(certified):
 def move_cost_fn(c):
     return 1
 
+
 #######################################################
+
 
 def opt_move_cost_fn(t):
     return 1
+
 
 #######################################################
 
 CustomValue = namedtuple('CustomValue', ['stream', 'values'])
 
+
 def opt_pose_fn(o, r):
     p = CustomValue('p-sp', (r,))
-    return p,
+    return (p,)
+
 
 def opt_ik_fn(a, o, p, g):
     q = CustomValue('q-ik', (p,))
     t = CustomValue('t-ik', tuple())
     return q, t
 
+
 def opt_motion_fn(q1, q2):
     t = CustomValue('t-pbm', (q1, q2))
-    return t,
+    return (t,)
+
 
 #######################################################
+
 
 def pddlstream_from_problem(problem, collisions=True, teleport=False):
     robot = problem.robot
@@ -72,16 +111,19 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
     constant_map = {}
 
     initial_bq = Conf(robot, get_group_joints(robot, 'base'), get_group_conf(robot, 'base'))
-    init = [
-        ('CanMove',),
-        ('BConf', initial_bq),
-        ('AtBConf', initial_bq),
-        Equal(('PickCost',), 1),
-        Equal(('PlaceCost',), 1),
-    ] + [('Sink', s) for s in problem.sinks] + \
-           [('Stove', s) for s in problem.stoves] + \
-           [('Connected', b, d) for b, d in problem.buttons] + \
-           [('Button', b) for b, _ in problem.buttons]
+    init = (
+        [
+            ('CanMove',),
+            ('BConf', initial_bq),
+            ('AtBConf', initial_bq),
+            Equal(('PickCost',), 1),
+            Equal(('PlaceCost',), 1),
+        ]
+        + [('Sink', s) for s in problem.sinks]
+        + [('Stove', s) for s in problem.stoves]
+        + [('Connected', b, d) for b, d in problem.buttons]
+        + [('Button', b) for b, _ in problem.buttons]
+    )
     for arm in ARM_NAMES:
         joints = get_arm_joints(robot, arm)
         conf = Conf(robot, joints, get_joint_positions(robot, joints))
@@ -90,8 +132,7 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
             init += [('Controllable', arm)]
     for body in problem.movable:
         pose = Pose(body, get_pose(body))
-        init += [('Graspable', body), ('Pose', body, pose),
-                 ('AtPose', body, pose)]
+        init += [('Graspable', body), ('Pose', body, pose), ('AtPose', body, pose)]
         for surface in problem.surfaces:
             init += [('Stackable', body, surface)]
             if is_placement(body, surface):
@@ -102,30 +143,31 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
         goal_conf = Conf(robot, get_group_joints(robot, 'base'), problem.goal_conf)
         init += [('BConf', goal_conf)]
         goal += [('AtBConf', goal_conf)]
-    goal += [('Holding', a, b) for a, b in problem.goal_holding] + \
-                     [('On', b, s) for b, s in problem.goal_on] + \
-                     [('Cleaned', b)  for b in problem.goal_cleaned] + \
-                     [('Cooked', b)  for b in problem.goal_cooked]
+    goal += (
+        [('Holding', a, b) for a, b in problem.goal_holding]
+        + [('On', b, s) for b, s in problem.goal_on]
+        + [('Cleaned', b) for b in problem.goal_cleaned]
+        + [('Cooked', b) for b in problem.goal_cooked]
+    )
 
     stream_map = {
         'sample-pose': from_gen_fn(get_stable_gen(problem, collisions=collisions)),
         'sample-grasp': from_list_fn(get_grasp_gen(problem, collisions=False)),
         'inverse-kinematics': from_gen_fn(get_ik_ir_gen(problem, collisions=collisions, teleport=teleport)),
         'plan-base-motion': from_fn(get_motion_gen(problem, collisions=collisions, teleport=teleport)),
-
         'test-cfree-pose-pose': from_test(get_cfree_pose_pose_test(collisions=collisions)),
         'test-cfree-approach-pose': from_test(get_cfree_approach_pose_test(problem, collisions=collisions)),
         'test-cfree-traj-pose': from_test(get_cfree_traj_pose_test(problem.robot, collisions=collisions)),
-
         'MoveCost': move_cost_fn,
-
     }
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
+
 #######################################################
 
 # TODO: avoid copying this?
+
 
 def post_process(problem, plan, teleport=False):
     if plan is None:
@@ -151,7 +193,7 @@ def post_process(problem, plan, teleport=False):
             open_gripper = GripperCommand(problem.robot, a, position, teleport=teleport)
             detach = Detach(problem.robot, a, b)
             new_commands = [t, detach, open_gripper, t.reverse()]
-        elif name == 'clean': # TODO: add text or change color?
+        elif name == 'clean':  # TODO: add text or change color?
             body, sink = args
             new_commands = [Clean(body)]
         elif name == 'cook':
@@ -171,7 +213,9 @@ def post_process(problem, plan, teleport=False):
         commands += new_commands
     return commands
 
+
 #######################################################
+
 
 def main(partial=False, defer=False, verbose=True):
     parser = create_parser()
@@ -196,18 +240,23 @@ def main(partial=False, defer=False, verbose=True):
         # 'test-cfree-pose-pose': StreamInfo(p_success=1e-3, verbose=verbose),
         # 'test-cfree-approach-pose': StreamInfo(p_success=1e-2, verbose=verbose),
         # 'test-cfree-traj-pose': StreamInfo(p_success=1e-1, verbose=verbose),
-
         'MoveCost': FunctionInfo(opt_move_cost_fn),
     }
-    stream_info.update({
-        'sample-pose': StreamInfo(opt_gen_fn=PartialInputs('?r')),
-        'inverse-kinematics': StreamInfo(opt_gen_fn=PartialInputs('?p')),
-        'plan-base-motion': StreamInfo(opt_gen_fn=PartialInputs('?q1 ?q2'), defer_fn=defer_shared if defer else never_defer),
-    } if partial else {
-        'sample-pose': StreamInfo(opt_gen_fn=from_fn(opt_pose_fn)),
-        'inverse-kinematics': StreamInfo(opt_gen_fn=from_fn(opt_ik_fn)),
-        'plan-base-motion': StreamInfo(opt_gen_fn=from_fn(opt_motion_fn)),
-    })
+    stream_info.update(
+        {
+            'sample-pose': StreamInfo(opt_gen_fn=PartialInputs('?r')),
+            'inverse-kinematics': StreamInfo(opt_gen_fn=PartialInputs('?p')),
+            'plan-base-motion': StreamInfo(
+                opt_gen_fn=PartialInputs('?q1 ?q2'), defer_fn=defer_shared if defer else never_defer
+            ),
+        }
+        if partial
+        else {
+            'sample-pose': StreamInfo(opt_gen_fn=from_fn(opt_pose_fn)),
+            'inverse-kinematics': StreamInfo(opt_gen_fn=from_fn(opt_ik_fn)),
+            'plan-base-motion': StreamInfo(opt_gen_fn=from_fn(opt_motion_fn)),
+        }
+    )
     _, _, _, stream_map, init, goal = pddlstream_problem
     print('Init:', init)
     print('Goal:', goal)
@@ -216,8 +265,15 @@ def main(partial=False, defer=False, verbose=True):
 
     with Profiler():
         with LockRenderer(lock=not args.enable):
-            solution = solve(pddlstream_problem, algorithm=args.algorithm, unit_costs=args.unit,
-                             stream_info=stream_info, success_cost=INF, verbose=True, debug=False)
+            solution = solve(
+                pddlstream_problem,
+                algorithm=args.algorithm,
+                unit_costs=args.unit,
+                stream_info=stream_info,
+                success_cost=INF,
+                verbose=True,
+                debug=False,
+            )
             saver.restore()
 
     print_solution(solution)
@@ -241,6 +297,7 @@ def main(partial=False, defer=False, verbose=True):
     wait_if_gui('Finish?')
     disconnect()
     # TODO: need to wrap circular joints
+
 
 if __name__ == '__main__':
     main()

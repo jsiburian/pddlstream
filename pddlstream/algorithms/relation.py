@@ -9,7 +9,7 @@ def compute_order(domain, atoms):
     # TODO: dynamically select the atom with the fewest options (minimize new additions)
     # Operating on dual (select constraints rather than vars) because lower arity
     order = []
-    parameters = set() # Include constants
+    parameters = set()  # Include constants
     for _ in range(len(domain)):
         min_new = INF
         min_index = None
@@ -24,22 +24,27 @@ def compute_order(domain, atoms):
         parameters.update(filter(is_parameter, domain[min_index].args))
     return order
 
+
 ##################################################
 
 # TODO: all solutions constraint satisfaction point of view: constraint propagation
 # https://en.wikipedia.org/wiki/Local_consistency
 # Cluster into components and then order?
 
+
 class Relation:
     def __init__(self, heading, body):
         self.heading = tuple(heading)
         self.body = list(body)
+
     def get_mapping(self, element):
         return get_mapping(self.heading, element)
+
     def project_element(self, attributes, element):
         value_from_attribute = self.get_mapping(element)
         assert all(attr in value_from_attribute for attr in attributes)
         return tuple(value_from_attribute[attr] for attr in attributes)
+
     def get_conditional(self, inputs):
         outputs = [attribute for attribute in self.heading if attribute not in inputs]
         two_from_overlap = defaultdict(set)
@@ -49,12 +54,15 @@ class Relation:
             two_from_overlap[key].add(value)  # TODO: preserve ordering
         # TODO: return a relation object?
         return two_from_overlap
+
     def subtract_attributes(self, attributes):
         return tuple(attribute for attribute in self.heading if attribute not in attributes)
+
     def dump(self):
         print(self.heading)
         for element in self.body:
             print(element)
+
     def __repr__(self):
         return '|{}| x {}'.format(', '.join(map(str, self.heading)), len(self.body))
 

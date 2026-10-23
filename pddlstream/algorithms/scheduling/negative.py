@@ -1,6 +1,4 @@
-
-from pddlstream.algorithms.downward import fact_from_fd, plan_preimage, apply_action, \
-    GOAL_NAME, get_derived_predicates
+from pddlstream.algorithms.downward import fact_from_fd, plan_preimage, apply_action, GOAL_NAME, get_derived_predicates
 from pddlstream.algorithms.scheduling.recover_axioms import extract_axiom_plan
 from pddlstream.algorithms.scheduling.reinstantiate import reinstantiate_action_instances, reinstantiate_axiom_instances
 from pddlstream.language.conversion import obj_from_pddl
@@ -10,39 +8,56 @@ from pddlstream.utils import safe_zip, INF
 
 
 def convert_negative_predicate(negative, literal, step_from_atom, negative_plan):
-    input_objects = tuple(map(obj_from_pddl, literal.args)) # Might be negative
+    input_objects = tuple(map(obj_from_pddl, literal.args))  # Might be negative
     instance = negative.get_instance(input_objects)
     value = not literal.negated
     if instance.enumerated:
-        assert (instance.value == value)
+        assert instance.value == value
     else:
         result = PredicateResult(instance, value, optimistic=True)
         step = min(step_from_atom[literal]) if result.is_deferrable() else 0
         negative_plan[result] = min(step, negative_plan.get(result, INF))
 
+
 def get_negative_result(negative, input_objects, fluent_facts=frozenset()):
     instance = negative.get_instance(input_objects, fluent_facts=fluent_facts)
-    optimistic = not instance.successful # TODO: clean this up
-    return instance._Result(instance, output_objects=tuple(), opt_index=instance.opt_index,
-                            call_index=instance.num_calls, optimistic=optimistic)
+    optimistic = not instance.successful  # TODO: clean this up
+    return instance._Result(
+        instance,
+        output_objects=tuple(),
+        opt_index=instance.opt_index,
+        call_index=instance.num_calls,
+        optimistic=optimistic,
+    )
+
 
 def convert_negative_stream(negative, literal, step_from_atom, real_states, negative_plan):
     import pddl
+
     # assert not negative.is_fluent
     fluent_facts_list = []
     if negative.is_fluent:
         # TODO: ensure that only used once?
         for step in step_from_atom[literal]:
-            fluent_facts_list.append(list(map(fact_from_fd, filter(
-                lambda f: isinstance(f, pddl.Atom) and (f.predicate in negative.fluents), real_states[step]))))
+            fluent_facts_list.append(
+                list(
+                    map(
+                        fact_from_fd,
+                        filter(
+                            lambda f: isinstance(f, pddl.Atom) and (f.predicate in negative.fluents), real_states[step]
+                        ),
+                    )
+                )
+            )
     else:
         fluent_facts_list.append(frozenset())
 
-    input_objects = tuple(map(obj_from_pddl, literal.args)) # Might be negative
+    input_objects = tuple(map(obj_from_pddl, literal.args))  # Might be negative
     for fluent_facts in fluent_facts_list:
         result = get_negative_result(negative, input_objects, fluent_facts)
         step = min(step_from_atom[literal]) if result.is_deferrable() else 0
         negative_plan[result] = min(step, negative_plan.get(result, INF))
+
 
 def convert_negative(negative_preimage, negative_from_name, step_from_atom, real_states):
     negative_plan = {}
@@ -56,7 +71,9 @@ def convert_negative(negative_preimage, negative_from_name, step_from_atom, real
             raise ValueError(negative)
     return negative_plan
 
+
 ##################################################
+
 
 def recover_negative_axioms(real_task, opt_task, axiom_plans, action_plan, negative_from_name):
     action_plan = reinstantiate_action_instances(opt_task, action_plan, negative_from_name=negative_from_name)
@@ -69,11 +86,9 @@ def recover_negative_axioms(real_task, opt_task, axiom_plans, action_plan, negat
     num_negative = 0
     preimage_plan = []
     for axiom_plan, action_instance in safe_zip(axiom_plans, action_plan):
-        preimage = [l for l in plan_preimage(axiom_plan + [action_instance])
-                    if (l.predicate in axioms_from_name)]
+        preimage = [l for l in plan_preimage(axiom_plan + [action_instance]) if (l.predicate in axioms_from_name)]
         # TODO: only add derived facts and negative facts to fluent state to make normalizing easier
-        negative_axiom_plan = extract_axiom_plan(opt_task, preimage, negative_from_name,
-                                                 static_state=opt_task.init)
+        negative_axiom_plan = extract_axiom_plan(opt_task, preimage, negative_from_name, static_state=opt_task.init)
         assert negative_axiom_plan is not None
         num_negative += len(negative_axiom_plan)
         preimage_plan.extend(negative_axiom_plan + axiom_plan + [action_instance])

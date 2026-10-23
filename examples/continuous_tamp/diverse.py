@@ -23,27 +23,31 @@ def create_skeleton(robot, blocks, home=False):
     # TODO: constrain the placement region
     skeleton = []
     for block in blocks:
-        skeleton.extend([
-            ('move', [robot, WILD, WILD, WILD]),
-            ('pick', [robot, block, WILD, WILD, WILD]),
-            ('move', [robot, WILD, WILD, WILD]),
-            ('place', [robot, block, WILD, WILD, WILD]),
-        ])
+        skeleton.extend(
+            [
+                ('move', [robot, WILD, WILD, WILD]),
+                ('pick', [robot, block, WILD, WILD, WILD]),
+                ('move', [robot, WILD, WILD, WILD]),
+                ('place', [robot, block, WILD, WILD, WILD]),
+            ]
+        )
     if home:
         skeleton.append(('move', [robot, WILD, WILD, WILD]))
     return skeleton
+
 
 ##################################################
 
 Stats = namedtuple('Stats', ['p_success', 'overhead'])
 
 STATS_PER_STREAM = {
-    's-grasp':  Stats(p_success=1.0, overhead=0.1),
+    's-grasp': Stats(p_success=1.0, overhead=0.1),
     's-region': Stats(p_success=0.5, overhead=0.1),
-    't-cfree':  Stats(p_success=0.1, overhead=0.1),
-    's-ik':     Stats(p_success=0.9, overhead=0.1),
+    't-cfree': Stats(p_success=0.1, overhead=0.1),
+    's-ik': Stats(p_success=0.9, overhead=0.1),
     's-motion': Stats(p_success=0.99, overhead=0.1),
 }
+
 
 def dump_statistics(name='continuous-tamp'):
     data = load_data(name)
@@ -59,7 +63,9 @@ def dump_statistics(name='continuous-tamp'):
     print(stats_from_stream)
     return stats_from_stream
 
+
 StreamValue = namedtuple('StreamValue', ['stream', 'inputs', 'output'])
+
 
 def get_stream_value(value):
     # TODO: dynamic programming version
@@ -67,23 +73,26 @@ def get_stream_value(value):
         return value_or_id(value)
     return StreamValue(value.stream, tuple(map(get_stream_value, value.input_values)), value.output_parameter)
 
+
 def p_conjunction(stream_plans, stats_from_stream):
-    return np.prod([stats_from_stream[stream].p_success
-                       for stream, _ in set.union(*stream_plans)])
+    return np.prod([stats_from_stream[stream].p_success for stream, _ in set.union(*stream_plans)])
+
 
 def p_disjunction(stream_plans, stats_from_stream):
     # Inclusion exclusion
     # TODO: dynamic programming method for this?
     # TODO: incorporate overhead
-    p = 0.
+    p = 0.0
     for i in range(len(stream_plans)):
         r = i + 1
         for subset_plans in combinations(stream_plans, r=r):
             sign = -1 if r % 2 == 0 else +1
-            p += sign*p_conjunction(subset_plans, stats_from_stream)
+            p += sign * p_conjunction(subset_plans, stats_from_stream)
     return p
 
+
 ##################################################
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -107,7 +116,7 @@ def main():
     domain_pddl = read(get_file_path(__file__, 'domain.pddl'))
     stream_pddl = read(get_file_path(__file__, 'stream.pddl'))
     constant_map = {}
-    stream_map = DEBUG # TODO: reuse same streams
+    stream_map = DEBUG  # TODO: reuse same streams
 
     stream_info = {
         't-region': StreamInfo(eager=False, p_success=0),  # bound_fn is None
@@ -115,7 +124,7 @@ def main():
 
     streams_from_problem = {}
     for order in permutations(blocks):
-        for region in regions: # Objects could also have separate goals
+        for region in regions:  # Objects could also have separate goals
             print(SEPARATOR)
             print('Block order:', order)
             print('Goal region:', region)
@@ -130,10 +139,19 @@ def main():
             skeletons = [skeleton]
             constraints = PlanConstraints(skeletons=skeletons, exact=True)
 
-            solution = solve_focused(problem, constraints=constraints, stream_info=stream_info,
-                                     planner='max-astar', max_planner_time=10, debug=False,
-                                     max_time=args.max_time, verbose=True,
-                                     unit_costs=True, unit_efforts=True, effort_weight=1)
+            solution = solve_focused(
+                problem,
+                constraints=constraints,
+                stream_info=stream_info,
+                planner='max-astar',
+                max_planner_time=10,
+                debug=False,
+                max_time=args.max_time,
+                verbose=True,
+                unit_costs=True,
+                unit_efforts=True,
+                effort_weight=1,
+            )
             print_solution(solution)
             plan, cost, evaluations = solution
             assert plan is not None
@@ -153,7 +171,7 @@ def main():
 
     print(SEPARATOR)
     best_problems, best_p = None, -INF
-    for problems in combinations(streams_from_problem, r=2): # Make r a parameter
+    for problems in combinations(streams_from_problem, r=2):  # Make r a parameter
         stream_plans = [streams_from_problem[problem] for problem in problems]
         intersection = set.intersection(*stream_plans)
         p = p_disjunction(stream_plans, STATS_PER_STREAM)

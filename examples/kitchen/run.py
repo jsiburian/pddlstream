@@ -1,8 +1,11 @@
 from pddlstream.algorithms import instantiate_task
+
 instantiate_task.FD_INSTANTIATE = True
 from pddlstream.algorithms import instantiation
+
 instantiation.USE_RELATION = True
 from pddlstream.algorithms import refinement
+
 refinement.CONSTRAIN_PLANS = False
 
 from pddlstream.algorithms.meta import solve, create_parser
@@ -14,6 +17,7 @@ from pddlstream.utils import Profiler
 ROBOT = 'gripper'
 CUP = 'cup'
 COASTER = 'block'
+
 
 def create_problem(initial_poses):
     block_goal = (-25, 0, 0)
@@ -60,8 +64,8 @@ def create_problem(initial_poses):
     constant_map = {}
     stream_map = SHARED_DEBUG
 
-    return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map,
-                       initial_atoms, And(*goal_literals))
+    return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, initial_atoms, And(*goal_literals))
+
 
 # TODO: where did this domain originate?
 # https://github.mit.edu/Learning-and-Intelligent-Systems/ltamp_pr2/issues/1
@@ -70,19 +74,20 @@ def create_problem(initial_poses):
 # https://ziw.mit.edu/projects/kitchen2d/
 # https://github.com/zi-w/Kitchen2D
 
+
 def main():
     parser = create_parser()
     args = parser.parse_args()
     print('Arguments:', args)
 
     initial_poses = {
-        ROBOT: (0., 15., 0.),
-        CUP: (7.5, 0., 0.),
-        'sugar_cup': (-10., 0., 0.),
-        'cream_cup': (15., 0, 0),
+        ROBOT: (0.0, 15.0, 0.0),
+        CUP: (7.5, 0.0, 0.0),
+        'sugar_cup': (-10.0, 0.0, 0.0),
+        'cream_cup': (15.0, 0, 0),
         'spoon': (0.5, 0.5, 0),
         'stirrer': (20, 0.5, 0),
-        COASTER: (-20., 0, 0),
+        COASTER: (-20.0, 0, 0),
     }
 
     problem = create_problem(initial_poses)
@@ -91,10 +96,18 @@ def main():
     }
 
     with Profiler(field='tottime'):
-        solution = solve(problem, algorithm=args.algorithm, stream_info=stream_info,
-                         unit_costs=args.unit, planner='ff-eager',
-                         unit_efforts=True, effort_weight=1, debug=False) # max_planner_time=5,
+        solution = solve(
+            problem,
+            algorithm=args.algorithm,
+            stream_info=stream_info,
+            unit_costs=args.unit,
+            planner='ff-eager',
+            unit_efforts=True,
+            effort_weight=1,
+            debug=False,
+        )  # max_planner_time=5,
         print_solution(solution)
+
 
 if __name__ == '__main__':
     main()

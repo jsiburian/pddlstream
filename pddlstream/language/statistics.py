@@ -9,7 +9,7 @@ LOAD_STATISTICS = True
 SAVE_STATISTICS = True
 
 DATA_DIR = 'statistics/py{:d}/'
-DEFAULT_SEARCH_OVERHEAD = 1e2 # TODO: update this over time
+DEFAULT_SEARCH_OVERHEAD = 1e2  # TODO: update this over time
 EPSILON = 1e-6
 # Can also include the overhead to process skeletons
 
@@ -17,18 +17,22 @@ Stats = namedtuple('Stats', ['p_success', 'overhead'])
 
 # TODO: ability to "burn in" streams by sampling artificially to get better estimates
 
+
 def safe_ratio(numerator, denominator, undefined=None):
     if denominator == 0:
         return undefined
     return float(numerator) / denominator
 
+
 def geometric_cost(cost, p):
     return safe_ratio(cost, p, undefined=INF)
+
 
 def check_effort(effort, max_effort):
     if max_effort is None:
         return True
-    return effort < max_effort # Exclusive
+    return effort < max_effort  # Exclusive
+
 
 def compute_plan_effort(stream_plan, **kwargs):
     # TODO: compute effort in the delete relaxation way
@@ -38,14 +42,17 @@ def compute_plan_effort(stream_plan, **kwargs):
         return 0
     return sum(result.get_effort(**kwargs) for result in stream_plan)
 
+
 ##################################################
 
 # TODO: write to a "local" folder containing temp, data2, data3, visualizations
+
 
 def get_data_path(stream_name):
     data_dir = DATA_DIR.format(get_python_version())
     file_name = f'{stream_name}.pkl'
     return os.path.join(data_dir, file_name)
+
 
 def load_data(pddl_name):
     if not LOAD_STATISTICS:
@@ -53,27 +60,32 @@ def load_data(pddl_name):
     filename = get_data_path(pddl_name)
     if not os.path.exists(filename):
         return {}
-    data = read_pickle(filename) # TODO: try/except
+    data = read_pickle(filename)  # TODO: try/except
     return data
+
 
 def load_stream_statistics(externals):
     if not externals:
         return
-    pddl_name = externals[0].pddl_name # TODO: ensure the same
+    pddl_name = externals[0].pddl_name  # TODO: ensure the same
     # TODO: fresh restart flag
     data = load_data(pddl_name)
     for external in externals:
         if external.name in data:
             external.load_statistics(data[external.name])
 
+
 ##################################################
+
 
 def dump_total_statistics(externals):
     print('\nTotal External Statistics')
     for external in externals:
         external.dump_total()
 
+
 ##################################################
+
 
 def merge_data(external, previous_data):
     # TODO: compute distribution of successes given feasible
@@ -100,6 +112,7 @@ def merge_data(external, previous_data):
     }
     # TODO: make an instance method
 
+
 def write_stream_statistics(externals, verbose):
     # TODO: estimate conditional to affecting history on skeleton
     # TODO: estimate conditional to first & attempt and success
@@ -109,12 +122,12 @@ def write_stream_statistics(externals, verbose):
         return
     if verbose:
         dump_total_statistics(externals)
-    pddl_name = externals[0].pddl_name # TODO: ensure the same
+    pddl_name = externals[0].pddl_name  # TODO: ensure the same
     previous_data = load_data(pddl_name)
     data = {}
     for external in externals:
         if not hasattr(external, 'instances'):
-            continue # TODO: SynthesizerStreams
+            continue  # TODO: SynthesizerStreams
         previous_statistics = previous_data.get(external.name, {})
         data[external.name] = merge_data(external, previous_statistics)
 
@@ -126,96 +139,121 @@ def write_stream_statistics(externals, verbose):
     if verbose:
         print('Wrote:', filename)
 
+
 ##################################################
 
+
 class PerformanceInfo:
-    def __init__(self, p_success=1-EPSILON, overhead=EPSILON, effort=None, estimate=False):
+    def __init__(self, p_success=1 - EPSILON, overhead=EPSILON, effort=None, estimate=False):
         # TODO: make info just a dict
         self.estimate = estimate
         if self.estimate:
             p_success = overhead = effort = None
         if p_success is not None:
-            assert 0. <= p_success <= 1.
+            assert 0.0 <= p_success <= 1.0
         if overhead is not None:
-            assert 0. <= overhead
+            assert 0.0 <= overhead
         self.p_success = p_success
         self.overhead = overhead
         self.effort = effort
+
     def __repr__(self):
         return f'{self.__class__.__name__}{repr(self.__dict__)}'
+
 
 class Performance(CreationHash):
     def __init__(self, name, info):
         self.name = name.lower()
         self.info = info
         self.initial_calls = 0
-        self.initial_overhead = 0.
+        self.initial_overhead = 0.0
         self.initial_successes = 0
         # TODO: online learning vs offline learning
         self.online_calls = 0
-        self.online_overhead = 0.
+        self.online_overhead = 0.0
         self.online_successes = 0
+
     @property
     def total_calls(self):
         return self.initial_calls + self.online_calls
+
     @property
     def total_overhead(self):
         return self.initial_overhead + self.online_overhead
+
     @property
     def total_successes(self):
         return self.initial_successes + self.online_successes
+
     def load_statistics(self, statistics):
         self.initial_calls = statistics['calls']
         self.initial_overhead = statistics['overhead']
         self.initial_successes = statistics['successes']
+
     def update_statistics(self, overhead, success):
         self.online_calls += 1
         self.online_overhead += overhead
         self.online_successes += success
-    def _estimate_p_success(self, reg_p_success=1., reg_calls=1):
+
+    def _estimate_p_success(self, reg_p_success=1.0, reg_calls=1):
         # TODO: use prior from info instead?
-        return safe_ratio(self.total_successes + reg_p_success * reg_calls,
-                          self.total_calls + reg_calls,
-                          undefined=reg_p_success)
+        return safe_ratio(
+            self.total_successes + reg_p_success * reg_calls, self.total_calls + reg_calls, undefined=reg_p_success
+        )
+
     def _estimate_overhead(self, reg_overhead=1e-6, reg_calls=1):
         # TODO: use prior from info instead?
-        return safe_ratio(self.total_overhead + reg_overhead * reg_calls,
-                          self.total_calls + reg_calls,
-                          undefined=reg_overhead)
+        return safe_ratio(
+            self.total_overhead + reg_overhead * reg_calls, self.total_calls + reg_calls, undefined=reg_overhead
+        )
+
     def get_p_success(self):
         # TODO: could precompute and store
         if self.info.p_success is None:
             return self._estimate_p_success()
         return self.info.p_success
+
     def get_overhead(self):
         if self.info.overhead is None:
             return self._estimate_overhead()
         return self.info.overhead
+
     def could_succeed(self):
         return self.get_p_success() > 0
+
     def _estimate_effort(self, search_overhead=DEFAULT_SEARCH_OVERHEAD):
         p_success = self.get_p_success()
-        return geometric_cost(self.get_overhead(), p_success) + \
-               (1 - p_success) * geometric_cost(search_overhead, p_success)
+        return geometric_cost(self.get_overhead(), p_success) + (1 - p_success) * geometric_cost(
+            search_overhead, p_success
+        )
+
     def get_effort(self, **kwargs):
         if self.info.effort is None:
             return self._estimate_effort(**kwargs)
         elif callable(self.info.effort):
             return 0  # This really is a bound on the effort
         return self.info.effort
-    def get_statistics(self, negate=False): # negate=True is for the "worst-case" ordering
+
+    def get_statistics(self, negate=False):  # negate=True is for the "worst-case" ordering
         sign = -1 if negate else +1
         return Stats(p_success=self.get_p_success(), overhead=sign * self.get_overhead())
+
     def dump_total(self):
-        print(f'External: {self.name} | n: {self.total_calls:d} | p_success: {self._estimate_p_success():.3f} | '
-              f'overhead: {self._estimate_overhead():.3f}')
+        print(
+            f'External: {self.name} | n: {self.total_calls:d} | p_success: {self._estimate_p_success():.3f} | '
+            f'overhead: {self._estimate_overhead():.3f}'
+        )
+
     def dump_online(self):
         if not self.online_calls:
             return
-        print(f'External: {self.name} | n: {self.online_calls:d} | '
-              f'p_success: {safe_ratio(self.online_successes, self.online_calls):.3f} | '
-              f'mean overhead: {safe_ratio(self.online_overhead, self.online_calls):.3f} | '
-              f'overhead: {self.online_overhead:.3f}')
+        print(
+            f'External: {self.name} | n: {self.online_calls:d} | '
+            f'p_success: {safe_ratio(self.online_successes, self.online_calls):.3f} | '
+            f'mean overhead: {safe_ratio(self.online_overhead, self.online_calls):.3f} | '
+            f'overhead: {self.online_overhead:.3f}'
+        )
+
 
 ##################################################
 
@@ -235,7 +273,3 @@ class Performance(CreationHash):
 
 # Goal: estimate P(Success | History)
 # P(Success | History) = P(Success | Samples) * P(Samples | History)
-
-
-
-

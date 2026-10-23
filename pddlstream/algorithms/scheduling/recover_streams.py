@@ -5,9 +5,10 @@ from pddlstream.language.conversion import is_negated_atom, fact_from_evaluation
 from pddlstream.language.statistics import check_effort
 from pddlstream.utils import HeapElement, INF
 
-Node = namedtuple('Node', ['effort', 'result']) # TODO: include level
-EFFORT_OP = sum # max | sum
+Node = namedtuple('Node', ['effort', 'result'])  # TODO: include level
+EFFORT_OP = sum  # max | sum
 NULL_COND = (None,)
+
 
 def get_achieving_streams(evaluations, stream_results, max_effort=INF, **effort_args):
     unprocessed_from_atom = defaultdict(list)
@@ -33,8 +34,7 @@ def get_achieving_streams(evaluations, stream_results, max_effort=INF, **effort_
             if remaining_from_stream[result]:
                 continue
             effort = result.get_effort(**effort_args)
-            total_effort = effort + EFFORT_OP(
-                node_from_atom[cond].effort for cond in conditions_from_stream[result])
+            total_effort = effort + EFFORT_OP(node_from_atom[cond].effort for cond in conditions_from_stream[result])
             if (max_effort is not None) and (max_effort <= total_effort):
                 continue
             for new_atom in result.get_certified():
@@ -45,18 +45,21 @@ def get_achieving_streams(evaluations, stream_results, max_effort=INF, **effort_
     del node_from_atom[NULL_COND]
     return node_from_atom
 
+
 def evaluations_from_stream_plan(evaluations, stream_results, max_effort=INF):
     opt_evaluations = set(evaluations)
     for result in stream_results:
         if result.instance.disabled or result.instance.enumerated:
             raise RuntimeError(result)
         domain = set(map(evaluation_from_fact, result.instance.get_domain()))
-        assert(domain <= opt_evaluations)
+        assert domain <= opt_evaluations
         opt_evaluations.update(map(evaluation_from_fact, result.get_certified()))
     node_from_atom = get_achieving_streams(evaluations, stream_results)
-    result_from_evaluation = {evaluation_from_fact(f): n.result for f, n in node_from_atom.items()
-                              if check_effort(n.effort, max_effort)}
+    result_from_evaluation = {
+        evaluation_from_fact(f): n.result for f, n in node_from_atom.items() if check_effort(n.effort, max_effort)
+    }
     return result_from_evaluation
+
 
 def extract_stream_plan(node_from_atom, target_facts, stream_plan):
     # TODO: prune with rules

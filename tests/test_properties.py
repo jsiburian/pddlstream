@@ -7,6 +7,7 @@ behavior change, rerun the affected cases with `--record` and review the diff of
 GUI cases run under a virtual X server (`pixi run test-gui`); slow and Gurobi cases are opt-in (`-m slow`,
 `pixi run -e full test-gurobi`).
 """
+
 import importlib.util
 import json
 import pathlib
@@ -34,13 +35,15 @@ def recorded_output(result):
     for call in result['calls']:
         cost = call['cost']
         summary = call['summary'] or {}
-        output.append({
-            'actions': [step[0] if isinstance(step, list) else step for step in call['plan'] or []],
-            'cost': round(cost, 6) if isinstance(cost, float) else cost,
-            'stream_calls': call['stream_calls'],
-            'digest': call['digest'],
-            **{name: summary[name] for name in COUNTERS if name in summary},
-        })
+        output.append(
+            {
+                'actions': [step[0] if isinstance(step, list) else step for step in call['plan'] or []],
+                'cost': round(cost, 6) if isinstance(cost, float) else cost,
+                'stream_calls': call['stream_calls'],
+                'digest': call['digest'],
+                **{name: summary[name] for name in COUNTERS if name in summary},
+            }
+        )
     return output
 
 
@@ -61,8 +64,9 @@ def test_example(case, tmp_path, record):
         pytest.skip('xvfb-run is not installed')
     if ('gurobi' in case.marks) and (importlib.util.find_spec('gurobipy') is None):
         pytest.skip('gurobipy is not installed (use the full environment)')
-    result = run_case(case.example, cwd=tmp_path, timeout=case.timeout, display=display,
-                      wall_clock=not case.deterministic)
+    result = run_case(
+        case.example, cwd=tmp_path, timeout=case.timeout, display=display, wall_clock=not case.deterministic
+    )
     assert result['error'] is None, result['error']
     assert result['calls'], 'The example never called a solver'
     for call in result['calls']:

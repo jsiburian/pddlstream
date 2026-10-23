@@ -1,13 +1,22 @@
 """Solves a constraint satisfaction problem by compiling it into a planning problem: clusters of constraints become
 actions whose parameters are the cluster's variables, and any PDDLStream algorithm solves the result."""
+
 from collections import namedtuple
 
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.satisfaction import SatisfactionSolution
 from pddlstream.algorithms.constraints import to_constant, ORDER_PREDICATE, ASSIGNED_PREDICATE
 from pddlstream.algorithms.downward import make_action, make_domain, make_predicate
-from pddlstream.language.constants import is_parameter, Not, PDDLProblem, MINIMIZE, NOT, partition_facts, get_costs, \
-    get_constraints
+from pddlstream.language.constants import (
+    is_parameter,
+    Not,
+    PDDLProblem,
+    MINIMIZE,
+    NOT,
+    partition_facts,
+    get_costs,
+    get_constraints,
+)
 from pddlstream.language.conversion import get_prefix, get_args, obj_from_value_expression
 from pddlstream.utils import safe_zip
 
@@ -31,12 +40,14 @@ def cluster_constraints(terms):
     # Can always combine clusters but leads to inefficient grounding
     # The extreme case of this making a single goal
     # Alternatively, can just keep each cluster separate (shouldn't slow down search much)
-    clusters = sorted([Cluster([constraint], set(get_parameters(constraint)))
-                       for constraint in get_constraints(terms)],
-                      key=lambda c: len(c.parameters), reverse=True)
-    cost_clusters = sorted([Cluster([cost], set(get_parameters(cost)))
-                            for cost in get_costs(terms)],
-                           key=lambda c: len(c.parameters))
+    clusters = sorted(
+        [Cluster([constraint], set(get_parameters(constraint))) for constraint in get_constraints(terms)],
+        key=lambda c: len(c.parameters),
+        reverse=True,
+    )
+    cost_clusters = sorted(
+        [Cluster([cost], set(get_parameters(cost))) for cost in get_costs(terms)], key=lambda c: len(c.parameters)
+    )
     for c1 in cost_clusters:
         for c2 in reversed(clusters):
             if 1 < len(get_costs(c1.constraints)) + len(get_costs(c2.constraints)):
@@ -60,14 +71,16 @@ def cluster_constraints(terms):
                 break
     return clusters
 
+
 ##################################################
+
 
 def planning_from_satisfaction(init, constraints):
     clusters = cluster_constraints(constraints)
     prefix = ''
     assigned_predicate = ASSIGNED_PREDICATE.format(prefix)
     order_predicate = ORDER_PREDICATE.format(prefix)
-    order_value_facts = [(order_predicate, f'_t{i}') for i in range(len(clusters)+1)]
+    order_value_facts = [(order_predicate, f'_t{i}') for i in range(len(clusters) + 1)]
     init.append(order_value_facts[0])
     goal_expression = order_value_facts[-1]
     order_facts = list(map(obj_from_value_expression, order_value_facts))
@@ -83,10 +96,15 @@ def planning_from_satisfaction(init, constraints):
 
         name = f'cluster-{i}'
         parameters = list(sorted(cluster.parameters))
-        preconditions = [(assigned_predicate, to_constant(p), p) for p in sorted(existing_parameters)] + \
-                        constraints + [order_facts[i]]
-        effects = [(assigned_predicate, to_constant(p), p) for p in parameters] + \
-                  [order_facts[i+1], Not(order_facts[i])]
+        preconditions = (
+            [(assigned_predicate, to_constant(p), p) for p in sorted(existing_parameters)]
+            + constraints
+            + [order_facts[i]]
+        )
+        effects = [(assigned_predicate, to_constant(p), p) for p in parameters] + [
+            order_facts[i + 1],
+            Not(order_facts[i]),
+        ]
 
         if costs:
             assert len(costs) == 1
@@ -96,16 +114,19 @@ def planning_from_satisfaction(init, constraints):
         actions.append(make_action(name, parameters, preconditions, effects, cost))
         bound_parameters.update(cluster.parameters)
 
-    predicates = [make_predicate(order_predicate, ['?step'])] # '?num',
+    predicates = [make_predicate(order_predicate, ['?step'])]  # '?num',
     domain = make_domain(predicates=predicates, actions=actions)
     return domain, goal_expression
 
+
 ##################################################
+
 
 def pddl_from_csp(stream_pddl, stream_map, init, constraints):
     domain, goal = planning_from_satisfaction(init, constraints)
     constant_map = {}
     return PDDLProblem(domain, constant_map, stream_pddl, stream_map, init, goal)
+
 
 def bindings_from_plan(problem, plan):
     if plan is None:
@@ -120,7 +141,9 @@ def bindings_from_plan(problem, plan):
             bindings[name] = arg
     return bindings
 
+
 ##################################################
+
 
 def solve_pddlstream_satisfaction(problem, **kwargs):
     # TODO: prune set of streams based on constraints
