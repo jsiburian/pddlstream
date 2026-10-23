@@ -119,28 +119,18 @@ def solve_abstract(
     num_iterations = eager_calls = 0
     complexity_limit = initial_complexity
 
-    evaluations, goal_exp, domain, externals = parse_problem(
-        problem, stream_info=stream_info, constraints=constraints, unit_costs=unit_costs, unit_efforts=unit_efforts
+    evaluations, goal_exp, domain, externals = compile_problem(
+        problem, stream_info, constraints, unit_costs, unit_efforts
     )
-    automatically_negate_externals(domain, externals)
-    enforce_simultaneous(domain, externals)
-    compile_fluent_streams(domain, externals)
     # TODO: make effort_weight be a function of the current cost
-
     if not deterministic:
         load_stream_statistics(externals)
-    if visualize and not has_pygraphviz():
-        visualize = False
-        logger.warning('visualize=True requires pygraphviz. Setting visualize=False')
-    if visualize:
-        reset_visualizations()
+    visualize = prepare_visualizations(visualize)
     streams, functions, negative, optimizers = partition_externals(externals, verbose=verbose)
     eager_externals = list(filter(lambda e: e.info.eager, externals))
     positive_externals = streams + functions + optimizers
     has_optimizers = bool(optimizers)  # TODO: deprecate
     assert implies(has_optimizers, use_skeletons)
-
-    ################
 
     store = SolutionStore(evaluations, max_time, success_cost, verbose, max_memory=max_memory)
     skeleton_queue = SkeletonQueue(store, domain, disable=not has_optimizers)
@@ -148,23 +138,13 @@ def solve_abstract(
     infeasible = False
     while (not store.is_terminated()) and (num_iterations < max_iterations) and (complexity_limit <= max_complexity):
         num_iterations += 1
-        eager_instantiator = Instantiator(eager_externals, evaluations)  # Only update after an increase?
-        if eager_disabled:
-            push_disabled(eager_instantiator, disabled)
-        if eager_externals:
-            eager_calls += process_stream_queue(
-                eager_instantiator, store, complexity_limit=complexity_limit, verbose=verbose
-            )
-
-        ################
-
-        logger.info(
-            f'\nIteration: {num_iterations} | Complexity: {complexity_limit} | '
-            f'Skeletons: {len(skeleton_queue.skeletons)} | Skeleton Queue: {len(skeleton_queue)} | '
-            f'Disabled: {len(disabled)} | Evaluations: {len(evaluations)} | Eager Calls: {eager_calls} | '
-            f'Cost: {store.best_cost:.3f} | Search Time: {store.search_time:.3f} | '
-            f'Sample Time: {store.sample_time:.3f} | Total Time: {store.elapsed_time():.3f}'
+        eager_instantiator, num_calls = process_eager_streams(
+            eager_externals, store, disabled, complexity_limit, eager_disabled, verbose
         )
+        eager_calls += num_calls
+        log_iteration(store, skeleton_queue, disabled, num_iterations, complexity_limit, eager_calls)
+
+        # Plan with optimistic stream outputs
         optimistic_solve_fn = get_optimistic_solve_fn(
             goal_exp,
             domain,
@@ -178,36 +158,16 @@ def solve_abstract(
         )
         # TODO: just set unit effort for each stream beforehand
         if (max_skeletons is None) or (len(skeleton_queue.skeletons) < max_skeletons):
-            disabled_axioms = create_disabled_axioms(skeleton_queue) if has_optimizers else []
-            if disabled_axioms:
-                domain.axioms.extend(disabled_axioms)
-            stream_plan, opt_plan, cost = iterative_plan_streams(
-                evaluations, positive_externals, optimistic_solve_fn, complexity_limit, max_effort=max_effort
+            stream_plan, opt_plan, cost = plan_optimistically(
+                skeleton_queue, positive_externals, optimistic_solve_fn, complexity_limit, max_effort, has_optimizers
             )
-            for axiom in disabled_axioms:
-                domain.axioms.remove(axiom)
         else:
             stream_plan, opt_plan, cost = OptSolution(INFEASIBLE, INFEASIBLE, INF)  # TODO: apply elsewhere
-
-        ################
-
         stream_plan = combine_optimizers(evaluations, stream_plan)
         if reorder:
             # TODO: this blows up memory wise for long stream plans
             stream_plan = reorder_stream_plan(store, stream_plan)
-
-        num_optimistic = sum(r.optimistic for r in stream_plan) if stream_plan else 0
-        action_plan = opt_plan.action_plan if is_plan(opt_plan) else opt_plan
-        logger.info(
-            f'Stream plan ({get_length(stream_plan)}, {num_optimistic}, '
-            f'{compute_plan_effort(stream_plan):.3f}): {stream_plan}\n'
-            f'Action plan ({get_length(action_plan)}, {cost:.3f}): {str_from_plan(action_plan)}'
-        )
-        if is_plan(stream_plan) and visualize:
-            log_plans(stream_plan, action_plan, num_iterations)
-            create_visualizations(evaluations, stream_plan, num_iterations)
-
-        ################
+        report_plans(evaluations, stream_plan, opt_plan, cost, num_iterations, visualize)
 
         if (stream_plan is INFEASIBLE) and (not eager_instantiator) and (not skeleton_queue) and (not disabled):
             infeasible = True
@@ -220,23 +180,12 @@ def solve_abstract(
             if not eager_disabled:
                 reenable_disabled(evaluations, domain, disabled)
 
+        # Sample the plan's streams: greedily for focused and binding, through the skeleton queue for adaptive
         if not use_skeletons:
             process_stream_plan(
                 store, domain, disabled, stream_plan, opt_plan, cost, bind=bind, max_failures=max_failures
             )
             continue
-
-        ################
-
-        optimizer_plan = None
-        if optimizer_plan is not None:
-            # TODO: post process a bound plan
-            logger.info(
-                f'Optimizer plan ({get_length(optimizer_plan)}, '
-                f'{compute_plan_effort(optimizer_plan):.3f}): {optimizer_plan}'
-            )
-            skeleton_queue.new_skeleton(optimizer_plan, opt_plan, cost)
-
         allocated_sample_time = (
             (search_sample_ratio * store.search_time) - store.sample_time
             if len(skeleton_queue.skeletons) <= max_skeletons
@@ -246,8 +195,6 @@ def solve_abstract(
             infeasible = True
             break
 
-    ################
-
     return store.finish(
         externals,
         infeasible,
@@ -255,6 +202,75 @@ def solve_abstract(
         complexity=complexity_limit,
         skeletons=len(skeleton_queue.skeletons),
     )
+
+
+def compile_problem(problem, stream_info, constraints, unit_costs, unit_efforts):
+    """Parses the problem and compiles its negated, simultaneous and fluent streams into the domain."""
+    evaluations, goal_exp, domain, externals = parse_problem(
+        problem, stream_info=stream_info, constraints=constraints, unit_costs=unit_costs, unit_efforts=unit_efforts
+    )
+    automatically_negate_externals(domain, externals)
+    enforce_simultaneous(domain, externals)
+    compile_fluent_streams(domain, externals)
+    return evaluations, goal_exp, domain, externals
+
+
+def prepare_visualizations(visualize):
+    """Whether to visualize, which needs pygraphviz; clears earlier visualizations if so."""
+    if visualize and not has_pygraphviz():
+        logger.warning('visualize=True requires pygraphviz. Setting visualize=False')
+        return False
+    if visualize:
+        reset_visualizations()
+    return visualize
+
+
+def process_eager_streams(eager_externals, store, disabled, complexity_limit, eager_disabled, verbose):
+    """Calls the eager streams up to the complexity limit, returning their instantiator and the number of calls."""
+    eager_instantiator = Instantiator(eager_externals, store.evaluations)  # Only update after an increase?
+    if eager_disabled:
+        push_disabled(eager_instantiator, disabled)
+    if not eager_externals:
+        return eager_instantiator, 0
+    num_calls = process_stream_queue(eager_instantiator, store, complexity_limit=complexity_limit, verbose=verbose)
+    return eager_instantiator, num_calls
+
+
+def plan_optimistically(skeleton_queue, externals, optimistic_solve_fn, complexity_limit, max_effort, has_optimizers):
+    """Searches for a stream plan and action plan; with optimizers, the skeletons found so far are excluded."""
+    domain = skeleton_queue.domain
+    disabled_axioms = create_disabled_axioms(skeleton_queue) if has_optimizers else []
+    domain.axioms.extend(disabled_axioms)
+    stream_plan, opt_plan, cost = iterative_plan_streams(
+        skeleton_queue.evaluations, externals, optimistic_solve_fn, complexity_limit, max_effort=max_effort
+    )
+    for axiom in disabled_axioms:
+        domain.axioms.remove(axiom)
+    return stream_plan, opt_plan, cost
+
+
+def log_iteration(store, skeleton_queue, disabled, num_iterations, complexity_limit, eager_calls):
+    logger.info(
+        f'\nIteration: {num_iterations} | Complexity: {complexity_limit} | '
+        f'Skeletons: {len(skeleton_queue.skeletons)} | Skeleton Queue: {len(skeleton_queue)} | '
+        f'Disabled: {len(disabled)} | Evaluations: {len(store.evaluations)} | Eager Calls: {eager_calls} | '
+        f'Cost: {store.best_cost:.3f} | Search Time: {store.search_time:.3f} | '
+        f'Sample Time: {store.sample_time:.3f} | Total Time: {store.elapsed_time():.3f}'
+    )
+
+
+def report_plans(evaluations, stream_plan, opt_plan, cost, num_iterations, visualize):
+    """Logs the stream plan and action plan, and draws them when visualizing."""
+    num_optimistic = sum(r.optimistic for r in stream_plan) if stream_plan else 0
+    action_plan = opt_plan.action_plan if is_plan(opt_plan) else opt_plan
+    logger.info(
+        f'Stream plan ({get_length(stream_plan)}, {num_optimistic}, '
+        f'{compute_plan_effort(stream_plan):.3f}): {stream_plan}\n'
+        f'Action plan ({get_length(action_plan)}, {cost:.3f}): {str_from_plan(action_plan)}'
+    )
+    if is_plan(stream_plan) and visualize:
+        log_plans(stream_plan, action_plan, num_iterations)
+        create_visualizations(evaluations, stream_plan, num_iterations)
 
 
 solve_focused = solve_abstract  # TODO: deprecate solve_focused
