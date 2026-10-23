@@ -36,9 +36,10 @@ def output_tail(result, num_chars=3000):
     return result.stdout[-num_chars:] + result.stderr[-num_chars:]
 
 
-def run_case(example, cwd, timeout=600, display=False):
+def run_case(example, cwd, timeout=600, display=False, wall_clock=False):
     """Runs an example (e.g. 'blocksworld.run -a focused') through tests/harness.py and returns its JSON result."""
-    result = run_python([str(HARNESS), *example.split()], cwd=cwd, timeout=timeout, display=display)
+    flags = ['--wall-clock'] if wall_clock else []
+    result = run_python([str(HARNESS), *flags, *example.split()], cwd=cwd, timeout=timeout, display=display)
     for line in reversed(result.stdout.splitlines()):
         if line.startswith(RESULT_PREFIX):
             return json.loads(line[len(RESULT_PREFIX):])

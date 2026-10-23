@@ -1,6 +1,6 @@
 """Times the benchmark cases in tests/cases.py and compares them with a saved baseline.
 
-Usage: pixi run bench [--save] [--repeat N] [--baseline PATH]
+Usage: pixi run bench [--save] [--repeat N] [--baseline PATH] [--wall-clock]
 
 Each case runs `repeat` times through tests/harness.py, and its fastest solve time is compared with the baseline:
 more than 10% slower warns and more than 20% fails (exit code 1), ignoring slowdowns under 50 ms. Search counters
@@ -23,11 +23,12 @@ MIN_SLOWDOWN = 0.05  # Seconds; timer noise for the fastest cases
 COUNTERS = ['iterations', 'evaluations', 'cost']
 
 
-def measure(case, repeat):
+def measure(case, repeat, wall_clock):
     times, counters = [], None
     for _ in range(repeat):
         with tempfile.TemporaryDirectory() as tmp:
-            result = run_case(case.example, cwd=tmp, timeout=case.timeout, display='gui' in case.marks)
+            result = run_case(case.example, cwd=tmp, timeout=case.timeout, display='gui' in case.marks,
+                              wall_clock=wall_clock)
         if result['error'] or not result['calls'] or not result['calls'][-1]['solved']:
             raise RuntimeError('{} did not solve: {}'.format(case.example, result['error']))
         times.append(sum(call['elapsed'] for call in result['calls']))
@@ -54,12 +55,13 @@ def main():
     parser.add_argument('--save', action='store_true', help='Overwrites the baseline with this run')
     parser.add_argument('--repeat', type=int, default=3, help='Runs per case (the fastest counts)')
     parser.add_argument('--baseline', type=pathlib.Path, default=ROOT / '.benchmarks' / 'baseline.json')
+    parser.add_argument('--wall-clock', action='store_true', help='Solves every case with deterministic=False')
     args = parser.parse_args()
 
     baseline = json.loads(args.baseline.read_text())['cases'] if args.baseline.exists() else {}
     results, failed = {}, False
     for case in (case for case in CASES if case.bench):
-        results[case.example] = measure(case, args.repeat)
+        results[case.example] = measure(case, args.repeat, args.wall_clock or not case.deterministic)
         status, message = compare(results[case.example], baseline.get(case.example))
         failed |= (status == 'FAIL')
         print('{:5} {:45} {}'.format(status, case.example, message), flush=True)

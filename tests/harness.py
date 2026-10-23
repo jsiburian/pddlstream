@@ -1,27 +1,34 @@
-"""Runs one example's main() and prints a JSON summary of its solve call.
+"""Runs one example's main() and prints a JSON summary of its solve calls.
 
-Usage: python tests/harness.py <example module> [example args...]
+Usage: python tests/harness.py [--wall-clock] <example module> [example args...]
 e.g.   python tests/harness.py continuous_tamp.run -p blocked -n 3
 
-The harness wraps the solver entry points before the example is imported and records each outermost solve call
-(problem, keyword arguments, solution, run time and the solver's summary). PDDLStream plans are then checked with
-pddlstream.algorithms.validate; plain PDDL plans and constraint-satisfaction assignments are only recorded.
-The last stdout line starting with RESULT_PREFIX holds the JSON result.
+The harness wraps the solver entry points before the example is imported. Each outermost PDDLStream solve runs with
+deterministic=True (unless --wall-clock) inside its own solve scope, and its plan is checked with
+pddlstream.algorithms.validate within that scope, before the object registries are cleared. Plain PDDL plans and
+constraint-satisfaction assignments are only recorded. Every stream and function call is logged by stream name and
+input object names, so the digest of the log identifies a run. The last stdout line starting with RESULT_PREFIX holds
+the JSON result.
 """
+import argparse
 import functools
+import hashlib
 import json
 import random
 import runpy
 import sys
 import time
 import traceback
+from collections import Counter
 
 import numpy as np
 
 from pddlstream.algorithms import focused, incremental, meta, satisfaction, search, serialized
+from pddlstream.algorithms.algorithm import solve_scope
 from pddlstream.algorithms.common import SolutionStore
 from pddlstream.algorithms.validate import validate_solution
 from pddlstream.language.constants import Action, is_plan
+from pddlstream.language.external import Instance
 from pddlstream.utils import INF
 
 RESULT_PREFIX = 'HARNESS_RESULT '
@@ -35,40 +42,6 @@ SOLVERS = {  # (module, name): what the solver returns
     (search, 'solve_from_pddl'): PDDL,  # (plan, cost)
     (satisfaction, 'constraint_satisfaction'): SATISFACTION,  # (bindings, cost, facts)
 }
-
-
-class Recorder:
-    def __init__(self):
-        self.calls = []
-        self.summaries = []
-        self.depth = 0
-
-    def wrap(self, solver, kind):
-        @functools.wraps(solver)
-        def wrapper(problem, *args, **kwargs):
-            outermost = (self.depth == 0)
-            self.depth += 1
-            start_time = time.perf_counter()
-            try:
-                solution = solver(problem, *args, **kwargs)
-            finally:
-                self.depth -= 1
-            if outermost:
-                self.calls.append({'solver': solver.__name__, 'kind': kind, 'problem': problem, 'kwargs': kwargs,
-                                   'solution': solution, 'elapsed': time.perf_counter() - start_time,
-                                   'summary': self.summaries[-1] if self.summaries else None})
-            return solution
-        return wrapper
-
-    def install(self):
-        for (module, name), kind in SOLVERS.items():
-            setattr(module, name, self.wrap(getattr(module, name), kind))
-        export_summary = SolutionStore.export_summary
-        def record_summary(store):
-            summary = export_summary(store)
-            self.summaries.append(summary)
-            return summary
-        SolutionStore.export_summary = record_summary
 
 
 def str_from_plan(plan, kind):
@@ -91,37 +64,91 @@ def to_json(value):
     return str(value)
 
 
-def summarize_call(call):
-    plan, cost = call['solution'][:2]
-    valid, replay_cost, validation_error = None, INF, None
-    if call['kind'] == PDDLSTREAM:
-        try:
-            valid, replay_cost = validate_solution(call['problem'], call['solution'],
-                                                   unit_costs=call['kwargs'].get('unit_costs', False))
-        except Exception:
-            validation_error = traceback.format_exc()
-    return {
-        'solver': call['solver'],
-        'kind': call['kind'],
-        'solved': is_plan(plan),
-        'plan': str_from_plan(plan, call['kind']),
-        'length': len(plan) if is_plan(plan) else None,
-        'cost': to_json(cost),
-        'valid': valid,
-        'replay_cost': to_json(replay_cost),
-        'validation_error': validation_error,
-        'elapsed': call['elapsed'],
-        'summary': to_json(call['summary']) if call['summary'] else None,
-    }
+class Recorder:
+    def __init__(self, deterministic):
+        self.deterministic = deterministic
+        self.calls = []
+        self.summaries = []
+        self.stream_calls = []
+        self.depth = 0
+
+    def wrap(self, solver, kind):
+        @functools.wraps(solver)
+        def wrapper(problem, *args, **kwargs):
+            if self.depth:  # Only the outermost call is recorded
+                return solver(problem, *args, **kwargs)
+            self.depth += 1
+            try:
+                if kind != PDDLSTREAM:
+                    return self.record(solver, kind, problem, args, kwargs)
+                kwargs.setdefault('deterministic', self.deterministic)
+                with solve_scope(self.deterministic):  # Keeps the objects alive until the plan is validated
+                    return self.record(solver, kind, problem, args, kwargs)
+            finally:
+                self.depth -= 1
+        return wrapper
+
+    def record(self, solver, kind, problem, args, kwargs):
+        num_summaries, first_stream_call = len(self.summaries), len(self.stream_calls)
+        start_time = time.perf_counter()
+        solution = solver(problem, *args, **kwargs)
+        elapsed = time.perf_counter() - start_time
+        summary = self.summaries[-1] if len(self.summaries) > num_summaries else None
+        stream_calls = self.stream_calls[first_stream_call:]
+        plan, cost = solution[:2]
+        valid, replay_cost, validation_error = None, INF, None
+        if kind == PDDLSTREAM:
+            try:
+                valid, replay_cost = validate_solution(problem, solution, unit_costs=kwargs.get('unit_costs', False))
+            except Exception:
+                validation_error = traceback.format_exc()
+        self.calls.append({
+            'solver': solver.__name__,
+            'kind': kind,
+            'solved': is_plan(plan),
+            'plan': str_from_plan(plan, kind),
+            'length': len(plan) if is_plan(plan) else None,
+            'cost': to_json(cost),
+            'valid': valid,
+            'replay_cost': to_json(replay_cost),
+            'validation_error': validation_error,
+            'elapsed': elapsed,
+            'summary': to_json(summary) if summary else None,
+            'stream_calls': dict(sorted(Counter(name for name, _ in stream_calls).items())),
+            'digest': hashlib.sha256(repr(stream_calls).encode()).hexdigest()[:16],
+        })
+        return solution
+
+    def install(self):
+        for (module, name), kind in SOLVERS.items():
+            setattr(module, name, self.wrap(getattr(module, name), kind))
+
+        export_summary = SolutionStore.export_summary
+        def record_summary(store):
+            summary = export_summary(store)
+            self.summaries.append(summary)
+            return summary
+        SolutionStore.export_summary = record_summary
+
+        # Every stream and function call that runs the user's procedure updates the statistics once
+        update_statistics = Instance.update_statistics
+        def record_stream_call(instance, *args, **kwargs):
+            self.stream_calls.append((instance.external.name, tuple(obj.pddl for obj in instance.input_objects)))
+            return update_statistics(instance, *args, **kwargs)
+        Instance.update_statistics = record_stream_call
 
 
 def main():
-    module, *args = sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--wall-clock', action='store_true', help='Solves with deterministic=False')
+    parser.add_argument('example', nargs=argparse.REMAINDER, help='The example module and its arguments')
+    args = parser.parse_args()
+    module, *example_args = args.example
     random.seed(0)
     np.random.seed(0)
-    recorder = Recorder()
+    recorder = Recorder(deterministic=not args.wall_clock)
     recorder.install()
-    sys.argv = [module, *args]
+    sys.argv = [module, *example_args]
     error = None
     try:
         runpy.run_module('examples.' + module, run_name='__main__', alter_sys=True)
@@ -130,11 +157,7 @@ def main():
             error = 'SystemExit({})'.format(exception.code)
     except Exception:
         error = traceback.format_exc()
-    result = {
-        'example': ' '.join([module, *args]),
-        'error': error,
-        'calls': [summarize_call(call) for call in recorder.calls],
-    }
+    result = {'example': ' '.join(args.example), 'error': error, 'calls': recorder.calls}
     print('\n' + RESULT_PREFIX + json.dumps(result))  # Examples may leave a prompt without a newline
 
 

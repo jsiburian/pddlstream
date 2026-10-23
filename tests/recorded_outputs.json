@@ -1,0 +1,910 @@
+{
+ "advanced.adl.run": [
+  {
+   "actions": [
+    "imply-act"
+   ],
+   "complexity": 0,
+   "cost": 0.0,
+   "digest": "4f53cda18c2baa0c",
+   "evaluations": 2,
+   "iterations": 1,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {}
+  }
+ ],
+ "advanced.counting.run": [
+  {
+   "actions": [
+    "achieve"
+   ],
+   "complexity": 5,
+   "cost": 0.0,
+   "digest": "15e561ba76a55384",
+   "evaluations": 12,
+   "iterations": 24,
+   "skeletons": 19,
+   "solutions": 1,
+   "stream_calls": {
+    "decrement": 9,
+    "increment": 9,
+    "test-large": 11
+   }
+  }
+ ],
+ "advanced.defer.run": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "StreamAction(name='motion', inputs=(array([1, 1]), array([2, 1])), outputs=('#t1',))",
+    "move",
+    "place"
+   ],
+   "complexity": 3,
+   "cost": 0.0,
+   "digest": "fb242dc00a10ad6d",
+   "evaluations": 14,
+   "iterations": 5,
+   "skeletons": 2,
+   "solutions": 1,
+   "stream_calls": {
+    "inv-kin": 2,
+    "motion": 1,
+    "sample-pose": 1,
+    "test-pose": 1
+   }
+  }
+ ],
+ "advanced.exogenous.run": [
+  {
+   "actions": [
+    "phone",
+    "StreamAction(name='inv-kin', inputs=(L(None),), outputs=(ik_fn(L(None)),))",
+    "StreamAction(name='motion', inputs=(array([0, 1]), ik_fn(L(None))), outputs=(motion_fn(array([0, 1]), ik_fn(L(None))),))",
+    "move",
+    "pick"
+   ],
+   "complexity": 2,
+   "cost": 0.0,
+   "digest": "59f79d23079eacd0",
+   "evaluations": 13,
+   "iterations": 3,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "inv-kin": 1,
+    "motion": 1
+   }
+  }
+ ],
+ "advanced.fluent.run": [
+  {
+   "actions": [
+    "pick",
+    "pick",
+    "clean",
+    "cook",
+    "clean"
+   ],
+   "complexity": 0,
+   "cost": 0.0,
+   "digest": "2a4a62b161d4428e",
+   "evaluations": 8,
+   "iterations": 2,
+   "skeletons": 2,
+   "solutions": 1,
+   "stream_calls": {
+    "sample-pickable": 3,
+    "test-cleanable": 2
+   }
+  }
+ ],
+ "advanced.multi_cost": [
+  {
+   "actions": [
+    "execute2"
+   ],
+   "complexity": 1,
+   "cost": 4.0,
+   "digest": "9dc951ab16fca8d9",
+   "evaluations": 2,
+   "iterations": 2,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "sample-control": 1,
+    "sum": 1
+   }
+  }
+ ],
+ "advanced.satisfy.run": [
+  {
+   "actions": [
+    "?x1",
+    "?x2"
+   ],
+   "cost": 0.0,
+   "digest": "1c3938e3b24d05d9",
+   "stream_calls": {
+    "negative": 1,
+    "positive": 5,
+    "test-large": 5,
+    "test-small": 1
+   }
+  }
+ ],
+ "advanced.satisfy.run -a adaptive": [
+  {
+   "actions": [
+    "cluster-0",
+    "cluster-1"
+   ],
+   "complexity": 1,
+   "cost": 0.0,
+   "digest": "b1a49d1196d0e062",
+   "evaluations": 15,
+   "iterations": 2,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "negative": 1,
+    "positive": 5,
+    "test-large": 5,
+    "test-small": 1
+   }
+  }
+ ],
+ "advanced.storage": [
+  {
+   "actions": [
+    "pick",
+    "place",
+    "push",
+    "pick",
+    "place"
+   ],
+   "complexity": 0,
+   "cost": 0.0,
+   "digest": "4f53cda18c2baa0c",
+   "evaluations": 40,
+   "iterations": 1,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {}
+  }
+ ],
+ "advanced.wild.run": [
+  {
+   "actions": [
+    "cut",
+    "cut",
+    "move",
+    "move"
+   ],
+   "complexity": 3,
+   "cost": 47.312,
+   "digest": "5ae421edea975eae",
+   "evaluations": 14,
+   "iterations": 4,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "compute-split": 2,
+    "sample-split": 1,
+    "splitcost": 2
+   }
+  }
+ ],
+ "blocksworld.run -a adaptive": [
+  {
+   "actions": [
+    "unstack",
+    "putdown",
+    "pickup",
+    "stack"
+   ],
+   "complexity": 0,
+   "cost": 0.0,
+   "digest": "4f53cda18c2baa0c",
+   "evaluations": 4,
+   "iterations": 1,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {}
+  }
+ ],
+ "blocksworld.run -a binding": [
+  {
+   "actions": [
+    "unstack",
+    "putdown",
+    "pickup",
+    "stack"
+   ],
+   "complexity": 0,
+   "cost": 0.0,
+   "digest": "4f53cda18c2baa0c",
+   "evaluations": 4,
+   "iterations": 1,
+   "skeletons": 0,
+   "solutions": 1,
+   "stream_calls": {}
+  }
+ ],
+ "blocksworld.run -a focused": [
+  {
+   "actions": [
+    "unstack",
+    "putdown",
+    "pickup",
+    "stack"
+   ],
+   "complexity": 0,
+   "cost": 0.0,
+   "digest": "4f53cda18c2baa0c",
+   "evaluations": 4,
+   "iterations": 1,
+   "skeletons": 0,
+   "solutions": 1,
+   "stream_calls": {}
+  }
+ ],
+ "blocksworld.run -a incremental": [
+  {
+   "actions": [
+    "unstack",
+    "putdown",
+    "pickup",
+    "stack"
+   ],
+   "complexity": 0,
+   "cost": 0.0,
+   "digest": "4f53cda18c2baa0c",
+   "evaluations": 4,
+   "iterations": 1,
+   "solutions": 1,
+   "stream_calls": {}
+  }
+ ],
+ "blocksworld.run_derived": [
+  {
+   "actions": [
+    "unstack",
+    "putdown",
+    "pickup",
+    "stack"
+   ],
+   "complexity": 0,
+   "cost": 4.0,
+   "digest": "4f53cda18c2baa0c",
+   "evaluations": 3,
+   "iterations": 1,
+   "solutions": 1,
+   "stream_calls": {}
+  }
+ ],
+ "continuous_tamp.diverse": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 3,
+   "cost": 9.0,
+   "digest": "0586672687b37b8e",
+   "evaluations": 44,
+   "iterations": 4,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "s-grasp": 2,
+    "s-ik": 4,
+    "s-motion": 5,
+    "s-region": 2,
+    "t-cfree": 2
+   }
+  },
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 3,
+   "cost": 9.0,
+   "digest": "5920cc9adef4dde7",
+   "evaluations": 44,
+   "iterations": 4,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "s-grasp": 2,
+    "s-ik": 4,
+    "s-motion": 5,
+    "s-region": 2,
+    "t-cfree": 2
+   }
+  }
+ ],
+ "continuous_tamp.ffrob.run": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 3,
+   "cost": 9.0,
+   "digest": "819c49362846a47c",
+   "evaluations": 670,
+   "iterations": 3,
+   "solutions": 1,
+   "stream_calls": {
+    "connect": 7,
+    "s-ik": 6,
+    "s-region": 8,
+    "t-cfree": 560,
+    "t-region": 20
+   }
+  }
+ ],
+ "continuous_tamp.idtmp.run": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 6,
+   "cost": 9.0,
+   "digest": "1c7106cbbc3815e0",
+   "evaluations": 320,
+   "iterations": 11,
+   "skeletons": 5,
+   "solutions": 1,
+   "stream_calls": {
+    "s-ik": 19,
+    "s-motion": 228,
+    "s-region": 17
+   }
+  }
+ ],
+ "continuous_tamp.run": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 10,
+   "cost": 101.777846,
+   "digest": "8c816e1105e79f2b",
+   "evaluations": 274,
+   "iterations": 12,
+   "skeletons": 2,
+   "solutions": 1,
+   "stream_calls": {
+    "dist": 46,
+    "s-grasp": 2,
+    "s-ik": 17,
+    "s-motion": 5,
+    "s-region": 15,
+    "t-cfree": 118,
+    "t-region": 32
+   }
+  }
+ ],
+ "continuous_tamp.run -a incremental -c": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 4,
+   "cost": 96.888,
+   "digest": "5a868c43eeb2a4b5",
+   "evaluations": 537,
+   "iterations": 4,
+   "solutions": 1,
+   "stream_calls": {
+    "dist": 121,
+    "duration": 49,
+    "s-grasp": 2,
+    "s-ik": 10,
+    "s-motion": 49,
+    "s-region": 12,
+    "t-cfree": 196,
+    "t-region": 28
+   }
+  }
+ ],
+ "continuous_tamp.run -p blocked -n 3": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move"
+   ],
+   "complexity": 4,
+   "cost": 118.738594,
+   "digest": "c5e417b855a86b0b",
+   "evaluations": 145,
+   "iterations": 6,
+   "skeletons": 2,
+   "solutions": 1,
+   "stream_calls": {
+    "dist": 31,
+    "s-grasp": 3,
+    "s-ik": 13,
+    "s-motion": 6,
+    "s-region": 10,
+    "t-cfree": 26,
+    "t-region": 11
+   }
+  }
+ ],
+ "continuous_tamp.run -s": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 10,
+   "cost": 95.776854,
+   "digest": "6e03c8c05600f470",
+   "evaluations": 204,
+   "iterations": 11,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "dist": 31,
+    "s-grasp": 2,
+    "s-ik": 17,
+    "s-motion": 5,
+    "s-region": 15,
+    "t-cfree": 63,
+    "t-region": 32
+   }
+  }
+ ],
+ "continuous_tamp.satisfy": [
+  {
+   "actions": [
+    "?g0",
+    "?g1",
+    "?p0",
+    "?p1",
+    "?q0",
+    "?q1",
+    "?q2",
+    "?q3",
+    "?t0",
+    "?t1",
+    "?t2",
+    "?t3"
+   ],
+   "cost": 75.563746,
+   "digest": "24f28190affdf262",
+   "stream_calls": {
+    "dist": 23,
+    "s-grasp": 2,
+    "s-ik": 17,
+    "s-motion": 4,
+    "s-region": 15,
+    "t-cfree": 62
+   }
+  }
+ ],
+ "discrete_tamp.push.run": [
+  {
+   "actions": [
+    "move",
+    "push",
+    "move",
+    "push",
+    "move",
+    "push",
+    "push",
+    "move"
+   ],
+   "complexity": 1,
+   "cost": 20.0,
+   "digest": "85979ac346148053",
+   "evaluations": 51,
+   "iterations": 6,
+   "skeletons": 5,
+   "solutions": 1,
+   "stream_calls": {
+    "distance": 18,
+    "push-direction": 4,
+    "push-target": 2,
+    "rule0": 2,
+    "test-cfree": 11
+   }
+  }
+ ],
+ "discrete_tamp.run": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place"
+   ],
+   "complexity": 2,
+   "cost": 10.0,
+   "digest": "0891abc169df8280",
+   "evaluations": 41,
+   "iterations": 5,
+   "skeletons": 3,
+   "solutions": 1,
+   "stream_calls": {
+    "distance": 18,
+    "inverse-kinematics": 3,
+    "rule0": 2,
+    "sample-pose": 1,
+    "test-cfree": 4
+   }
+  }
+ ],
+ "ipc.rovers.run": [
+  {
+   "actions": [
+    "calibrate",
+    "take_image",
+    "communicate_image_data",
+    "sample_rock",
+    "navigate",
+    "navigate",
+    "communicate_rock_data",
+    "drop",
+    "sample_soil",
+    "communicate_soil_data"
+   ],
+   "cost": 0.01,
+   "digest": "4f53cda18c2baa0c",
+   "stream_calls": {}
+  }
+ ],
+ "ipc.satellites.run": [
+  {
+   "actions": [
+    "switch_on",
+    "turn_to",
+    "calibrate",
+    "turn_to",
+    "take_image",
+    "turn_to",
+    "take_image",
+    "turn_to",
+    "take_image"
+   ],
+   "cost": 0.009,
+   "digest": "4f53cda18c2baa0c",
+   "stream_calls": {}
+  }
+ ],
+ "kitchen.run": [
+  {
+   "actions": [
+    "move",
+    "push",
+    "move",
+    "pick",
+    "move",
+    "scoop",
+    "move",
+    "dump",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "fill",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "pour",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "stack",
+    "move",
+    "pick",
+    "move",
+    "stir",
+    "move",
+    "place"
+   ],
+   "complexity": 2,
+   "cost": 32.0,
+   "digest": "03023a4cf5e4d1d1",
+   "evaluations": 78,
+   "iterations": 3,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "sample-dump": 1,
+    "sample-fill": 1,
+    "sample-grasp-ctrl": 5,
+    "sample-grasp-cup": 1,
+    "sample-grasp-stirrer": 1,
+    "sample-motion": 14,
+    "sample-pour": 1,
+    "sample-push": 1,
+    "sample-scoop": 1,
+    "sample-stack": 1,
+    "sample-stir": 1
+   }
+  }
+ ],
+ "pybullet.kuka.run": [
+  {
+   "actions": [
+    "move_free",
+    "pick",
+    "move_holding",
+    "place",
+    "clean",
+    "pick",
+    "move_holding",
+    "place",
+    "move_free",
+    "cook"
+   ],
+   "complexity": 2,
+   "cost": 0.0,
+   "digest": "dc723c670b28f26d",
+   "evaluations": 50,
+   "iterations": 3,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "inverse-kinematics": 4,
+    "plan-free-motion": 2,
+    "plan-holding-motion": 2,
+    "sample-grasp": 1,
+    "sample-pose": 3,
+    "test-cfree-approach-pose": 3,
+    "test-cfree-pose-pose": 2,
+    "test-cfree-traj-pose": 5
+   }
+  }
+ ],
+ "pybullet.pr2.run -teleport": [
+  {
+   "actions": [
+    "move_base",
+    "pick",
+    "move_base",
+    "place",
+    "clean",
+    "pick",
+    "move_base",
+    "place",
+    "cook"
+   ],
+   "complexity": 3,
+   "cost": 7.0,
+   "digest": "c43cfe97d20ca53d",
+   "evaluations": 49,
+   "iterations": 4,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "inverse-kinematics": 3,
+    "movecost": 3,
+    "plan-base-motion": 3,
+    "sample-grasp": 1,
+    "sample-pose": 2,
+    "test-cfree-traj-pose": 2
+   }
+  }
+ ],
+ "pybullet.pr2_rovers.run": [
+  {
+   "actions": [
+    "move_head",
+    "move_base",
+    "calibrate",
+    "take_image",
+    "move_head",
+    "move_base",
+    "send_image"
+   ],
+   "complexity": 2,
+   "cost": 0.0,
+   "digest": "94dd1f9d5aefe618",
+   "evaluations": 30,
+   "iterations": 3,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "com-inv-visible": 1,
+    "obj-inv-visible": 1,
+    "sample-base-motion": 2,
+    "sample-head-motion": 2
+   }
+  }
+ ],
+ "pybullet.tamp.run -n 2": [
+  {
+   "actions": [
+    "move_base",
+    "pick",
+    "move_base",
+    "place",
+    "move_base",
+    "pick",
+    "move_base",
+    "place"
+   ],
+   "complexity": 3,
+   "cost": 33.708749,
+   "digest": "5fc7bf58d631012b",
+   "evaluations": 71,
+   "iterations": 4,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "distance": 5,
+    "inverse-kinematics": 4,
+    "plan-base-motion": 4,
+    "sample-grasp": 2,
+    "sample-pose": 2,
+    "test-cfree-approach-pose": 4,
+    "test-cfree-pose-pose": 2,
+    "test-cfree-traj-pose": 6
+   }
+  }
+ ],
+ "pybullet.tamp.run -n 3 -teleport": [
+  {
+   "actions": [
+    "move_base",
+    "pick",
+    "move_base",
+    "place",
+    "move_base",
+    "pick",
+    "move_base",
+    "place",
+    "move_base",
+    "pick",
+    "move_base",
+    "place"
+   ],
+   "complexity": 3,
+   "cost": 47.076949,
+   "digest": "8888b7f4fa2c0c5b",
+   "evaluations": 114,
+   "iterations": 4,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "distance": 7,
+    "inverse-kinematics": 6,
+    "plan-base-motion": 6,
+    "sample-grasp": 3,
+    "sample-pose": 3,
+    "test-cfree-approach-pose": 12,
+    "test-cfree-pose-pose": 6,
+    "test-cfree-traj-pose": 15
+   }
+  }
+ ],
+ "table_belief.run": [
+  {
+   "actions": [
+    "scan",
+    "scan",
+    "scan",
+    "register",
+    "scan",
+    "pick",
+    "place",
+    "register",
+    "pick",
+    "register"
+   ],
+   "complexity": 0,
+   "cost": 10.532,
+   "digest": "4f53cda18c2baa0c",
+   "evaluations": 38,
+   "iterations": 1,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {}
+  }
+ ],
+ "temporal.run": [
+  {
+   "actions": [
+    "start-cooking",
+    "start-cooking",
+    "wait",
+    "stop-cooking",
+    "stop-cooking",
+    "start-cooking",
+    "wait",
+    "stop-cooking"
+   ],
+   "complexity": "inf",
+   "cost": 4.0,
+   "digest": "d63858733d28b9a3",
+   "evaluations": 204,
+   "iterations": 1,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "add": 11,
+    "difference": 78,
+    "elapsed": 1,
+    "ge": 144
+   }
+  }
+ ]
+}
