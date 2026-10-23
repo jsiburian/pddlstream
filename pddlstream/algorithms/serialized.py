@@ -1,3 +1,5 @@
+import logging
+
 from pddlstream.algorithms.algorithm import parse_problem
 from pddlstream.algorithms.common import evaluations_from_init
 from pddlstream.algorithms.downward import (
@@ -9,6 +11,7 @@ from pddlstream.algorithms.downward import (
     task_from_domain_problem,
 )
 from pddlstream.algorithms.focused import solve_focused
+from pddlstream.core.log import console_output
 from pddlstream.fastdownward.translator import pddl
 from pddlstream.language.constants import (
     AND,
@@ -23,6 +26,8 @@ from pddlstream.language.constants import (
 )
 from pddlstream.language.conversion import Certificate, Object, transform_plan_args, value_from_evaluation
 from pddlstream.utils import INF, SEPARATOR, Verbose, str_from_object
+
+logger = logging.getLogger(__name__)
 
 
 def serialize_goal(goal):
@@ -47,7 +52,7 @@ def apply_actions(domain, state, plan, unit_costs=False):
 
     # Goal serialization just assumes the tail of the plan includes an abstract action to achieve each condition
     static_state, _ = partition_facts(domain, state)
-    print('Static:', static_state)
+    logger.info(f'Static: {static_state}')
     # TODO: might need properties that involve an object that aren't useful yet
     evaluations = evaluations_from_init(state)
     goal_exp = None
@@ -62,7 +67,7 @@ def apply_actions(domain, state, plan, unit_costs=False):
         for atom in task.init
         if isinstance(atom, pddl.Atom) and (atom.predicate in fluents)
     ]
-    print('Fluent:', fluent_state)
+    logger.info(f'Fluent: {fluent_state}')
     state = static_state + fluent_state
     return state
 
@@ -70,6 +75,7 @@ def apply_actions(domain, state, plan, unit_costs=False):
 ##################################################
 
 
+@console_output()
 def solve_serialized(
     initial_problem, stream_info={}, unit_costs=False, unit_efforts=False, verbose=True, retain_facts=True, **kwargs
 ):
@@ -89,7 +95,7 @@ def solve_serialized(
         for stream in streams:
             stream.reset()
         goal = And(*goals[: i + 1])
-        print('Goal:', str_from_object(goal))
+        logger.info(f'Goal: {str_from_object(goal)}')
         # No strict need to reuse streams because generator functions
         local_problem = PDDLProblem(domain_pddl, constant_map, streams, None, state, goal)
         with Verbose(verbose):
@@ -119,9 +125,9 @@ def solve_serialized(
         global_cost += local_cost
 
         static_state, _ = partition_facts(domain, state)
-        print('Static:', static_state)
+        logger.info(f'Static: {static_state}')
         state = apply_actions(domain, state, local_plan, unit_costs=unit_costs)
-        print(SEPARATOR)
+        logger.info(SEPARATOR)
         # TODO: could also just test the goal here
         # TODO: constrain future plan skeletons
 

@@ -1,4 +1,5 @@
 import copy
+import logging
 from collections import defaultdict
 
 from pddlstream.algorithms.downward import (
@@ -13,6 +14,8 @@ from pddlstream.algorithms.instantiate_task import filter_negated, get_achieving
 from pddlstream.fastdownward.translator import axiom_rules, build_model, instantiate, options, pddl, pddl_to_prolog
 from pddlstream.language.constants import is_parameter
 from pddlstream.utils import MockSet, Verbose, flatten, safe_zip
+
+logger = logging.getLogger(__name__)
 
 
 def get_necessary_axioms(conditions, axioms, negative_from_name):
@@ -84,7 +87,7 @@ def extract_axioms(state, axiom_from_atom, conditions, axiom_plan, negated_from_
         if literal_holds(state, fact):
             continue
         if fact not in axiom_from_atom:
-            print('Fact is not achievable:', fact)
+            logger.info(f'Fact is not achievable: {fact}')
             success = False
             continue
         axiom = axiom_from_atom[fact]
@@ -137,7 +140,7 @@ def extraction_helper(state, instantiated_axioms, goals, negative_from_name={}):
     axiom_plan = []  # Could always add all conditions
     success = extract_axioms(state | axiom_init, axiom_from_atom, goals, axiom_plan, negative_from_name)
     if not success:
-        print('Warning! Could not extract an axiom plan')
+        logger.warning('Could not extract an axiom plan')
     return axiom_plan
 
 
@@ -231,9 +234,9 @@ def recover_axioms_plans(instantiated, action_instances):
         axiom_plans.append([])
         success = extract_axioms(state, axiom_from_atom, precondition, axiom_plans[-1])
         if not success:
-            print(all_conditions)
-            print(action)
-            print(axioms)
+            logger.info(all_conditions)
+            logger.info(action)
+            logger.info(axioms)
             raise RuntimeError('Could not extract axioms')
         apply_action(state, action)
     return new_action_instances, axiom_plans

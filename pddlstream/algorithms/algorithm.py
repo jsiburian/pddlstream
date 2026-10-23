@@ -1,6 +1,7 @@
 import dataclasses
 import functools
 import inspect
+import logging
 from collections import Counter
 from contextlib import contextmanager
 
@@ -24,6 +25,7 @@ from pddlstream.core.context import (
     get_config,
     get_context,
 )
+from pddlstream.core.log import console_output
 from pddlstream.language.constants import get_args, get_prefix
 from pddlstream.language.conversion import obj_from_value_expression
 from pddlstream.language.exogenous import FutureValue, compile_to_exogenous
@@ -34,6 +36,8 @@ from pddlstream.language.optimizer import parse_optimizer
 from pddlstream.language.rule import RULES, apply_rules_to_streams, parse_rule
 from pddlstream.language.stream import Stream, StreamInstance, parse_stream
 from pddlstream.utils import INF, reset_creation_hashes
+
+logger = logging.getLogger(__name__)
 
 # TODO: rename file to parsing
 
@@ -77,9 +81,9 @@ def check_problem(domain, streams, obj_from_constant):
             if name not in domain.predicate_dict:
                 undeclared_predicates.add(name)
             elif len(get_args(fact)) != domain.predicate_dict[name].get_arity():  # predicate used with wrong arity: {}
-                print(f'Warning! predicate used with wrong arity in stream [{stream.name}]: {fact}')
+                logger.warning(f'predicate used with wrong arity in stream [{stream.name}]: {fact}')
     if undeclared_predicates:
-        print(f'Warning! Undeclared predicates: {sorted(undeclared_predicates)}')  # Undeclared predicate: {}
+        logger.warning(f'Undeclared predicates: {sorted(undeclared_predicates)}')  # Undeclared predicate: {}
 
 
 def reset_registries():
@@ -110,7 +114,7 @@ def solve_scope(config=None):
             yield
         return
     try:
-        with activate(SolveContext(config, WorkClock() if config.deterministic else WallClock())):
+        with activate(SolveContext(config, WorkClock() if config.deterministic else WallClock())), console_output():
             yield
     finally:
         # Cleared afterwards rather than beforehand because callers may create objects before solving (satisfaction)
@@ -153,7 +157,7 @@ def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, u
         set_unit_costs(domain)
     if not has_costs(domain):
         # TODO: set effort_weight to 1 if no costs
-        print('Warning! All actions have no cost. Recommend setting unit_costs=True')
+        logger.warning('All actions have no cost. Recommend setting unit_costs=True')
     obj_from_constant = parse_constants(domain, constant_map)  # Keep before parse_stream_pddl
 
     streams = parse_stream_pddl(

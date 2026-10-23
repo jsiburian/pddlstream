@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import namedtuple
 from collections.abc import Sized
@@ -21,6 +22,8 @@ from pddlstream.utils import (
     incoming_from_edges,
     outgoing_from_edges,
 )
+
+logger = logging.getLogger(__name__)
 
 # TODO: the bias away from solved things is actually due to USE_PRIORITIES+timed_process not REQUIRE_DOWNSTREAM
 USE_PRIORITIES = True
@@ -390,7 +393,7 @@ class SkeletonQueue(Sized):
         num_new = 0
         if not self.is_active():
             return num_new
-        print('Sampling until new output values')
+        logger.info('Sampling until new output values')
         iterations = 0
         last_time = time.time()
         while self.is_active() and (not num_new):
@@ -403,7 +406,9 @@ class SkeletonQueue(Sized):
                 self.standby.append(binding)  # TODO: test for deciding whether to standby
             num_new += is_new
             if print_frequency <= elapsed_time(last_time):
-                print(f'Queue: {len(self.queue)} | Iterations: {iterations} | Time: {elapsed_time(last_time):.3f}')
+                logger.info(
+                    f'Queue: {len(self.queue)} | Iterations: {iterations} | Time: {elapsed_time(last_time):.3f}'
+                )
                 last_time = time.time()
         self.readd_standby()
         return num_new + self.greedily_process()
@@ -413,7 +418,7 @@ class SkeletonQueue(Sized):
         num_new = 0
         if not self.is_active():
             return num_new
-        print(f'Sampling while complexity <= {complexity_limit}')
+        logger.info(f'Sampling while complexity <= {complexity_limit}')
         while self.is_active():
             _, binding = self.pop_binding()
             if binding.check_complexity(complexity_limit):  # not binding.up_to_date() or
@@ -433,7 +438,7 @@ class SkeletonQueue(Sized):
         iterations = num_new = 0
         if not self.is_active():
             return num_new
-        print(f'Sampling for up to {max_time:.3f} {get_clock().unit}')
+        logger.info(f'Sampling for up to {max_time:.3f} {get_clock().unit}')
         start_time = get_clock().now()
         while self.is_active() and (get_clock().now() - start_time < max_time) and (iterations < max_iterations):
             iterations += 1

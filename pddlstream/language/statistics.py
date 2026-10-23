@@ -1,9 +1,12 @@
+import logging
 import os
 from collections import namedtuple
 
 from pddlstream.core.context import get_config
 from pddlstream.language.constants import is_plan
 from pddlstream.utils import INF, CreationHash, ensure_dir, read_pickle, write_pickle
+
+logger = logging.getLogger(__name__)
 
 # Deprecated: pass load_statistics=False or save_statistics=False to solve() instead of assigning these
 LOAD_STATISTICS = True
@@ -85,7 +88,7 @@ def load_stream_statistics(externals):
 
 
 def dump_total_statistics(externals):
-    print('\nTotal External Statistics')
+    logger.info('\nTotal External Statistics')
     for external in externals:
         external.dump_total()
 
@@ -143,7 +146,7 @@ def write_stream_statistics(externals, verbose):
     ensure_dir(filename)
     write_pickle(filename, data)
     if verbose:
-        print('Wrote:', filename)
+        logger.info(f'Wrote: {filename}')
 
 
 ##################################################
@@ -245,7 +248,7 @@ class Performance(CreationHash):
         return Stats(p_success=self.get_p_success(), overhead=sign * self.get_overhead())
 
     def dump_total(self):
-        print(
+        logger.info(
             f'External: {self.name} | n: {self.total_calls:d} | p_success: {self._estimate_p_success():.3f} | '
             f'overhead: {self._estimate_overhead():.3f}'
         )
@@ -253,7 +256,7 @@ class Performance(CreationHash):
     def dump_online(self):
         if not self.online_calls:
             return
-        print(
+        logger.info(
             f'External: {self.name} | n: {self.online_calls:d} | '
             f'p_success: {safe_ratio(self.online_successes, self.online_calls):.3f} | '
             f'mean overhead: {safe_ratio(self.online_overhead, self.online_calls):.3f} | '

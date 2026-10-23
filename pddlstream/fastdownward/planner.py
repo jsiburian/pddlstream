@@ -1,6 +1,7 @@
 """Runs FastDownward's search on a translated (SAS+) task and reads back its plans."""
 
 import contextlib
+import logging
 import os
 import re
 import shlex
@@ -12,6 +13,8 @@ from pddlstream.core.context import SEARCH_WORK, get_clock
 from pddlstream.fastdownward.translator import convert_value, find_build, get_cost_scale, scale_cost
 from pddlstream.language.constants import Action
 from pddlstream.utils import INF, elapsed_time, ensure_dir, read, safe_remove, safe_rm_dir, write
+
+logger = logging.getLogger(__name__)
 
 # Debugging runs keep FastDownward's input and output files here for inspection
 TEMP_DIR = 'temp/'
@@ -160,16 +163,16 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
         *shlex.split(planner_config),
     ]
     if debug:
-        print('Search command:', shlex.join(command))
+        logger.info(f'Search command: {shlex.join(command)}')
 
     with open(os.path.join(temp_dir, TRANSLATE_OUTPUT)) as sas_file:
         output = subprocess.run(command, stdin=sas_file, stdout=subprocess.PIPE).stdout
 
     if debug:
-        print(output.decode(encoding='UTF-8')[:-1])
-        print(f'Search runtime: {elapsed_time(start_time):.3f}')
+        logger.info(output.decode(encoding='UTF-8')[:-1])
+        logger.info(f'Search runtime: {elapsed_time(start_time):.3f}')
     plan_files = sorted(f for f in os.listdir(temp_dir) if f.startswith(SEARCH_OUTPUT))
-    print('Plans:', plan_files)
+    logger.info(f'Plans: {plan_files}')
     return parse_solutions(temp_dir, plan_files)
 
 

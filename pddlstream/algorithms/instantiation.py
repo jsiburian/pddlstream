@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict, namedtuple
 from collections.abc import Sized
 from heapq import heappop, heappush
@@ -8,6 +9,8 @@ from pddlstream.algorithms.relation import Relation, compute_order, solve_satisf
 from pddlstream.language.constants import is_parameter
 from pddlstream.language.conversion import head_from_fact, is_atom
 from pddlstream.utils import HeapElement, safe_apply_mapping, safe_zip
+
+logger = logging.getLogger(__name__)
 
 USE_RELATION = True
 
@@ -75,7 +78,7 @@ class Instantiator(Sized):  # Dynamic Instantiator
         heappush(self.queue, HeapElement(priority, instance))
         self.num_pushes += 1
         if self.verbose:
-            print(self.num_pushes, instance)
+            logger.info(f'{self.num_pushes} {instance}')
 
     def pop_stream(self):
         priority, instance = heappop(self.queue)

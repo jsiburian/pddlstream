@@ -1,3 +1,4 @@
+import logging
 from collections import Counter
 
 from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
@@ -13,6 +14,8 @@ from pddlstream.language.conversion import obj_from_pddl_plan
 from pddlstream.language.statistics import load_stream_statistics, write_stream_statistics
 from pddlstream.language.stream import Stream
 from pddlstream.utils import INF, str_from_object
+
+logger = logging.getLogger(__name__)
 
 UPDATE_STATISTICS = False
 
@@ -63,7 +66,7 @@ def process_stream_queue(instantiator, store, complexity_limit=INF, verbose=Fals
         num_successes += bool(new_results)  # TODO: max_results?
     if verbose:
         counts = Counter(instance.external.name for instance in instances)
-        print(
+        logger.info(
             f'Eager Calls: {len(instances)} | Successes: {num_successes} | Results: {len(results)} | '
             f'Counts: {str_from_object(counts)}'
         )
@@ -137,7 +140,7 @@ def solve_incremental(
     num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
     while not store.is_terminated() and (num_iterations < max_iterations) and (complexity_limit <= max_complexity):
         num_iterations += 1
-        print(
+        logger.info(
             f'Iteration: {num_iterations} | Complexity: {complexity_limit} | Calls: {num_calls} | '
             f'Evaluations: {len(evaluations)} | Solved: {store.has_solution()} | Cost: {store.best_cost:.3f} | '
             f'Search Time: {store.search_time:.3f} | Sample Time: {store.sample_time:.3f} | '
@@ -165,7 +168,7 @@ def solve_incremental(
             'complexity': complexity_limit,
         }
     )
-    print(f'Summary: {str_from_object(summary, ndigits=3)}')  # TODO: return the summary
+    logger.info(f'Summary: {str_from_object(summary, ndigits=3)}')  # TODO: return the summary
 
     if UPDATE_STATISTICS:
         write_stream_statistics(externals, verbose)

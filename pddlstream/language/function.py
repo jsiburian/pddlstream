@@ -1,8 +1,12 @@
+import logging
+
 from pddlstream.core.context import get_clock
 from pddlstream.language.constants import Equal, FunctionAction, Not, get_args, get_prefix, is_head
 from pddlstream.language.conversion import list_from_conjunction, str_from_head, substitute_expression
 from pddlstream.language.external import DEBUG_MODES, External, ExternalInfo, Instance, Result, get_procedure_fn
 from pddlstream.utils import apply_mapping, str_from_object
+
+logger = logging.getLogger(__name__)
 
 ##################################################
 
@@ -103,7 +107,7 @@ class FunctionInstance(Instance):
 
         if (value is not False) and verbose:
             # TODO: str(new_results[-1])
-            print(
+            logger.info(
                 f'iter={self.get_iteration()}, outs={len(new_results)}) {get_prefix(self.external.head)}'
                 f'{str_from_object(self.get_input_values())}={value:.3f}'
             )

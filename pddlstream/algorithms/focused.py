@@ -1,3 +1,5 @@
+import logging
+
 from pddlstream.algorithms.advanced import automatically_negate_externals, enforce_simultaneous
 from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
 from pddlstream.algorithms.common import SolutionStore
@@ -20,6 +22,8 @@ from pddlstream.language.statistics import compute_plan_effort, load_stream_stat
 from pddlstream.language.stream import Stream
 from pddlstream.utils import INF, implies, str_from_object
 
+logger = logging.getLogger(__name__)
+
 
 def get_negative_externals(externals):
     negative_predicates = list(filter(lambda s: type(s) is Predicate, externals))  # and s.is_negative()
@@ -33,7 +37,7 @@ def partition_externals(externals, verbose=False):
     optimizers = list(filter(lambda s: isinstance(s, ComponentStream) and (s not in negative), externals))
     streams = list(filter(lambda s: s not in (functions + negative + optimizers), externals))
     if verbose:
-        print(f'Streams: {streams}\nFunctions: {functions}\nNegated: {negative}\nOptimizers: {optimizers}')
+        logger.info(f'Streams: {streams}\nFunctions: {functions}\nNegated: {negative}\nOptimizers: {optimizers}')
     return streams, functions, negative, optimizers
 
 
@@ -127,7 +131,7 @@ def solve_abstract(
         load_stream_statistics(externals)
     if visualize and not has_pygraphviz():
         visualize = False
-        print('Warning, visualize=True requires pygraphviz. Setting visualize=False')
+        logger.warning('visualize=True requires pygraphviz. Setting visualize=False')
     if visualize:
         reset_visualizations()
     streams, functions, negative, optimizers = partition_externals(externals, verbose=verbose)
@@ -154,7 +158,7 @@ def solve_abstract(
 
         ################
 
-        print(
+        logger.info(
             f'\nIteration: {num_iterations} | Complexity: {complexity_limit} | '
             f'Skeletons: {len(skeleton_queue.skeletons)} | Skeleton Queue: {len(skeleton_queue)} | '
             f'Disabled: {len(disabled)} | Evaluations: {len(evaluations)} | Eager Calls: {eager_calls} | '
@@ -194,7 +198,7 @@ def solve_abstract(
 
         num_optimistic = sum(r.optimistic for r in stream_plan) if stream_plan else 0
         action_plan = opt_plan.action_plan if is_plan(opt_plan) else opt_plan
-        print(
+        logger.info(
             f'Stream plan ({get_length(stream_plan)}, {num_optimistic}, '
             f'{compute_plan_effort(stream_plan):.3f}): {stream_plan}\n'
             f'Action plan ({get_length(action_plan)}, {cost:.3f}): {str_from_plan(action_plan)}'
@@ -209,7 +213,9 @@ def solve_abstract(
             infeasible = True
             break
         if not is_plan(stream_plan):
-            print(f'No plan: increasing complexity from {complexity_limit} to {complexity_limit + complexity_step}')
+            logger.info(
+                f'No plan: increasing complexity from {complexity_limit} to {complexity_limit + complexity_step}'
+            )
             complexity_limit += complexity_step
             if not eager_disabled:
                 reenable_disabled(evaluations, domain, disabled)
@@ -225,7 +231,7 @@ def solve_abstract(
         optimizer_plan = None
         if optimizer_plan is not None:
             # TODO: post process a bound plan
-            print(
+            logger.info(
                 f'Optimizer plan ({get_length(optimizer_plan)}, '
                 f'{compute_plan_effort(optimizer_plan):.3f}): {optimizer_plan}'
             )
@@ -250,7 +256,7 @@ def solve_abstract(
             'skeletons': len(skeleton_queue.skeletons),
         }
     )
-    print(f'Summary: {str_from_object(summary, ndigits=3)}')  # TODO: return the summary
+    logger.info(f'Summary: {str_from_object(summary, ndigits=3)}')  # TODO: return the summary
 
     write_stream_statistics(externals, verbose)
     return store.extract_solution(summary, infeasible)

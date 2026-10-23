@@ -1,3 +1,4 @@
+import logging
 from collections import Counter
 from collections.abc import Sequence
 
@@ -37,6 +38,8 @@ from pddlstream.language.object import (
     UniqueOptValue,
 )
 from pddlstream.utils import apply_mapping, get_mapping, irange, str_from_object
+
+logger = logging.getLogger(__name__)
 
 VERBOSE_FAILURES = True
 VERBOSE_WILD = False
@@ -269,7 +272,7 @@ class StreamInstance(Instance):
 
     def dump_new_values(self, new_values=[]):
         if (not new_values and VERBOSE_FAILURES) or (new_values and self.info.verbose):
-            print(
+            logger.info(
                 f'iter={self.get_iteration()}, outs={len(new_values)}) {self.external.name}:'
                 f'{str_from_object(self.get_input_values())}->{str_from_object(new_values)}'
             )
@@ -277,7 +280,7 @@ class StreamInstance(Instance):
     def dump_new_facts(self, new_facts=[]):
         if VERBOSE_WILD and new_facts:
             # TODO: format all_new_facts
-            print(
+            logger.info(
                 f'iter={self.get_iteration()}, facts={self.external.name}) '
                 f'{str_from_object(self.get_input_values())}:{new_facts}->{len(new_facts)}'
             )
@@ -459,7 +462,7 @@ class Stream(External):
         for p in certified_parameters - set(self.inputs + self.outputs):
             raise ValueError(f'Parameter [{p}] for stream [{name}] is not included within outputs')
         for p in set(self.outputs) - certified_parameters:
-            print(f'Warning! Output [{p}] for stream [{name}] is not covered by a certified condition')
+            logger.warning(f'Output [{p}] for stream [{name}] is not covered by a certified condition')
 
         # TODO: automatically switch to unique if only used once
         self.gen_fn = gen_fn  # DEBUG_MODES

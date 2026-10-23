@@ -1,9 +1,13 @@
+import logging
 from copy import deepcopy
 from time import time
 
 from pddlstream.algorithms.instantiate_task import translate_and_write_pddl
+from pddlstream.core.log import console_output
 from pddlstream.fastdownward.planner import run_search, search_workspace, write_pddl, write_sas_task
 from pddlstream.utils import INF, Verbose, elapsed_time
+
+logger = logging.getLogger(__name__)
 
 # TODO: manual_patterns
 # Specify on the discrete variables that are updated via conditional effects
@@ -23,13 +27,14 @@ def solve_from_task(sas_task, temp_dir=None, clean=False, debug=False, hierarchy
     # Can apply plan constraints (skeleton constraints) here as well
     start_time = time()
     with Verbose(debug), search_workspace(temp_dir, clean, debug) as workspace:
-        print('\n' + 50 * '-' + '\n')
+        logger.info('\n' + 50 * '-' + '\n')
         write_sas_task(sas_task, workspace)
         solution = run_search(workspace, debug=True, **search_args)
-        print(f'Total runtime: {elapsed_time(start_time):.3f}')
+        logger.info(f'Total runtime: {elapsed_time(start_time):.3f}')
     return solution
 
 
+@console_output()
 def solve_from_pddl(domain_pddl, problem_pddl, temp_dir=None, clean=False, debug=False, **search_kwargs):
     # TODO: combine with solve_from_task
     start_time = time()
@@ -37,7 +42,7 @@ def solve_from_pddl(domain_pddl, problem_pddl, temp_dir=None, clean=False, debug
         write_pddl(domain_pddl, problem_pddl, workspace)
         translate_and_write_pddl(domain_pddl, problem_pddl, workspace, debug)
         solution = run_search(workspace, debug=debug, **search_kwargs)
-        print(f'Total runtime: {elapsed_time(start_time):.3f}')
+        logger.info(f'Total runtime: {elapsed_time(start_time):.3f}')
     return solution
 
 
@@ -90,10 +95,10 @@ def serialized_solve_from_task(sas_task, temp_dir=None, clean=False, debug=False
     # TODO: version that solves for all disjuctive subgoals at once
     start_time = time()
     with Verbose(debug), search_workspace(temp_dir, clean, debug) as workspace:
-        print('\n' + 50 * '-' + '\n')
+        logger.info('\n' + 50 * '-' + '\n')
         subgoal_plan = [sas_task.goal.pairs[: i + 1] for i in range(len(sas_task.goal.pairs))]
         plan, cost = plan_subgoals(sas_task, subgoal_plan, workspace, **kwargs)
-        print(f'Total runtime: {elapsed_time(start_time):.3f}')
+        logger.info(f'Total runtime: {elapsed_time(start_time):.3f}')
     return plan, cost
 
 
@@ -173,7 +178,7 @@ def abstrips_solve_from_task(sas_task, temp_dir=None, clean=False, debug=False, 
     start_time = time()
     plan, cost = None, INF
     with Verbose(debug), search_workspace(temp_dir, clean, debug) as workspace:
-        print('\n' + 50 * '-' + '\n')
+        logger.info('\n' + 50 * '-' + '\n')
         last_plan = []
         for level in range(len(hierarchy) + 1):
             local_sas_task = deepcopy(sas_task)
@@ -185,7 +190,7 @@ def abstrips_solve_from_task(sas_task, temp_dir=None, clean=False, debug=False, 
                 # TODO: fall back on standard search
                 break
             last_plan = [name_from_action(action, args) for action, args in plan]
-        print(f'Total runtime: {elapsed_time(start_time):.3f}')
+        logger.info(f'Total runtime: {elapsed_time(start_time):.3f}')
     return plan, cost
 
 

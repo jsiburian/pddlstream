@@ -1,5 +1,6 @@
 import argparse
 import inspect
+import logging
 import time
 from collections import defaultdict
 
@@ -22,10 +23,13 @@ from pddlstream.algorithms.scheduling.recover_streams import evaluations_from_st
 from pddlstream.algorithms.scheduling.reinstantiate import reinstantiate_axiom
 from pddlstream.core.config import ALGORITHMS, DEFAULT_ALGORITHM, FIELD_NAMES, SolverConfig
 from pddlstream.core.config import FOCUSED_ALGORITHMS as FOCUSED_ALGORITHMS  # Re-exported (name as name)
+from pddlstream.core.log import console_output
 from pddlstream.language.constants import Certificate, PDDLProblem, SolveResult, Status, get_prefix, is_plan
 from pddlstream.language.conversion import EQ, value_from_obj_expression
 from pddlstream.language.external import DEBUG, SHARED_DEBUG
 from pddlstream.utils import INF, SEPARATOR, Verbose, elapsed_time, irange
+
+logger = logging.getLogger(__name__)
 
 # The SolverConfig fields that each algorithm takes
 INCREMENTAL_OPTIONS = [
@@ -162,6 +166,7 @@ def solve(
 ##################################################
 
 
+@console_output()
 def solve_restart(problem, max_time=INF, max_restarts=0, iteration_time=INF, abort=True, **kwargs):
     # TODO: iteratively lower the cost bound
     # TODO: a sequence of different planner configurations
@@ -177,7 +182,7 @@ def solve_restart(problem, max_time=INF, max_restarts=0, iteration_time=INF, abo
         if elapsed_time(start_time) > max_time:
             break
         if attempt >= 1:
-            print(SEPARATOR)
+            logger.info(SEPARATOR)
         remaining_time = min(iteration_time, max_time - elapsed_time(start_time))
         solution = solve(problem, max_time=remaining_time, **kwargs)
         plan, cost, certificate = solution
@@ -193,6 +198,7 @@ def solve_restart(problem, max_time=INF, max_restarts=0, iteration_time=INF, abo
 ##################################################
 
 
+@console_output()
 def examine_instantiated(problem, unique=False, normalize=True, unit_costs=False, verbose=False, debug=False, **kwargs):
     # TODO: refactor to an analysis file
     domain_pddl, constant_map, stream_pddl, _, init, goal = problem
@@ -239,6 +245,7 @@ def recurse_subgoals(goals, condition_from_effect):
     return possible
 
 
+@console_output()
 def analyze_goal(problem, use_actions=False, use_axioms=True, use_streams=True, blocked_predicates=[], **kwargs):
     # TODO: instantiate all goal partial states
     # TODO: remove actions/axioms that never could achieve a subgoal
@@ -277,7 +284,7 @@ def analyze_goal(problem, use_actions=False, use_axioms=True, use_streams=True, 
                 for condition in result.domain:
                     condition_from_effect[fd_from_fact(effect)].add(fd_from_fact(condition))
 
-    print('Goals:', list(map(fact_from_fd, instantiated.goal_list)))
+    logger.info(f'Goals: {list(map(fact_from_fd, instantiated.goal_list))}')
     all_subgoals = recurse_subgoals(instantiated.goal_list, condition_from_effect)
     filtered_subgoals = [subgoal for subgoal in all_subgoals if subgoal in init]  # TODO: return the goals as well?
     external_subgoals = [
@@ -285,6 +292,6 @@ def analyze_goal(problem, use_actions=False, use_axioms=True, use_streams=True, 
         for subgoal in sorted(filtered_subgoals, key=lambda g: g.predicate)
         if not subgoal.predicate.startswith(INTERNAL_AXIOM)
     ]
-    print('Initial:', external_subgoals)
+    logger.info(f'Initial: {external_subgoals}')
 
     return external_subgoals  # TODO: decompose into simplified components

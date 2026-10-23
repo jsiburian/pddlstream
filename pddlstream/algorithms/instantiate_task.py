@@ -1,3 +1,4 @@
+import logging
 from collections import Counter, defaultdict, deque, namedtuple
 from time import time
 
@@ -38,6 +39,8 @@ from pddlstream.utils import (
     flatten,
     str_from_object,
 )
+
+logger = logging.getLogger(__name__)
 
 # Deprecated: pass fd_instantiate=False to solve() instead of assigning this (it was previously ignored)
 FD_INSTANTIATE = True
@@ -203,7 +206,7 @@ def instantiate_domain(task, prune_static=True):
 
 
 def dump_instantiated(instantiated):
-    print(
+    logger.info(
         'Instantiated frequencies:\n'
         f'Atoms: {str_from_object(Counter(atom.predicate for atom in instantiated.atoms))}\n'
         f'Actions: {str_from_object(Counter(action.action.name for action in instantiated.actions))}\n'
@@ -216,7 +219,7 @@ def instantiate_task(task, check_infeasible=True, use_fd=None, **kwargs):
     if use_fd is None:
         use_fd = get_config().fd_instantiate
     start_time = time()
-    print()
+    logger.info('')
     normalize.normalize(task)
     if use_fd:
         # TODO: recover relaxed reachability (from model)
@@ -224,8 +227,8 @@ def instantiate_task(task, check_infeasible=True, use_fd=None, **kwargs):
     else:
         relaxed_reachable, atoms, actions, axioms = instantiate_domain(task, **kwargs)
         reachable_action_params = get_reachable_action_params(actions)
-    print('Infeasible:', not relaxed_reachable)
-    print(f'Instantiation time: {elapsed_time(start_time):.3f}s')
+    logger.info(f'Infeasible: {not relaxed_reachable}')
+    logger.info(f'Instantiation time: {elapsed_time(start_time):.3f}s')
     if check_infeasible and not relaxed_reachable:
         return None
     goal_list = instantiate_goal(task.goal)
@@ -239,7 +242,7 @@ def instantiate_task(task, check_infeasible=True, use_fd=None, **kwargs):
 
 def sas_from_instantiated(instantiated_task):
     start_time = time()
-    print()
+    logger.info('')
 
     if not instantiated_task:
         return translate.unsolvable_sas_task('No relaxed solution')
@@ -296,7 +299,7 @@ def sas_from_instantiated(instantiated_task):
             )
 
     translate.dump_statistics(sas_task)
-    print(f'Translation time: {elapsed_time(start_time):.3f}s')
+    logger.info(f'Translation time: {elapsed_time(start_time):.3f}s')
     return sas_task
 
 

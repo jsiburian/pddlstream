@@ -1,3 +1,4 @@
+import logging
 import os
 
 from pddlstream.algorithms.reorder import get_partial_orders
@@ -14,6 +15,8 @@ from pddlstream.language.conversion import evaluation_from_fact, str_from_fact
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.object import OptimisticObject
 from pddlstream.utils import clear_dir, ensure_dir, flatten, str_from_object
+
+logger = logging.getLogger(__name__)
 
 # https://www.graphviz.org/doc/info/
 
@@ -99,7 +102,7 @@ def create_visualizations(evaluations, stream_plan, iteration):
     constraints = set()  # TODO: approximates needed facts using produced ones
     for stream in stream_plan:
         constraints.update(filter(lambda f: evaluation_from_fact(f) not in evaluations, stream.get_certified()))
-    print('Constraints:', str_from_object(constraints))
+    logger.info(f'Constraints: {str_from_object(constraints)}')
     visualize_constraints(constraints, os.path.join(CONSTRAINT_NETWORK_DIR, filename))
 
     decomposed_plan = decompose_stream_plan(stream_plan)
@@ -148,7 +151,7 @@ def visualize_constraints(constraints, filename='constraint_network' + DEFAULT_E
                 graph.add_edge(name, arg_name)
 
     graph.draw(filename, prog='dot')  # neato | dot | twopi | circo | fdp | nop
-    print('Saved', filename)
+    logger.info(f'Saved {filename}')
     return graph
 
 
@@ -178,7 +181,7 @@ def visualize_stream_orders(orders, streams=[], filename='stream_orders' + DEFAU
     # https://stackoverflow.com/questions/3499056/making-a-legend-key-in-graphviz
 
     graph.draw(filename, prog='dot')
-    print('Saved', filename)
+    logger.info(f'Saved {filename}')
     return graph
 
 
@@ -235,7 +238,7 @@ def visualize_stream_plan_bipartite(stream_plan, filename='stream_plan' + DEFAUL
                 achieved_facts.add(fact)
 
     graph.draw(filename, prog='dot')
-    print('Saved', filename)
+    logger.info(f'Saved {filename}')
     return graph
     # graph.layout
     # https://pygraphviz.github.io/documentation/pygraphviz-1.3rc1/reference/agraph.html

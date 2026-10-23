@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import Counter, namedtuple
 
@@ -9,6 +10,7 @@ from pddlstream.algorithms.recover_optimizers import combine_optimizers, retrace
 from pddlstream.algorithms.reorder import reorder_stream_plan
 from pddlstream.algorithms.scheduling.postprocess import reschedule_stream_plan
 from pddlstream.algorithms.skeleton import SkeletonQueue
+from pddlstream.core.log import console_output
 from pddlstream.language.constants import Assignment, OptPlan, get_length, is_parameter, partition_facts
 from pddlstream.language.conversion import (
     evaluation_from_fact,
@@ -22,6 +24,8 @@ from pddlstream.language.object import Object, OptimisticObject
 from pddlstream.language.statistics import compute_plan_effort, write_stream_statistics
 from pddlstream.language.stream import Stream
 from pddlstream.utils import INF, elapsed_time, get_mapping, safe_zip, str_from_object
+
+logger = logging.getLogger(__name__)
 
 # TODO: ConstraintProblem?
 SatisfactionProblem = namedtuple('SatisfactionProblem', ['stream_pddl', 'stream_map', 'init', 'terms'])
@@ -60,7 +64,7 @@ def plan_functions(functions, externals):
         instance = external.get_instance(get_args(term))
         [result] = instance.next_optimistic()
         function_plan.add(result)
-    print('Function plan:', str_from_object(function_plan))
+    logger.info(f'Function plan: {str_from_object(function_plan)}')
     return function_plan
 
 
@@ -76,7 +80,7 @@ def extract_streams(evaluations, externals, goal_facts):
     for fact in goal_facts:
         # TODO: prune results that already exceed effort limit
         retrace_instantiation(fact, streams, evaluations, free_parameters, visited_facts, stream_results)
-    print('Streams:', stream_results)
+    logger.info(f'Streams: {stream_results}')
     # TODO: express some of this pruning using effort (e.g. unlikely to sample bound value)
     return stream_results
 
@@ -112,6 +116,7 @@ def dump_assignment(solution):
 ##################################################
 
 
+@console_output()
 def constraint_satisfaction(
     problem,
     stream_info={},
@@ -148,7 +153,7 @@ def constraint_satisfaction(
     evaluations = evaluations_from_init(init)
     goal_facts = set(filter(lambda f: evaluation_from_fact(f) not in evaluations, constraints))
     free_parameters = sorted(get_parameters(goal_facts))
-    print('Parameters:', free_parameters)
+    logger.info(f'Parameters: {free_parameters}')
 
     externals = parse_stream_pddl(stream_pddl, stream_map, stream_info, unit_efforts=unit_efforts)
     stream_results = extract_streams(evaluations, externals, goal_facts)
@@ -170,7 +175,7 @@ def constraint_satisfaction(
     while not store.is_terminated():
         num_iterations += 1
         start_time = time.time()
-        print(
+        logger.info(
             f'\nIteration: {num_iterations} | Skeletons: {len(queue.skeletons)} | Skeleton Queue: {len(queue)} | '
             f'Evaluations: {len(evaluations)} | Cost: {store.best_cost:.3f} | Search Time: {search_time:.3f} | '
             f'Sample Time: {sample_time:.3f} | Total Time: {store.elapsed_time():.3f}'
@@ -195,7 +200,9 @@ def constraint_satisfaction(
                     store, combine_optimizers(init_evaluations, stream_plan + list(function_plan))
                 )
 
-        print(f'Stream plan ({get_length(external_plan)}, {compute_plan_effort(external_plan):.3f}): {external_plan}')
+        logger.info(
+            f'Stream plan ({get_length(external_plan)}, {compute_plan_effort(external_plan):.3f}): {external_plan}'
+        )
         last_success = external_plan is not None
         search_time += elapsed_time(start_time)
 

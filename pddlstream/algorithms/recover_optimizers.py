@@ -1,3 +1,5 @@
+import logging
+
 from pddlstream.algorithms.reorder import get_stream_plan_components
 from pddlstream.algorithms.scheduling.utils import partition_external_plan
 from pddlstream.language.constants import get_args, get_prefix, is_plan
@@ -5,6 +7,8 @@ from pddlstream.language.conversion import evaluation_from_fact
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.optimizer import ComponentStream, OptimizerStream
 from pddlstream.utils import get_mapping, safe_apply_mapping
+
+logger = logging.getLogger(__name__)
 
 CLUSTER = True
 
@@ -44,7 +48,7 @@ def combine_optimizers(evaluations, external_plan):
     if len(optimizers - {None}) == 0:
         return external_plan
 
-    print(f'Constraint plan: {external_plan}')
+    logger.info(f'Constraint plan: {external_plan}')
     combined_results = []
     for optimizer in optimizers:
         relevant_results = [r for r in stream_plan if get_optimizer(r) == optimizer]

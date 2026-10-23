@@ -1,4 +1,5 @@
 import cProfile
+import logging
 import math
 import os
 import pickle
@@ -12,6 +13,8 @@ from heapq import heappop, heappush
 from itertools import count
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 INF = float('inf')
 SEPARATOR = '\n' + 80 * '-' + '\n'
@@ -212,7 +215,7 @@ def check_memory(max_memory):
     peak_memory = get_peak_memory_in_kb()
     if peak_memory <= max_memory:
         return True
-    print(f'Peak memory of {int(peak_memory)} KB exceeds memory limit of {int(max_memory)} KB')
+    logger.info(f'Peak memory of {int(peak_memory)} KB exceeds memory limit of {int(max_memory)} KB')
     return False
 
 

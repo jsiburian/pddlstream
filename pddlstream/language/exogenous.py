@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from itertools import count
 
@@ -16,6 +17,8 @@ from pddlstream.language.conversion import (
 from pddlstream.language.external import get_domain_predicates
 from pddlstream.language.generator import from_fn
 from pddlstream.language.stream import Stream
+
+logger = logging.getLogger(__name__)
 
 # Deprecated: pass exogenous_axioms=... or exogenous_future_values=... to solve() instead of assigning these
 EXOGENOUS_AXIOMS = True
@@ -241,8 +244,8 @@ def compile_to_exogenous(evaluations, domain, streams):
     exogenous_predicates = get_exogenous_predicates(domain, streams)
     if not exogenous_predicates:
         return False
-    print(
-        'Warning! The following predicates are mentioned in both action effects '
+    logger.warning(
+        'The following predicates are mentioned in both action effects '
         f'and stream domain conditions: {exogenous_predicates}'
     )
     if get_config().exogenous_axioms:

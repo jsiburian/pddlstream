@@ -1,3 +1,4 @@
+import logging
 from collections import Counter
 
 from pddlstream.algorithms.common import compute_complexity
@@ -7,6 +8,8 @@ from pddlstream.language.conversion import substitute_fact, values_from_objects
 from pddlstream.language.object import Object, OptimisticObject
 from pddlstream.language.statistics import DEFAULT_SEARCH_OVERHEAD, Performance, PerformanceInfo
 from pddlstream.utils import INF, CreationHash, Score, get_mapping, safe_apply_mapping
+
+logger = logging.getLogger(__name__)
 
 DEBUG = 'debug'
 SHARED_DEBUG = 'shared_debug'
@@ -292,7 +295,7 @@ class External(Performance):
         for p in parameters - set(self.inputs):
             raise ValueError(f'Parameter [{p}] for stream [{name}] is not included within inputs')
         for p in set(self.inputs) - parameters:
-            print(f'Warning! Input [{p}] for stream [{name}] is not covered by a domain condition')
+            logger.warning(f'Input [{p}] for stream [{name}] is not covered by a domain condition')
         self.constants = {a for i in self.domain for a in get_args(i) if not is_parameter(a)}
         self.instances = {}
 

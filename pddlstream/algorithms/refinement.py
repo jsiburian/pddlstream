@@ -1,3 +1,4 @@
+import logging
 import time
 from itertools import product
 
@@ -9,6 +10,8 @@ from pddlstream.language.function import Function, FunctionResult
 from pddlstream.language.statistics import check_effort
 from pddlstream.language.stream import StreamResult
 from pddlstream.utils import INF, elapsed_time, get_mapping, safe_zip
+
+logger = logging.getLogger(__name__)
 
 
 def is_refined(stream_plan):
@@ -25,7 +28,7 @@ def is_refined(stream_plan):
 def optimistic_process_instance(instantiator, instance, verbose=False):
     for result in instance.next_optimistic():
         if verbose:
-            print(result)  # TODO: make a debug tools that reports the optimistic streams
+            logger.info(result)  # TODO: make a debug tools that reports the optimistic streams
         new_facts = False
         complexity = instantiator.compute_complexity(instance)
         for fact in result.get_certified():
@@ -136,7 +139,7 @@ def iterative_plan_streams(all_evaluations, externals, optimistic_solve_fn, comp
         results, exhausted = optimistic_process_streams(complexity_evals, externals, complexity_limit, **effort_args)
         opt_solution, final_depth = hierarchical_plan_streams(complexity_evals, results, optimistic_solve_fn)
         stream_plan, action_plan, cost = opt_solution
-        print(
+        logger.info(
             f'Attempt: {num_iterations} | Results: {len(results)} | Depth: {final_depth} | '
             f'Success: {is_plan(action_plan)} | Time: {elapsed_time(start_time):.3f}'
         )

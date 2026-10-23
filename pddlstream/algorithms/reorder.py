@@ -1,3 +1,4 @@
+import logging
 from collections import Counter, deque, namedtuple
 from itertools import combinations
 
@@ -12,6 +13,8 @@ from pddlstream.utils import (
     safe_zip,
     topological_sort,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_output_objects(result):
@@ -129,7 +132,7 @@ def dynamic_programming(
     subset = frozenset(vertices)
     while True:
         if subset not in subproblems:
-            print(vertices)
+            logger.info(vertices)
             # TODO: some sort of bug where the problem isn't solved?
         subproblem = subproblems[subset]
         if subproblem.head is None:

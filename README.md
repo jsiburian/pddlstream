@@ -162,6 +162,8 @@ The meta procedure `solve(...)` (in `pddlstream/algorithms/meta.py`) allows the 
 Its options are the fields of `SolverConfig` (`pddlstream/core/config.py`), which also documents them: pass them as keyword arguments, or build a config once and reuse it with `solve(problem, config=config)`, where keyword arguments override its fields.
 Misspelled options raise a `TypeError` before solving starts.
 The solvers return a `SolveResult`, which unpacks as `plan, cost, certificate` like before; `result.status` says whether a plan was found (`Status.SUCCEEDED`), a limit was reached first (`Status.FAILED`), or the solver concluded that no plan exists (`Status.INFEASIBLE`), and `result.stats` holds the printed summary (iterations, search, sampling and total time, ...).
+The solvers report progress through Python's `logging`, with loggers named after their modules under `pddlstream`.
+Without a logging configuration, they print it to stdout while solving, as before; `logging.getLogger('pddlstream').setLevel(logging.WARNING)` keeps only the warnings, and an application that configures logging receives the messages through its own handlers.
 
 Property descriptions:
 * **Method**: the python function that calls the algorithm
