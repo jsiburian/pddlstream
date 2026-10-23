@@ -132,8 +132,6 @@ def main():
     # http://gki.informatik.uni-freiburg.de/papers/eyerich-etal-icaps09.pdf
 
     # TODO: exogenous agents such as intercepting a ball
-    # examples/pybullet/turtlebots/domain.pddl
-    # examples/continuous_tamp/temporal/domain.pddl
     parser = create_parser()
     args = parser.parse_args()
     print('Arguments:', args)

@@ -88,11 +88,6 @@ Examples:
 * PR2 Rovers: `pddlstream$ python -m examples.pybullet.pr2_rovers.run`
 * PR2 Planning and Execution: `pddlstream$ python -m examples.pybullet.pr2_belief.run`
 * Kuka Cleaning and Cooking: `pddlstream$ python -m examples.pybullet.kuka.run`
-<!--* Turtlebot NAMO: `pddlstream$ python -m examples.pybullet.namo.run`-->
-<!--
-* Turtlebot Multi-Robot: `pddlstream$ python -m examples.pybullet.turtlebots.run`
-Requires Temporal FastDownward - https://github.com/caelan/TemporalFastDownward
--->
 
 <!--[![Kuka IIWA](https://img.youtube.com/vi/3HJrkgIGK7c/0.jpg)](https://www.youtube.com/watch?v=3HJrkgIGK7c)-->
 [<img src="https://img.youtube.com/vi/Uc0fogLsPMI/0.jpg" height="200">](https://www.youtube.com/watch?v=Uc0fogLsPMI)
@@ -151,6 +146,7 @@ External projects that make use of PDDLStream:
 * Automated Construction - https://github.com/caelan/pb-construction
 * Learning + TAMP (LTAMP) - https://github.com/caelan/LTAMP
 * pyrobosim - https://github.com/sea-bass/pyrobosim
+* PDDLStream + Drake examples - https://github.com/RobotLocomotion/6-881-examples
 <!--https://github.com/rachelholladay/ftamp-->
 
 ## Algorithms
@@ -274,20 +270,3 @@ Diverse Planners:
 * [Derived Predicates](https://www.cs.cmu.edu/afs/cs/project/jair/pub/volume28/coles07a-html/node18.html)
 * [FastDownward](http://www.fast-downward.org/)
 <!--* [PDDLStream Tutorial](https://web.mit.edu/caelan/www/presentations/6.881_TAMP.pdf)-->
-
-## Retired
-
-"Retired" folders indicate code that no longer is continuously supported and thus is likely outdated.
-
-### Drake
-
-The Drake example in `examples/retired/drake` no longer runs: it was written for Python 2 and the 2018 pydrake API (docker tag drake-20181128), and it is not part of the pixi environments.
-
-Examples:
-* Kuka IIWA task and motion planning: `examples/retired/drake/run.py`
-<!--[![Kuka IIWA](https://img.youtube.com/vi/3HJrkgIGK7c/0.jpg)](https://www.youtube.com/watch?v=3HJrkgIGK7c)-->
-<img src="images/drake_kuka.png" height="150">
-
-Additional PDDLStream + Drake examples can be found at: https://github.com/RobotLocomotion/6-881-examples.
-
-<!--https://drake.mit.edu/gallery.html#task-and-motion-planning-->
