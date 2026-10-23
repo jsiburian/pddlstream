@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import namedtuple
 
@@ -17,7 +18,10 @@ from pddlstream.core.evaluations import compute_complexity as compute_complexity
 from pddlstream.core.evaluations import evaluations_from_init as evaluations_from_init
 from pddlstream.core.evaluations import is_instance_ready as is_instance_ready
 from pddlstream.core.problem import FAILED, SolveResult, Status, get_length, is_plan
-from pddlstream.core.utils import INF, check_memory, elapsed_time
+from pddlstream.core.utils import INF, check_memory, elapsed_time, str_from_object
+from pddlstream.language.statistics import write_stream_statistics
+
+logger = logging.getLogger(__name__)
 
 Solution = namedtuple('Solution', ['plan', 'cost', 'time'])
 
@@ -71,6 +75,21 @@ class SolutionStore:
 
     def is_terminated(self):
         return self.is_solved() or self.is_timeout()
+
+    def sample(self, instance, verbose=False):
+        """The instance's next results and new facts, with the time charged to sampling."""
+        start_time = get_clock().now()
+        new_results, new_facts = instance.next_results(verbose=verbose)
+        self.sample_time += get_clock().now() - start_time
+        return new_results, new_facts
+
+    def finish(self, externals=(), infeasible=False, **stats):
+        """Logs the summary (with stats added), saves the externals' statistics and returns the SolveResult."""
+        summary = self.export_summary()
+        summary.update(stats)
+        logger.info(f'Summary: {str_from_object(summary, ndigits=3)}')
+        write_stream_statistics(externals, self.verbose)
+        return self.extract_solution(summary, infeasible)
 
     def extract_solution(self, stats=None, infeasible=False):
         """The best plan as a SolveResult; infeasible says whether the solver concluded that no plan exists."""

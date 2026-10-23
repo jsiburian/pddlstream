@@ -35,5 +35,5 @@ def test_configured_logging(caplog, capsys):
     messages = [(record.name, record.levelno, record.getMessage()) for record in caplog.records]
     assert any(level == logging.WARNING and 'All actions have no cost' in message for _, level, message in messages)
     assert any(
-        name == 'pddlstream.algorithms.incremental' and message.startswith('Summary') for name, _, message in messages
+        name.startswith('pddlstream.algorithms') and message.startswith('Summary') for name, _, message in messages
     )

@@ -15,11 +15,11 @@ from pddlstream.algorithms.scheduling.plan_streams import OptSolution
 from pddlstream.algorithms.skeleton import SkeletonQueue
 from pddlstream.algorithms.visualization import create_visualizations, has_pygraphviz, log_plans, reset_visualizations
 from pddlstream.core.problem import INFEASIBLE, get_length, is_plan, str_from_plan
-from pddlstream.core.utils import INF, implies, str_from_object
+from pddlstream.core.utils import INF, implies
 from pddlstream.language.fluent import compile_fluent_streams
 from pddlstream.language.function import Function, Predicate
 from pddlstream.language.optimizer import ComponentStream
-from pddlstream.language.statistics import compute_plan_effort, load_stream_statistics, write_stream_statistics
+from pddlstream.language.statistics import compute_plan_effort, load_stream_statistics
 from pddlstream.language.stream import Stream
 
 logger = logging.getLogger(__name__)
@@ -248,18 +248,13 @@ def solve_abstract(
 
     ################
 
-    summary = store.export_summary()
-    summary.update(
-        {
-            'iterations': num_iterations,
-            'complexity': complexity_limit,
-            'skeletons': len(skeleton_queue.skeletons),
-        }
+    return store.finish(
+        externals,
+        infeasible,
+        iterations=num_iterations,
+        complexity=complexity_limit,
+        skeletons=len(skeleton_queue.skeletons),
     )
-    logger.info(f'Summary: {str_from_object(summary, ndigits=3)}')  # TODO: return the summary
-
-    write_stream_statistics(externals, verbose)
-    return store.extract_solution(summary, infeasible)
 
 
 solve_focused = solve_abstract  # TODO: deprecate solve_focused

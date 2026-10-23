@@ -5,7 +5,6 @@ from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
 from pddlstream.algorithms.common import SolutionStore
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.instantiation import Instantiator
-from pddlstream.core.context import get_clock
 from pddlstream.core.conversion import obj_from_pddl_plan
 from pddlstream.core.evaluations import UNKNOWN_EVALUATION, add_certified, add_facts
 from pddlstream.core.problem import is_plan
@@ -13,7 +12,7 @@ from pddlstream.core.utils import INF, str_from_object
 from pddlstream.fastdownward.grounding import sas_from_pddl
 from pddlstream.fastdownward.search import abstrips_solve_from_task
 from pddlstream.fastdownward.tasks import get_problem, task_from_domain_problem
-from pddlstream.language.statistics import load_stream_statistics, write_stream_statistics
+from pddlstream.language.statistics import load_stream_statistics
 from pddlstream.language.stream import Stream
 
 logger = logging.getLogger(__name__)
@@ -36,9 +35,7 @@ def solve_finite(evaluations, goal_exp, domain, unit_costs=False, debug=False, *
 def process_instance(instantiator, store, instance, verbose=False):
     if instance.enumerated:
         return []
-    start_time = get_clock().now()
-    new_results, new_facts = instance.next_results(verbose=verbose)
-    store.sample_time += get_clock().now() - start_time
+    new_results, new_facts = store.sample(instance, verbose=verbose)
 
     evaluations = store.evaluations
     for result in new_results:
@@ -162,18 +159,8 @@ def solve_incremental(
             complexity_limit += complexity_step
         num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
 
-    summary = store.export_summary()
-    summary.update(
-        {
-            'iterations': num_iterations,
-            'complexity': complexity_limit,
-        }
-    )
-    logger.info(f'Summary: {str_from_object(summary, ndigits=3)}')  # TODO: return the summary
-
-    if UPDATE_STATISTICS:
-        write_stream_statistics(externals, verbose)
-    return store.extract_solution(summary, infeasible)
+    statistics_externals = externals if UPDATE_STATISTICS else []
+    return store.finish(statistics_externals, infeasible, iterations=num_iterations, complexity=complexity_limit)
 
 
 ##################################################

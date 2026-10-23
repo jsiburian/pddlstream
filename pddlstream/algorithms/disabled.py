@@ -1,5 +1,4 @@
 from pddlstream.algorithms.algorithm import remove_blocked
-from pddlstream.core.context import get_clock
 from pddlstream.core.conversion import replace_expression, transform_action_args
 from pddlstream.core.evaluations import UNKNOWN_EVALUATION, add_facts, is_instance_ready
 from pddlstream.core.problem import OptPlan, is_plan
@@ -60,9 +59,7 @@ def reenable_disabled(evaluations, domain, disabled):
 def process_instance(store, domain, instance, disable=False):
     if instance.enumerated:
         return [], []
-    start_time = get_clock().now()
-    new_results, new_facts = instance.next_results(verbose=store.verbose)
-    store.sample_time += get_clock().now() - start_time
+    new_results, new_facts = store.sample(instance, verbose=store.verbose)
 
     evaluations = store.evaluations
     if disable:
