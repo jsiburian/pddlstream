@@ -11,6 +11,7 @@ from pddlstream.core.conversion import (
     substitute_expression,
 )
 from pddlstream.core.evaluations import INTERNAL_EVALUATION, add_fact
+from pddlstream.core.objects import DebugValue
 from pddlstream.core.syntax import Evaluation, Head, get_args, get_prefix
 from pddlstream.fastdownward.tasks import add_predicate, get_fluents, make_action, make_axiom, make_predicate
 from pddlstream.fastdownward.translator import pddl
@@ -28,19 +29,10 @@ REPLACE_STREAM = True
 # TODO: can do this whole story within the focused algorithm as well
 
 
-class FutureValue:
-    # TODO: use this instead of debug value?
-    _output_counts = defaultdict(count)
+class FutureValue(DebugValue):
+    """A placeholder for a value that an exogenous stream will produce once its inputs are known."""
 
-    def __init__(self, stream, input_values, output_parameter):
-        self.stream = stream
-        self.input_values = input_values
-        self.output_parameter = output_parameter
-        self.index = next(self._output_counts[output_parameter])
-        # TODO: hash this?
-
-    def __repr__(self):
-        return f'@{self.output_parameter[1:]}{self.index}'
+    _output_counts = defaultdict(count)  # Counted separately from DebugValue's
 
 
 class FutureStream(Stream):
@@ -122,9 +114,9 @@ def rename_atom(atom, mapping):
     return (mapping[name],) + get_args(atom)
 
 
-def compile_to_exogenous_actions(evaluations, domain, streams):
-    # TODO: version of this that operates on fluents of length one?
-    # TODO: better instantiation when have full parameters
+def compile_exogenous_streams(evaluations, domain, streams, add_stream_operators):
+    """Gives each stream a static (future) stream that certifies renamed facts and a stream-result predicate, and
+    calls add_stream_operators(stream, stream_atom) to add the actions or axioms that connect the two."""
     fluent_predicates = get_fluents(domain)
     certified_predicates = {get_prefix(a) for s in streams for a in s.certified}
     future_map = {p: f'f-{p}' for p in certified_predicates}
@@ -134,10 +126,22 @@ def compile_to_exogenous_actions(evaluations, domain, streams):
     for stream in list(streams):
         if not isinstance(stream, Stream):
             raise NotImplementedError(stream)
-        # TODO: could also just have conditions asserting that one of the fluent conditions fails
         new_streams.append(create_static_stream(stream, evaluations, fluent_predicates, future_fn))
         stream_atom = new_streams[-1].certified[0]
         add_predicate(domain, make_predicate(get_prefix(stream_atom), get_args(stream_atom)))
+        add_stream_operators(stream, stream_atom)
+        stream.certified = tuple(set(stream.certified) | set(map(future_fn, stream.certified)))
+    if get_config().exogenous_future_values:
+        streams.extend(new_streams)
+    else:
+        streams[:] = new_streams
+
+
+def compile_to_exogenous_actions(evaluations, domain, streams):
+    # TODO: version of this that operates on fluents of length one?
+    # TODO: better instantiation when have full parameters
+    def add_call_action(stream, stream_atom):
+        # TODO: could also just have conditions asserting that one of the fluent conditions fails
         preconditions = [stream_atom] + list(stream.domain)
         effort = 1  # TODO: use stream info
         domain.actions.append(
@@ -149,11 +153,8 @@ def compile_to_exogenous_actions(evaluations, domain, streams):
                 cost=effort,
             )
         )
-        stream.certified = tuple(set(stream.certified) | set(map(future_fn, stream.certified)))
-    if get_config().exogenous_future_values:
-        streams.extend(new_streams)
-    else:
-        streams[:] = new_streams
+
+    compile_exogenous_streams(evaluations, domain, streams, add_call_action)
 
 
 ##################################################
@@ -193,11 +194,7 @@ def compile_to_exogenous_axioms(evaluations, domain, streams):
     # TODO: no attribute certified
     # TODO: recover the streams that are required
 
-    fluent_predicates = get_fluents(domain)
     certified_predicates = {get_prefix(a) for s in streams for a in s.certified}
-    future_map = {p: f'f-{p}' for p in certified_predicates}
-    augment_evaluations(evaluations, future_map)
-    future_fn = lambda a: rename_atom(a, future_map)
     derived_map = {p: f'd-{p}' for p in certified_predicates}
     derived_fn = lambda a: rename_atom(a, derived_map)
     # TODO: could prune streams that don't need this treatment
@@ -210,13 +207,7 @@ def compile_to_exogenous_axioms(evaluations, domain, streams):
     for axiom in domain.axioms:
         axiom.condition = replace_predicates(derived_map, axiom.condition)
 
-    new_streams = []
-    for stream in list(streams):
-        if not isinstance(stream, Stream):
-            raise NotImplementedError(stream)
-        new_streams.append(create_static_stream(stream, evaluations, fluent_predicates, future_fn))
-        stream_atom = new_streams[-1].certified[0]
-        add_predicate(domain, make_predicate(get_prefix(stream_atom), get_args(stream_atom)))
+    def add_derived_axioms(stream, stream_atom):
         preconditions = [stream_atom] + list(map(derived_fn, stream.domain))
         for certified_fact in stream.certified:
             derived_fact = derived_fn(certified_fact)
@@ -230,11 +221,8 @@ def compile_to_exogenous_axioms(evaluations, domain, streams):
                     ),
                 ]
             )
-        stream.certified = tuple(set(stream.certified) | set(map(future_fn, stream.certified)))
-    if get_config().exogenous_future_values:
-        streams.extend(new_streams)
-    else:
-        streams[:] = new_streams
+
+    compile_exogenous_streams(evaluations, domain, streams, add_derived_axioms)
 
 
 ##################################################
