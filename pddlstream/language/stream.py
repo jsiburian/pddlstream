@@ -1,10 +1,7 @@
 import time
 
 from collections import Counter
-try:
-    from collections import Sequence
-except ImportError:
-    from collections.abc import Sequence
+from collections.abc import Sequence
 
 from pddlstream.algorithms.common import INTERNAL_EVALUATION, add_fact
 from pddlstream.algorithms.downward import make_axiom
@@ -139,7 +136,6 @@ class FluentOutput(object): # TODO: unify with OptimizerOutput
         return WildOutput(self.assignments, self.facts)
     def __bool__(self):
         return bool(self.assignments)
-    __nonzero__ = __bool__
     def __repr__(self):
         #return '{}{}'.format(self.__class__.__name__, str_from_object(self.__dict__))
         return str_from_object(self.__dict__)

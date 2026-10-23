@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import copy
 
 from collections import defaultdict, namedtuple

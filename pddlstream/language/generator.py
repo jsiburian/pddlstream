@@ -1,8 +1,5 @@
 import time
-try:
-    from collections import Iterator
-except ImportError:
-    from collections.abc import Iterator
+from collections.abc import Iterator
 from collections import namedtuple, deque
 from itertools import count
 
@@ -27,7 +24,7 @@ class BoundedGenerator(Iterator):
     @property
     def enumerated(self):
         return self.stopped or (self.max_calls <= self.calls)
-    def next(self):
+    def __next__(self):
         if self.enumerated:
             raise StopIteration()
         try:
@@ -36,7 +33,6 @@ class BoundedGenerator(Iterator):
             self.stopped = True
             raise StopIteration()
         return self.history[-1]
-    __next__ = next
 
 
 def get_next(generator, default=[]):

@@ -1,9 +1,4 @@
-from __future__ import print_function
-
-try:
-    from Tkinter import Tk, Canvas, Toplevel
-except ImportError:
-    from tkinter import Tk, Canvas, Toplevel
+from tkinter import Tk, Canvas, Toplevel
 
 # NOTE - this will overwrite (but remember) existing drawings
 # TODO - try PyGame, PyCairo, or Pyglet

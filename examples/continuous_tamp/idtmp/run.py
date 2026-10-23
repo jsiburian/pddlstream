@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
 from pddlstream.algorithms.meta import create_parser, solve
 from examples.continuous_tamp.primitives import get_pose_gen, distance_fn, inverse_kin, \
     get_region_test, plan_motion, MOVE_COST, test_reachable, GRASP

@@ -1,11 +1,6 @@
-from __future__ import print_function
-
 import time
 from collections import namedtuple
-try:
-    from collections import Sized
-except ImportError:
-    from collections.abc import Sized
+from collections.abc import Sized
 from itertools import count
 from heapq import heappush, heappop
 

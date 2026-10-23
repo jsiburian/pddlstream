@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, control_commands
 from examples.pybullet.utils.pybullet_tools.pr2_utils import get_group_joints
 from examples.pybullet.utils.pybullet_tools.utils import connect, disconnect, \

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import numpy as np
 
 from examples.pybullet.utils.pybullet_tools.pr2_problems import create_pr2, create_table, Problem

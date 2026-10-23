@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from collections import namedtuple
 
 from pddlstream.algorithms.meta import solve

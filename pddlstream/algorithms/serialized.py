@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from pddlstream.algorithms.meta import solve_restart, solve
 from pddlstream.language.temporal import parse_domain
 from pddlstream.utils import INF, Verbose, str_from_object, SEPARATOR

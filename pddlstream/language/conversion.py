@@ -1,9 +1,4 @@
-from __future__ import print_function
-
-try:
-    from collections import Sequence
-except ImportError:
-    from collections.abc import Sequence
+from collections.abc import Sequence
 from itertools import product
 
 from pddlstream.language.constants import EQ, AND, OR, NOT, CONNECTIVES, QUANTIFIERS, OPERATORS, OBJECTIVES, \

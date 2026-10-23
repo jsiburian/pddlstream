@@ -1,8 +1,5 @@
 from collections import defaultdict, namedtuple
-try:
-    from collections import Sized
-except ImportError:
-    from collections.abc import Sized
+from collections.abc import Sized
 from heapq import heappush, heappop
 from itertools import product
 

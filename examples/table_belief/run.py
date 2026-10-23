@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
 from pddlstream.algorithms.meta import solve, create_parser
 from examples.discrete_belief.dist import DeltaDist, MixtureDist, UniformDist
 from examples.discrete_belief.run import revisit_mdp_cost

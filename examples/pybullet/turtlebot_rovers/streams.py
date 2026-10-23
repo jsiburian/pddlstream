@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import numpy as np
 
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, Trajectory, create_trajectory, Command

@@ -90,7 +90,7 @@ def tuplify(x):
     if type(x) in (tuple, list):
         return tuple([tuplify(y) for y in x])
     elif type(x) == dict:
-        return tuple(sorted(tuplify(y) for y in x.iteritems()))
+        return tuple(sorted(tuplify(y) for y in x.items()))
     else:
         return x
 
@@ -326,9 +326,9 @@ def combineBindings(a, b):
     if a == False or b == False:
         return False
     return dict([(k, applyBindings(v, b)) for (k, v) in \
-                 a.iteritems()] + \
+                 a.items()] + \
                 [(k, applyBindings(v, a)) for (k, v) in \
-                 b.iteritems()])
+                 b.items()])
 
 
 # Doesn't extend bindings if there are bindings in s
@@ -530,7 +530,7 @@ def extendBindings(b, k, v):
 
 def goodBindings(b):
     return type(b) == dict and \
-           all(var != val for (var, val) in b.iteritems())
+           all(var != val for (var, val) in b.items())
 
 
 def extractVars(struct):

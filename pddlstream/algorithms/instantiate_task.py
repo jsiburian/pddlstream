@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os
 from collections import namedtuple, defaultdict, deque, Counter
 from time import time

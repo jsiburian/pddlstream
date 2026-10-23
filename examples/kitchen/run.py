@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from pddlstream.algorithms import instantiate_task
 instantiate_task.FD_INSTANTIATE = True
 from pddlstream.algorithms import instantiation

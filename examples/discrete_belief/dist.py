@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from .miscUtil import prettyString, makeDiag, argmaxWithVal
 from . import miscUtil
 
@@ -603,7 +601,7 @@ def fixSigma(sigma, ridge=1e-20):
             print('Not positive definite', minEig)
         print('Added to matrix', (ridge - minEig))
         # if -minEig > 1e-5:
-        #     raw_input('okay?')
+        #     input('okay?')
         sigma = sigma + 2 * (ridge - minEig) * identity(len(sigma))
     return sigma
 
@@ -1084,7 +1082,7 @@ def regressGaussianPNM(epsr, obsSigma, delta):
     if ei2 < part2:
         return .99999999
     if pnmr > .99999999:
-        raw_input("Erfinv argument too big")
+        input("Erfinv argument too big")
     return 1 - ss.erf(math.sqrt(ei2 - part2))
 
 

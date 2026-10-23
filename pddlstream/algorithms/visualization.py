@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os
 
 from pddlstream.algorithms.reorder import get_partial_orders

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import math
 import os
 import pickle
@@ -20,10 +18,7 @@ import numpy as np
 INF = float('inf')
 SEPARATOR = '\n' + 80*'-'  + '\n'
 
-try:
-   user_input = raw_input
-except NameError:
-   user_input = input
+user_input = input
 
 inf_generator = count
 

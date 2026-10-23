@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
 import numpy as np
 
 from pddlstream.algorithms.meta import solve, create_parser

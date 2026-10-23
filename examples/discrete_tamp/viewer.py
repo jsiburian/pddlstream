@@ -1,7 +1,4 @@
-try:
-    from Tkinter import Tk, Canvas, Toplevel
-except ImportError:
-    from tkinter import Tk, Canvas, Toplevel
+from tkinter import Tk, Canvas, Toplevel
 
 import colorsys
 
