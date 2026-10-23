@@ -1,4 +1,3 @@
-import os
 from collections import namedtuple, defaultdict, deque, Counter
 from time import time
 
@@ -7,7 +6,6 @@ from pddlstream.algorithms.downward import (
     get_precondition,
     get_fluents,
     get_function_assignments,
-    TRANSLATE_OUTPUT,
     parse_sequential_domain,
     parse_problem,
     task_from_domain_problem,
@@ -24,10 +22,9 @@ from pddlstream.utils import (
     MockSet,
     elapsed_time,
     Verbose,
-    safe_remove,
-    ensure_dir,
     str_from_object,
 )
+from pddlstream.fastdownward.planner import write_sas_task
 from pddlstream.fastdownward.translator import (
     axiom_rules,
     fact_groups,
@@ -300,15 +297,6 @@ def sas_from_instantiated(instantiated_task):
 
 
 ##################################################
-
-
-def write_sas_task(sas_task, temp_dir):
-    translate_path = os.path.join(temp_dir, TRANSLATE_OUTPUT)
-    safe_remove(translate_path)
-    ensure_dir(translate_path)
-    with open(os.path.join(temp_dir, TRANSLATE_OUTPUT), 'w') as output_file:
-        sas_task.output(output_file)
-    return translate_path
 
 
 def sas_from_pddl(task, debug=False):

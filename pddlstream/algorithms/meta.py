@@ -110,7 +110,9 @@ def solve(
     :param verbose: if True, print the result of each stream application
     :param deterministic: if True, make seeded runs repeatable: time-based decisions (e.g. the sampling budget) count
         work units instead of seconds, and saved stream statistics are not loaded. max_time is still wall-clock time
-    :param search_kwargs: keyword args for the search subroutine
+    :param search_kwargs: keyword args for the search subroutine, such as planner (a key of SEARCH_OPTIONS),
+        max_planner_time and debug. Each search runs in a private temporary directory, except that debug=True
+        prints FastDownward's output and keeps its files in ./temp/ (temp_dir=... chooses another directory)
 
     :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
         (or None), cost is the cost of the plan (INF if no plan), and evaluations is init expanded

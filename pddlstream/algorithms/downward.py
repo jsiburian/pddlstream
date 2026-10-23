@@ -1,21 +1,15 @@
-import os
-import re
-import subprocess
 from collections import namedtuple, defaultdict
-from time import time
 
 from pddlstream.fastdownward.translator import (
-    convert_value,
-    find_build,
     get_cost_scale,
     instantiate,
     normalize,
     pddl,
     pddl_parser,
-    scale_cost,
 )
 
 # Re-exported for examples and downstream code that import them from here
+from pddlstream.fastdownward.planner import DEFAULT_MAX_TIME, DEFAULT_PLANNER, SEARCH_OPTIONS  # noqa: F401
 from pddlstream.fastdownward.translator import MAX_FD_COST, set_cost_scale  # noqa: F401
 from pddlstream.language.constants import (
     EQ,
@@ -38,111 +32,17 @@ from pddlstream.language.conversion import (
     obj_from_pddl,
 )
 from pddlstream.utils import (
-    read,
-    write,
-    INF,
-    clear_dir,
     MockSet,
     find_unique,
-    safe_remove,
     safe_zip,
-    elapsed_time,
-    get_clock,
-    SEARCH_WORK,
 )
 
 ##################################################
 
-filepath = os.path.abspath(__file__)
-if ' ' in filepath:
-    raise RuntimeError('The path to pddlstream cannot include spaces')
-
-DOMAIN_INPUT = 'domain.pddl'
-PROBLEM_INPUT = 'problem.pddl'
-TEMP_DIR = 'temp/'
-TRANSLATE_OUTPUT = 'output.sas'
-SEARCH_OUTPUT = 'sas_plan'
-SEARCH_COMMAND = 'downward --internal-plan-file {} {} < {}'
 GOAL_NAME = '@goal'  # @goal-reachable
 
 INTERNAL_AXIOM = 'new-axiom'  # @0
 IDENTICAL = 'identical'  # lowercase is critical (!= instead?)
-##################################################
-
-# TODO: cost_type=PLUSONE can lead to suboptimality but often doesn't in practice due to COST_SCALE
-# TODO: modify parsing_functions to support multiple costs
-
-# bound (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost.
-# (i.e. solutions must be strictly better than the bound)
-
-# TODO: move toward using this style
-
-SEARCH_OPTIONS = {
-    # See FastDownward's documentation for more configurations
-    # http://www.fast-downward.org/Doc/Evaluator
-    # http://www.fast-downward.org/Doc/SearchEngine
-    # Optimal (when cost_type=NORMAL)
-    'dijkstra': '--heuristic "h=blind(transform=adapt_costs(cost_type=PLUSONE))" '
-    '--search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
-    'max-astar': '--heuristic "h=hmax(transform=adapt_costs(cost_type=PLUSONE))"'
-    ' --search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',  # cost_type=PLUSONE
-    'lmcut-astar': '--heuristic "h=lmcut(transform=adapt_costs(cost_type=PLUSONE))"'
-    ' --search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
-    # Suboptimal
-    'ff-astar': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-    '--search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
-    'ff-eager': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-    '--search "eager_greedy([h],max_time=%s,bound=%s)"',
-    'ff-eager-pref': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-    '--search "eager_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
-    'ff-lazy': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-    '--search "lazy_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
-    'goal-lazy': '--heuristic "h=goalcount(transform=no_transform())" '
-    '--search "lazy_greedy([h],randomize_successors=True,max_time=%s,bound=%s)"',
-    'add-random-lazy': '--heuristic "h=add(transform=adapt_costs(cost_type=PLUSONE))" '
-    '--search "lazy_greedy([h],randomize_successors=True,max_time=%s,bound=%s)"',
-    'ff-eager-tiebreak': '--heuristic "h=ff(transform=no_transform())" '
-    '--search "eager(tiebreaking([h, g()]),reopen_closed=false,'
-    'cost_type=PLUSONE,max_time=%s,bound=%s, f_eval=sum([g(), h]))"',  # preferred=[h],
-    'ff-lazy-tiebreak': '--heuristic "h=ff(transform=no_transform())" '
-    '--search "lazy(tiebreaking([h, g()]),reopen_closed=false,'
-    'randomize_successors=True,cost_type=PLUSONE,max_time=%s,bound=%s)"',  # preferred=[h],
-    # TODO: eagerly evaluate goal count but lazily compute relaxed plan
-    'ff-ehc': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-    '--search "ehc(h,preferred=[h],preferred_usage=RANK_PREFERRED_FIRST,'
-    'cost_type=PLUSONE,max_time=%s,bound=%s)"',
-    # The key difference is that ehc resets the open list upon finding an improvement
-    # TODO: iterated search
-}
-# TODO: do I want to sort operators in FD hill-climbing search?
-# TODO: greedily prioritize operators with less cost. Useful when prioritizing actions that have no stream cost
-
-for w in range(1, 1 + 5):
-    SEARCH_OPTIONS.update(
-        {
-            # TODO: specify whether lazy or eager
-            f'ff-wastar{w}': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-            f'--search "lazy_wastar([h],preferred=[h],reopen_closed=true,boost=100,w={w},'
-            'randomize_successors=false,preferred_successors_first=true,random_seed=-1,'
-            'cost_type=PLUSONE,max_time=%s,bound=%s)"',
-            f'cea-wastar{w}': '--heuristic "h=cea(transform=adapt_costs(cost_type=PLUSONE))" '
-            f'--search "lazy_wastar([h],preferred=[h],reopen_closed=false,boost=1000,w={w},'
-            'randomize_successors=false,preferred_successors_first=true,random_seed=-1,'
-            'cost_type=PLUSONE,max_time=%s,bound=%s)"',
-            # TODO: eager_wastar
-            # http://www.fast-downward.org/Doc/SearchEngine#Eager_weighted_A.2A_search
-            f'ff-astar{w}': '--evaluator "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-            f'--search "eager(alt([single(sum([g(), weight(h,{w})])),'
-            f'single(sum([g(),weight(h,{w})]),pref_only=true)]),'
-            'preferred=[h],cost_type=PLUSONE,max_time=%s,bound=%s)"',
-        }
-    )
-
-# TODO: throw a warning if max_planner_time is met
-DEFAULT_MAX_TIME = 30  # INF
-DEFAULT_GREEDY_PLANNER = 'ff-astar2'
-DEFAULT_PLANNER = DEFAULT_GREEDY_PLANNER
-
 ##################################################
 
 
@@ -254,7 +154,6 @@ def get_problem(evaluations, goal_exp, domain, unit_costs=False):
     init = fd_from_evaluations(evaluations)
     goal = pddl.Truth() if goal_exp is None else parse_goal(goal_exp, domain)
     problem_pddl = None
-    write_pddl(domain.pddl, problem_pddl, temp_dir=TEMP_DIR)
     return Problem(
         task_name=domain.name,
         task_domain_name=domain.name,
@@ -367,92 +266,6 @@ def normalize_domain_goal(domain, goal_exp):
     task = task_from_domain_problem(domain, problem)
     normalize.normalize(task)
     return task
-
-
-def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_TIME, max_cost=INF, debug=False):
-    """
-    Runs FastDownward's search phase on translated SAS+ problem TRANSLATE_OUTPUT
-    :param temp_dir: the directory for temporary FastDownward input and output files
-    :param planner: a keyword for the FastDownward search configuration in SEARCH_OPTIONS
-    :param max_planner_time: the maximum runtime of FastDownward
-    :param max_cost: the maximum FastDownward plan cost
-    :param debug: If True, print the FastDownward search output
-    :return: a tuple (plan, cost) where plan is a sequence of PDDL actions
-        (or None) and cost is the cost of the plan (INF if no plan)
-    """
-    max_time = convert_value(max_planner_time)
-    max_cost = convert_value(scale_cost(max_cost))
-    start_time = time()
-    get_clock().charge(SEARCH_WORK)
-    search = os.path.join(find_build(), 'bin', SEARCH_COMMAND)
-    planner_config = SEARCH_OPTIONS[planner] % (max_time, max_cost)
-    temp_dir = os.path.abspath(temp_dir)
-    command = search.format(
-        os.path.join(temp_dir, SEARCH_OUTPUT), planner_config, os.path.join(temp_dir, TRANSLATE_OUTPUT)
-    )
-    if debug:
-        print('Search command:', command)
-
-    temp_path = os.path.join(os.getcwd(), TEMP_DIR)  # TODO: temp dir?
-    for filename in os.listdir(temp_path):
-        if filename.startswith(SEARCH_OUTPUT):
-            safe_remove(os.path.join(temp_path, filename))
-
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, cwd=None, close_fds=True)
-    output, error = proc.communicate()
-
-    if debug:
-        print(output.decode(encoding='UTF-8')[:-1])
-        print(f'Search runtime: {elapsed_time(start_time):.3f}')
-    plan_files = sorted(f for f in os.listdir(temp_path) if f.startswith(SEARCH_OUTPUT))
-    print('Plans:', plan_files)
-    return parse_solutions(temp_path, plan_files)
-
-
-##################################################
-
-
-def parse_action(line):
-    entries = line.strip('( )').split(' ')
-    name = entries[0]
-    args = tuple(entries[1:])
-    return Action(name, args)
-
-
-def parse_solution(solution):
-    cost = INF
-    if solution is None:
-        return None, cost
-    cost_regex = r'cost\s*=\s*(\d+)'
-    matches = re.findall(cost_regex, solution)
-    if matches:
-        cost = float(matches[0]) / get_cost_scale()
-    # TODO: recover the actual cost of the plan from the evaluations
-    lines = solution.split('\n')[:-2]  # Last line is newline, second to last is cost
-    plan = list(map(parse_action, lines))
-    return plan, cost
-
-
-def parse_solutions(temp_path, plan_files):
-    # TODO: return multiple solutions for focused
-    best_plan, best_cost = None, INF
-    for plan_file in plan_files:
-        solution = read(os.path.join(temp_path, plan_file))
-        plan, cost = parse_solution(solution)
-        if cost < best_cost:
-            best_plan, best_cost = plan, cost
-    return best_plan, best_cost
-
-
-def write_pddl(domain_pddl=None, problem_pddl=None, temp_dir=TEMP_DIR):
-    clear_dir(temp_dir)
-    domain_path = os.path.join(temp_dir, DOMAIN_INPUT)
-    if domain_pddl is not None:
-        write(domain_path, domain_pddl)
-    problem_path = os.path.join(temp_dir, PROBLEM_INPUT)
-    if problem_pddl is not None:
-        write(problem_path, problem_pddl)
-    return domain_path, problem_path
 
 
 ##################################################

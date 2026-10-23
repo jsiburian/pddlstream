@@ -1,9 +1,9 @@
 from copy import deepcopy
 from time import time
 
-from pddlstream.algorithms.downward import run_search, TEMP_DIR, write_pddl
-from pddlstream.algorithms.instantiate_task import write_sas_task, translate_and_write_pddl
-from pddlstream.utils import INF, Verbose, safe_rm_dir, elapsed_time
+from pddlstream.algorithms.instantiate_task import translate_and_write_pddl
+from pddlstream.fastdownward.planner import run_search, search_workspace, write_pddl, write_sas_task
+from pddlstream.utils import INF, Verbose, elapsed_time
 
 
 # TODO: manual_patterns
@@ -15,29 +15,29 @@ from pddlstream.utils import INF, Verbose, safe_rm_dir, elapsed_time
 # TODO: write the domain and problem PDDL files that are used for debugging purposes
 
 
-def solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=False, hierarchy=[], **search_args):
+# Each solver takes temp_dir, clean and debug, which select the directory for FastDownward's files (see
+# search_workspace): by default a private directory that is deleted afterwards, or ./temp/ when debugging.
+
+
+def solve_from_task(sas_task, temp_dir=None, clean=False, debug=False, hierarchy=[], **search_args):
     # TODO: can solve using another planner and then still translate using FastDownward
     # Can apply plan constraints (skeleton constraints) here as well
     start_time = time()
-    with Verbose(debug):
+    with Verbose(debug), search_workspace(temp_dir, clean, debug) as workspace:
         print('\n' + 50 * '-' + '\n')
-        write_sas_task(sas_task, temp_dir)
-        solution = run_search(temp_dir, debug=True, **search_args)
-        if clean:
-            safe_rm_dir(temp_dir)
+        write_sas_task(sas_task, workspace)
+        solution = run_search(workspace, debug=True, **search_args)
         print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return solution
 
 
-def solve_from_pddl(domain_pddl, problem_pddl, temp_dir=TEMP_DIR, clean=False, debug=False, **search_kwargs):
+def solve_from_pddl(domain_pddl, problem_pddl, temp_dir=None, clean=False, debug=False, **search_kwargs):
     # TODO: combine with solve_from_task
     start_time = time()
-    with Verbose(debug):
-        write_pddl(domain_pddl, problem_pddl, temp_dir)
-        translate_and_write_pddl(domain_pddl, problem_pddl, temp_dir, debug)
-        solution = run_search(temp_dir, debug=debug, **search_kwargs)
-        if clean:
-            safe_rm_dir(temp_dir)
+    with Verbose(debug), search_workspace(temp_dir, clean, debug) as workspace:
+        write_pddl(domain_pddl, problem_pddl, workspace)
+        translate_and_write_pddl(domain_pddl, problem_pddl, workspace, debug)
+        solution = run_search(workspace, debug=debug, **search_kwargs)
         print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return solution
 
@@ -86,16 +86,14 @@ def plan_subgoals(sas_task, subgoal_plan, temp_dir, **kwargs):
     return full_plan, full_cost
 
 
-def serialized_solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=False, hierarchy=[], **kwargs):
+def serialized_solve_from_task(sas_task, temp_dir=None, clean=False, debug=False, hierarchy=[], **kwargs):
     # TODO: specify goal grouping / group by predicate & objects
     # TODO: version that solves for all disjuctive subgoals at once
     start_time = time()
-    with Verbose(debug):
+    with Verbose(debug), search_workspace(temp_dir, clean, debug) as workspace:
         print('\n' + 50 * '-' + '\n')
         subgoal_plan = [sas_task.goal.pairs[: i + 1] for i in range(len(sas_task.goal.pairs))]
-        plan, cost = plan_subgoals(sas_task, subgoal_plan, temp_dir, **kwargs)
-        if clean:
-            safe_rm_dir(temp_dir)
+        plan, cost = plan_subgoals(sas_task, subgoal_plan, workspace, **kwargs)
         print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return plan, cost
 
@@ -165,7 +163,7 @@ def add_subgoals(sas_task, subgoal_plan):
     return subgoal_var
 
 
-def abstrips_solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=False, hierarchy=[], **kwargs):
+def abstrips_solve_from_task(sas_task, temp_dir=None, clean=False, debug=False, hierarchy=[], **kwargs):
     # Like partial order planning in terms of precondition order
     # TODO: add achieve subgoal actions
     # TODO: most generic would be a heuristic on each state
@@ -175,21 +173,19 @@ def abstrips_solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=Fal
         return solve_from_task(sas_task, temp_dir=temp_dir, clean=clean, debug=debug, **kwargs)
     start_time = time()
     plan, cost = None, INF
-    with Verbose(debug):
+    with Verbose(debug), search_workspace(temp_dir, clean, debug) as workspace:
         print('\n' + 50 * '-' + '\n')
         last_plan = []
         for level in range(len(hierarchy) + 1):
             local_sas_task = deepcopy(sas_task)
             prune_hierarchy_pre_eff(local_sas_task, hierarchy[level:])  # TODO: break if no pruned
             add_subgoals(local_sas_task, last_plan)
-            write_sas_task(local_sas_task, temp_dir)
-            plan, cost = run_search(temp_dir, debug=True, **kwargs)
+            write_sas_task(local_sas_task, workspace)
+            plan, cost = run_search(workspace, debug=True, **kwargs)
             if (level == len(hierarchy)) or (plan is None):
                 # TODO: fall back on standard search
                 break
             last_plan = [name_from_action(action, args) for action, args in plan]
-        if clean:
-            safe_rm_dir(temp_dir)
         print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return plan, cost
 
