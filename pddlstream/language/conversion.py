@@ -161,25 +161,11 @@ def values_from_objects(objects):
     return tuple(obj.value for obj in objects)
     #return tuple(map(value_from_object, objects))
 
-def temporal_from_sequential(action):
-    # TODO: clean this up
-    assert isinstance(action, DurativeAction)
-    name, args, start, duration = action
-    if name[-2] != '-':
-        return action
-    new_name, index = name[:-2], int(name[-1])
-    if index != 0: # Only keeps the start action
-        return None
-    return DurativeAction(new_name, args, start, duration)
-
 def transform_action_args(action, fn):
     if isinstance(action, Action):
         name, args = action
         return Action(name, tuple(map(fn, args)))
     elif isinstance(action, DurativeAction):
-        action = temporal_from_sequential(action)
-        if action is None:
-            return None
         name, args, start, duration = action
         return DurativeAction(name, tuple(map(fn, args)), start, duration)
     elif isinstance(action, StreamAction):
@@ -209,9 +195,6 @@ def param_from_object(obj):
     if isinstance(obj, Object):
         return obj.value
     raise ValueError(obj)
-
-def params_from_objects(objects):
-    return tuple(map(param_from_object, objects))
 
 def objects_from_values(values):
     return tuple(map(Object.from_value, values))

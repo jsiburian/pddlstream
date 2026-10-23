@@ -73,16 +73,6 @@ def load_stream_statistics(externals):
 
 ##################################################
 
-def dump_online_statistics(externals):
-    print('\nLocal External Statistics')
-    overall_calls = 0
-    overall_overhead = 0
-    for external in externals:
-        external.dump_online()
-        overall_calls += external.online_calls
-        overall_overhead += external.online_overhead
-    print('Overall calls: {} | Overall overhead: {:.3f}'.format(overall_calls, overall_overhead))
-
 def dump_total_statistics(externals):
     print('\nTotal External Statistics')
     for external in externals:
@@ -149,15 +139,6 @@ def write_stream_statistics(externals, verbose):
     write_pickle(filename, data)
     if verbose:
         print('Wrote:', filename)
-
-##################################################
-
-def hash_object(evaluations, obj):
-    # TODO: hash an object by the DAG of streams that produced it
-    # Use this to more finely estimate the parameters of a stream
-    # Can marginalize over conditional information to recover the same overall statistics
-    # Can also apply this directly to domain facts
-    raise NotImplementedError()
 
 ##################################################
 

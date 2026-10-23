@@ -4,39 +4,22 @@ from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
 from pddlstream.algorithms.common import add_facts, add_certified, SolutionStore, UNKNOWN_EVALUATION
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.downward import get_problem, task_from_domain_problem
-from pddlstream.algorithms.instantiate_task import sas_from_pddl, instantiate_task
+from pddlstream.algorithms.instantiate_task import sas_from_pddl
 from pddlstream.algorithms.instantiation import Instantiator
 from pddlstream.algorithms.search import abstrips_solve_from_task
 from pddlstream.language.constants import is_plan
 from pddlstream.language.conversion import obj_from_pddl_plan
-from pddlstream.language.attachments import has_attachments, compile_fluents_as_attachments, solve_pyplanners
 from pddlstream.language.statistics import load_stream_statistics, write_stream_statistics
-from pddlstream.language.temporal import solve_tfd, SimplifiedDomain
-from pddlstream.language.write_pddl import get_problem_pddl
-from pddlstream.utils import INF, Verbose, str_from_object, get_clock
+from pddlstream.language.stream import Stream
+from pddlstream.utils import INF, str_from_object, get_clock
 
 UPDATE_STATISTICS = False
 
-def solve_temporal(evaluations, goal_exp, domain, debug=False, **kwargs):
-    assert isinstance(domain, SimplifiedDomain)
-    problem = get_problem_pddl(evaluations, goal_exp, domain.pddl)
-    return solve_tfd(domain.pddl, problem, debug=debug)
-
-def solve_sequential(evaluations, goal_exp, domain, unit_costs=False, debug=False, **search_args):
+def solve_finite(evaluations, goal_exp, domain, unit_costs=False, debug=False, **search_args):
     problem = get_problem(evaluations, goal_exp, domain, unit_costs)
     task = task_from_domain_problem(domain, problem)
-    if has_attachments(domain):
-        with Verbose(debug):
-            instantiated = instantiate_task(task)
-        return solve_pyplanners(instantiated, **search_args)
     sas_task = sas_from_pddl(task, debug=debug)
-    return abstrips_solve_from_task(sas_task, debug=debug, **search_args)
-
-def solve_finite(evaluations, goal_exp, domain, **kwargs):
-    if isinstance(domain, SimplifiedDomain):
-        pddl_plan, cost = solve_temporal(evaluations, goal_exp, domain, **kwargs)
-    else:
-        pddl_plan, cost = solve_sequential(evaluations, goal_exp, domain, **kwargs)
+    pddl_plan, cost = abstrips_solve_from_task(sas_task, debug=debug, **search_args)
     plan = obj_from_pddl_plan(pddl_plan)
     return plan, cost
 
@@ -132,10 +115,13 @@ def solve_incremental(problem, constraints=PlanConstraints(),
     store = SolutionStore(evaluations, max_time, success_cost, verbose, max_memory=max_memory) # TODO: include other info here?
     if UPDATE_STATISTICS and not deterministic:
         load_stream_statistics(externals)
-    static_externals = compile_fluents_as_attachments(domain, externals)
+    fluent_streams = [external.name for external in externals if isinstance(external, Stream) and external.is_fluent]
+    if fluent_streams:
+        raise NotImplementedError('The incremental algorithm does not support fluent streams ({}); use a focused '
+                                  'algorithm such as adaptive'.format(', '.join(fluent_streams)))
     num_iterations = num_calls = 0
     complexity_limit = initial_complexity
-    instantiator = Instantiator(static_externals, evaluations)
+    instantiator = Instantiator(externals, evaluations)
     num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
     while not store.is_terminated() and (num_iterations < max_iterations) and (complexity_limit <= max_complexity):
         num_iterations += 1

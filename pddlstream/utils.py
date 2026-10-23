@@ -88,14 +88,6 @@ def get_file_path(file, rel_path):
     return os.path.join(directory, rel_path)
 
 
-def open_pdf(filename):
-    import subprocess
-    # import os
-    # import webbrowser
-    subprocess.Popen('open {}'.format(filename), shell=True)
-    # os.system(filename)
-    # webbrowser.open(filename)
-    user_input('Display?')
     # safe_remove(filename)
     # TODO: close output
 
@@ -192,13 +184,6 @@ def flatten(iterable_of_iterables):
     return (item for iterables in iterable_of_iterables for item in iterables)
 
 
-def find(test, sequence):
-    for item in sequence:
-        if test(item):
-            return item
-    return None
-
-
 def find_unique(test, sequence):
     found, value = False, None
     for item in sequence:
@@ -234,21 +219,9 @@ def argmax(fn, iterable):
     return max(iterable, key=fn)
 
 
-def invert_dict(d):
-    return {v: k for k, v in d.items()}
-
-
-def randomize(iterable):
-    sequence = list(iterable)
-    random.shuffle(sequence)
-    return sequence
-
 ##################################################
 
 BYTES_PER_KILOBYTE = math.pow(2, 10)
-BYTES_PER_GIGABYTE = math.pow(2, 30)
-KILOBYTES_PER_GIGABYTE = BYTES_PER_GIGABYTE / BYTES_PER_KILOBYTE
-
 def get_peak_memory_in_kb():
     # TODO: use psutil instead
     import psutil
@@ -354,15 +327,6 @@ class Verbose(Saver): # TODO: use DisableOutput
         #sys.stderr = self.stderr
         #self.devnull.close()
 
-
-class TmpCWD(Saver):
-    def __init__(self, temp_cwd):
-        self.tmp_cwd = temp_cwd
-    def save(self):
-        self.old_cwd = os.getcwd()
-        os.chdir(self.tmp_cwd)
-    def restore(self):
-        os.chdir(self.old_cwd)
 
 ##################################################
 
@@ -483,40 +447,6 @@ def is_valid_topological_sort(vertices, orders, solution):
             return False
     return True
 
-def dfs_topological_sort(vertices, orders, priority_fn=lambda v: 0):
-    # TODO: DFS for all topological sorts
-    orders = filter_orders(vertices, orders)
-    incoming_edges, outgoing_edges = neighbors_from_orders(orders)
-
-    def dfs(history, visited):
-        reverse_ordering = []
-        v1 = history[-1]
-        if v1 in visited:
-            return reverse_ordering
-        visited.add(v1)
-        for v2 in sorted(outgoing_edges[v1], key=priority_fn, reverse=True):
-            if v2 in history:
-                return None # Contains a cycle
-            result = dfs(history + [v2], visited)
-            if result is None:
-                return None
-            reverse_ordering.extend(result)
-        reverse_ordering.append(v1)
-        return reverse_ordering
-
-    visited = set()
-    reverse_order = []
-    for v0 in sorted(vertices, key=priority_fn, reverse=True):
-        if not incoming_edges[v0]:
-            result = dfs([v0], visited)
-            if result is None:
-                return None
-            reverse_order.extend(result)
-
-    ordering = reverse_order[::-1]
-    assert(is_valid_topological_sort(vertices, orders, ordering))
-    return ordering
-
 def topological_sort(vertices, orders, priority_fn=lambda v: 0):
     orders = filter_orders(vertices, orders)
     incoming_edges, outgoing_edges = neighbors_from_orders(orders)
@@ -558,23 +488,6 @@ def layer_sort(vertices, orders): # priority_fn=lambda v: 0
 
 def is_acyclic(vertices, orders):
     return topological_sort(vertices, orders) is not None
-
-def sample_topological_sort(vertices, orders):
-    # https://stackoverflow.com/questions/38551057/random-topological-sorting-with-uniform-distribution-in-near-linear-time
-    # https://www.geeksforgeeks.org/all-topological-sorts-of-a-directed-acyclic-graph/
-    priorities = {v: random.random() for v in vertices}
-    return topological_sort(vertices, orders, priority_fn=priorities.get)
-
-def transitive_closure(vertices, orders):
-    # Warshall's algorithm
-    orders = filter_orders(vertices, orders)
-    closure = set(orders)
-    for k in vertices:
-        for i in vertices:
-            for j in vertices:
-                if ((i, j) not in closure) and ((i, k) in closure) and ((k, j) in closure):
-                    closure.add((i, j))
-    return closure
 
 ##################################################
 
@@ -624,31 +537,6 @@ def get_connected_components(vertices, edges):
 
 ##################################################
 
-SearchNode = namedtuple('Node', ['g', 'parent'])
-
-def dijkstra(sources, edges, op=sum): # sum | max
-    if not isinstance(edges, dict):
-        edges = {edge: 1 for edge in edges}
-    _, outgoing_edges = neighbors_from_orders(edges)
-    visited = {}
-    queue = []
-    for v0 in sources:
-        visited[v0] = SearchNode(g=0, parent=None)
-        queue.append(HeapElement(visited[v0].g, v0))
-
-    while queue:
-        current_g, current_v = heappop(queue)
-        if visited[current_v].g < current_g:
-            continue
-        for next_v in outgoing_edges[current_v]:
-            next_g = op([current_g, edges[(current_v, next_v)]])
-            if (next_v not in visited) or (next_g < visited[next_v].g):
-                visited[next_v] = SearchNode(next_g, current_v)
-                heappush(queue, HeapElement(next_g, next_v))
-    return visited
-
-##################################################
-
 def is_hashable(value):
     #return isinstance(value, Hashable) # TODO: issue with hashable and numpy 2.7.6
     try:
@@ -670,13 +558,6 @@ def value_or_id(value):
     return id(value)
 
 
-def is_64bits():
-    #return sys.maxsize > 2**32
-    import platform
-    bit, _ = platform.architecture()
-    return bit == '64bit'
-
-
 def inclusive_range(start, stop, step=1):
     sequence = list(np.arange(start, stop, step))
     if sequence and (sequence[-1] == stop):
@@ -687,10 +568,6 @@ def inclusive_range(start, stop, step=1):
 def read_pddl(this_file, pddl_filename):
     directory = os.path.dirname(os.path.abspath(this_file))
     return read(os.path.join(directory, pddl_filename))
-
-
-def lowercase(*strings):
-    return [string.lower() for string in strings]
 
 
 def str_eq(s1, s2, ignore_case=True):

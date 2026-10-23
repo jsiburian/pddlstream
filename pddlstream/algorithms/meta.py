@@ -18,7 +18,6 @@ from pddlstream.language.constants import is_plan, Certificate, PDDLProblem, get
 from pddlstream.language.conversion import value_from_obj_expression, EQ
 from pddlstream.language.external import DEBUG, SHARED_DEBUG
 from pddlstream.language.stream import PartialInputs
-from pddlstream.language.temporal import SimplifiedDomain
 from pddlstream.utils import elapsed_time, INF, Verbose, irange, SEPARATOR
 
 FOCUSED_ALGORITHMS = ['focused', 'binding', 'adaptive']
@@ -182,11 +181,6 @@ def solve_restart(problem, max_time=INF, max_restarts=0, iteration_time=INF, abo
 
 ##################################################
 
-def set_unique(externals):
-    for external in externals:
-        external.info.opt_gen_fn = PartialInputs(unique=True)
-        external.num_opt_fns = 0
-
 def examine_instantiated(problem, unique=False, normalize=True, unit_costs=False, verbose=False, debug=False, **kwargs):
     # TODO: refactor to an analysis file
     domain_pddl, constant_map, stream_pddl, _, init, goal = problem
@@ -194,7 +188,6 @@ def examine_instantiated(problem, unique=False, normalize=True, unit_costs=False
     problem = PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
     evaluations, goal_exp, domain, externals = parse_problem(problem, **kwargs)
-    assert not isinstance(domain, SimplifiedDomain)
     negative = get_negative_externals(externals)
     externals = list(filter(lambda s: s not in negative, externals))
 
@@ -224,22 +217,6 @@ def examine_instantiated(problem, unique=False, normalize=True, unit_costs=False
     # sas_task = sas_from_pddl(task, debug=debug)
 
 ##################################################
-
-def iterate_subgoals(goals, axiom_from_effect):
-    necessary = set()
-    possible = set()
-    for goal in goals:
-        if goal in axiom_from_effect:
-            necessary.update(set.intersection(*[set(axiom.condition) for axiom in axiom_from_effect[goal]]))
-            #print(len(axiom_from_effect[goal]) == 1)  # Universal
-            for axiom in axiom_from_effect[goal]:
-                possible.update(axiom.condition)  # Add goal as well?
-        else:
-            necessary.add(goal)
-    print('Necessary:', necessary)
-    print('Possible:', possible - necessary)
-    return possible
-
 
 def recurse_subgoals(goals, condition_from_effect):
     possible = set()

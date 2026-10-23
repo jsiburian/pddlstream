@@ -10,7 +10,6 @@ from pddlstream.language.stream import Stream
 from pddlstream.utils import find_unique, get_mapping
 
 UNIVERSAL_TO_CONDITIONAL = False
-AUTOMATICALLY_NEGATE = True # TODO: fix Yang's bug
 # TODO: AUTOMATICALLY_NEGATE = False can omit collisions
 
 

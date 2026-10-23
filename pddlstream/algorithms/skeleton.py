@@ -40,10 +40,6 @@ def compute_affected_downstream(stream_plan, index):
             has_cost |= (type(result2) is FunctionResult)
     return Affected(affected_indices, has_cost)
 
-def compute_affected_component(stream_plan, index):
-    # TODO: affected upstream
-    raise NotImplementedError()
-
 ##################################################
 
 class Skeleton(CreationHash):

@@ -232,6 +232,7 @@ I recommend starting with a greedier configuration and moving torward a less gre
 
 Any PDDL planning algorithm could be used in the place of [FastDownward](http://www.fast-downward.org/); however, a caveat is that some of these planners are only implemented to support a limited set of representational features (e.g. no conditional effects, no derived predicates, etc.), which can make both modeling more difficult and ultimately planning less efficient in many real-world (non-IPC) planning domains.
 While I heavily recommend [FastDownward](http://www.fast-downward.org/), some PDDL planners that I've interfaced with in the past with some success include:
+(This repository now calls only FastDownward; its old hooks for Temporal FastDownward, pyplanners, Cerberus, TPSHE, OPTIC, tflap and Forbid Iterative were removed.)
 
 Classical Planners
 * [FastDownward](http://www.fast-downward.org/)

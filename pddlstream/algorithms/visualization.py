@@ -147,22 +147,6 @@ def visualize_constraints(constraints, filename='constraint_network'+DEFAULT_EXT
 
 ##################################################
 
-def display_image(filename):
-    import matplotlib.pyplot as plt
-    import matplotlib.image as mpimg
-    img = mpimg.imread(filename)
-    plt.imshow(img)
-    plt.title(filename)
-    plt.axis('off')
-    plt.tight_layout()
-
-    #plt.show()
-    plt.draw()
-    #plt.waitforbuttonpress(0)  # this will wait for indefinite time
-    plt.pause(interval=1e-3)
-    user_input()
-    plt.close(plt.figure())
-
 def visualize_stream_orders(orders, streams=[], filename='stream_orders'+DEFAULT_EXTENSION):
     from pygraphviz import AGraph
     graph = AGraph(strict=True, directed=True)

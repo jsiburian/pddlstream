@@ -4,8 +4,8 @@ from contextlib import contextmanager
 
 from pddlstream.algorithms.common import evaluations_from_init, SOLUTIONS
 from pddlstream.algorithms.constraints import add_plan_constraints
-from pddlstream.algorithms.downward import parse_lisp, parse_goal, has_costs, set_unit_costs, normalize_domain_goal
-from pddlstream.language.temporal import parse_domain, SimplifiedDomain
+from pddlstream.algorithms.downward import parse_lisp, parse_goal, has_costs, set_unit_costs, normalize_domain_goal, \
+    parse_sequential_domain
 from pddlstream.language.constants import get_prefix, get_args
 from pddlstream.language.conversion import obj_from_value_expression
 from pddlstream.language.exogenous import compile_to_exogenous, FutureValue
@@ -114,7 +114,7 @@ def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, u
     #reset_globals() # Prevents use of satisfaction.py
     domain_pddl, constant_map, stream_pddl, stream_map, init, goal = problem
 
-    domain = parse_domain(domain_pddl) # TODO: normalize here
+    domain = parse_sequential_domain(domain_pddl) # TODO: normalize here
     #domain = domain_pddl
     if len(domain.types) != 1:
         raise NotImplementedError('Types are not currently supported')
@@ -131,11 +131,6 @@ def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, u
 
     evaluations = evaluations_from_init(init)
     goal_exp = obj_from_value_expression(goal)
-
-    if isinstance(domain, SimplifiedDomain):
-        #assert isinstance(domain, str) # raw PDDL is returned
-        _ = {name: Object(value, name=name) for name, value in constant_map.items()}
-        return evaluations, goal_exp, domain, streams
 
     goal_exp = add_plan_constraints(constraints, domain, evaluations, goal_exp)
     parse_goal(goal_exp, domain) # Just to check that it parses
@@ -179,10 +174,6 @@ def set_unit_efforts(externals):
     for external in externals:
         if external.get_effort() < INF:
             external.info.effort = 1
-
-NO_INFO = None
-RELATIONAL_INFO = 'relational_info' # structural_info
-STATISTICS_INFO = 'statistics_info'
 
 def parse_stream_pddl(stream_pddl, stream_map, stream_info={}, unit_costs=False, unit_efforts=False):
     if stream_info is None: # NO_INFO

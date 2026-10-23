@@ -10,20 +10,6 @@ from pddlstream.language.conversion import is_atom, is_negated_atom, objects_fro
     pddl_list_from_expression, obj_from_pddl
 from pddlstream.utils import read, write, INF, clear_dir, get_file_path, MockSet, find_unique, int_ceil, \
     safe_remove, safe_zip, elapsed_time, get_clock, SEARCH_WORK
-from pddlstream.language.write_pddl import get_problem_pddl
-
-USE_CERBERUS = False
-#CERBERUS_PATH = '/home/caelan/Programs/cerberus' # Check if this path exists
-CERBERUS_PATH = '/home/caelan/Programs/fd-redblack-ipc2018' # Check if this path exists
-# Does not support derived predicates
-
-USE_FORBID = False
-FORBID_PATH = '/Users/caelan/Programs/external/ForbidIterative'
-# --planner topk,topq,topkq,diverse
-FORBID_TEMPLATE = 'plan.py --planner topk --number-of-plans {num} --domain {domain} --problem {problem}'
-FORBID_COMMAND = os.path.join(FORBID_PATH, FORBID_TEMPLATE)
-assert not USE_CERBERUS or not USE_FORBID
-# Does not support derived predicates
 
 ##################################################
 
@@ -44,11 +30,11 @@ def find_build(fd_path):
 FD_PATH = get_file_path(__file__, '../../downward/')
 #FD_PATH = get_file_path(__file__, '../../FastDownward/')
 TRANSLATE_PATH = os.path.join(find_build(FD_PATH), 'bin/translate')
-FD_BIN = os.path.join(find_build(CERBERUS_PATH if USE_CERBERUS else FD_PATH), 'bin')
+FD_BIN = os.path.join(find_build(FD_PATH), 'bin')
 
 DOMAIN_INPUT = 'domain.pddl'
 PROBLEM_INPUT = 'problem.pddl'
-TRANSLATE_FLAGS = [] #if USE_CERBERUS else ['--negative-axioms']
+TRANSLATE_FLAGS = []
 original_argv = sys.argv[:]
 sys.argv = sys.argv[:1] + TRANSLATE_FLAGS + [DOMAIN_INPUT, PROBLEM_INPUT]
 sys.path.append(TRANSLATE_PATH)
@@ -111,8 +97,6 @@ GOAL_NAME = '@goal' # @goal-reachable
 
 INTERNAL_AXIOM = 'new-axiom' # @0
 IDENTICAL = "identical" # lowercase is critical (!= instead?)
-INTERNAL_PREDICATES = [EQ, IDENTICAL, INTERNAL_AXIOM]
-
 ##################################################
 
 # TODO: cost_type=PLUSONE can lead to suboptimality but often doesn't in practice due to COST_SCALE
@@ -121,19 +105,7 @@ INTERNAL_PREDICATES = [EQ, IDENTICAL, INTERNAL_AXIOM]
 # bound (int): exclusive depth bound on g-values. Cutoffs are always performed according to the real cost.
 # (i.e. solutions must be strictly better than the bound)
 
-HEURISTICS = ['add', 'blind', 'cea', 'ff', 'goalcount', 'hmax', 'lmcut'] # hm
-TRANSFORMS = ['NORMAL', 'ONE', 'PLUSONE']
-
 # TODO: move toward using this style
-
-def Heuristic(heuristic='ff', cost_type='PLUSONE'):
-    return '--heuristic "h={heuristic}(transform=adapt_costs(cost_type={cost_type}))"'.format(
-        heuristic=heuristic, cost_type=cost_type)
-
-def EagerWeightedAStar(heuristic='ff', weight=1, cost_type='PLUSONE'):
-    return '--search eager_wastar(evals=[h()], preferred=[], reopen_closed=true, boost=0, w={weight}, pruning=null(), ' \
-           'cost_type={cost_type}, bound=infinity, max_time=infinity, verbosity=normal)'.format(
-        weight=weight, cost_type=cost_type)
 
 SEARCH_OPTIONS = {
     # See FastDownward's documentation for more configurations
@@ -203,36 +175,15 @@ for w in range(1, 1+5):
                                    'preferred=[h],cost_type=PLUSONE,max_time=%s,bound=%s)"'.format(w=w),
     })
 
-if USE_CERBERUS:
-    # --internal-previous-portfolio-plans
-    #import imp
-    #plan_path = os.path.join(CERBERUS_PATH, 'plan.py')
-    #plan = imp.load_source('plan', plan_path)
-    sys.path.append(CERBERUS_PATH)
-    import importlib
-    mod = importlib.import_module("plan-agl") # plan | plan-agl | plan-cbo | plan-sat
-    #SEARCH_OPTIONS['cerberus'] = ' '.join(p.strip() for s in mod.config_string() for p in s.split('\n')) # .replace('\n', ' ')
-    SEARCH_OPTIONS['cerberus'] = ' '.join(s if s.startswith('--') else '"{}"'.format(s)
-                                          for s in mod.config_string())
-
 # TODO: throw a warning if max_planner_time is met
 DEFAULT_MAX_TIME = 30 # INF
-DEFAULT_CONSERVATIVE_PLANNER = 'ff-astar'
 DEFAULT_GREEDY_PLANNER = 'ff-astar2'
 DEFAULT_PLANNER = DEFAULT_GREEDY_PLANNER
-
-def print_search_options():
-    for i, (name, command) in enumerate(sorted(SEARCH_OPTIONS.items())):
-        print('\n{}) {}: {}'.format(i, name, command))
 
 ##################################################
 
 # WARNING: overflow on h^add! Costs clamped to 100000000
 MAX_FD_COST = 1e8
-
-def round_cost(cost):
-    cost_scale = get_cost_scale()
-    return int(cost_scale * cost) / cost_scale
 
 def get_cost_scale():
     return pddl.f_expression.COST_SCALE
@@ -249,9 +200,6 @@ def scale_cost(cost):
     if cost == INF:
         return INF
     return int_ceil(get_cost_scale() * float(cost))
-
-def get_min_unit():
-    return 1. / get_cost_scale()
 
 set_cost_scale(cost_scale=1e3) # TODO: make unit costs be equivalent to cost scale = 0
 
@@ -357,8 +305,6 @@ def get_problem(evaluations, goal_exp, domain, unit_costs=False):
     goal = pddl.Truth() if goal_exp is None else parse_goal(goal_exp, domain)
     #print('{} objects and {} atoms'.format(len(objects), len(init)))
     problem_pddl = None
-    if USE_FORBID:
-        problem_pddl = get_problem_pddl(evaluations, goal_exp, domain.pddl, temporal=False)
     write_pddl(domain.pddl, problem_pddl, temp_dir=TEMP_DIR)
     return Problem(task_name=domain.name, task_domain_name=domain.name,
                    objects=sorted(typed_objects, key=lambda o: o.name),
@@ -464,18 +410,10 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
     start_time = time()
     get_clock().charge(SEARCH_WORK)
     search = os.path.abspath(os.path.join(FD_BIN, SEARCH_COMMAND))
-    if planner == 'cerberus':
-        planner_config = SEARCH_OPTIONS[planner] # Check if max_time, max_cost exist
-    else:
-        planner_config = SEARCH_OPTIONS[planner] % (max_time, max_cost)
+    planner_config = SEARCH_OPTIONS[planner] % (max_time, max_cost)
     temp_dir = os.path.abspath(temp_dir)
     command = search.format(os.path.join(temp_dir, SEARCH_OUTPUT), planner_config,
                             os.path.join(temp_dir, TRANSLATE_OUTPUT))
-
-    domain_path = os.path.abspath(os.path.join(temp_dir, DOMAIN_INPUT))
-    problem_path = os.path.abspath(os.path.join(temp_dir, PROBLEM_INPUT))
-    if USE_FORBID:
-        command = FORBID_COMMAND.format(num=2, domain=domain_path, problem=problem_path)
     if debug:
         print('Search command:', command)
 
@@ -499,11 +437,6 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
     output, error = proc.communicate()
     #if proc.returncode not in [0, 12]: # Good: [0, 12] | Bad: [127]
     #    raise RuntimeError(proc.returncode)
-
-    if USE_FORBID:
-        for filename in os.listdir(FORBID_PATH):
-            if filename.startswith(SEARCH_OUTPUT):
-                os.rename(os.path.join(FORBID_PATH, filename), os.path.join(temp_path, filename))
 
     if debug:
         print(output.decode(encoding='UTF-8')[:-1])
@@ -578,13 +511,6 @@ def get_conditional_effects(operator):
         return [([], operator.effect)]
     raise ValueError(operator)
 
-def get_effects(operator):
-    # TODO: conditional effects
-    return [effect for _, effect in get_conditional_effects(operator)]
-
-def is_applicable(state, action):
-    return conditions_hold(state, get_precondition(action))
-
 def apply_action(state, action):
     assert(isinstance(action, pddl.PropositionalAction))
     # TODO: signed literals
@@ -596,35 +522,11 @@ def apply_action(state, action):
         if conditions_hold(state, conditions):
             state.add(effect)
 
-def apply_axiom(state, axiom):
-    assert(isinstance(axiom, pddl.PropositionalAxiom))
-    state.add(axiom.effect)
-
-def is_valid_plan(initial_state, plan): #, goal):
-    state = set(initial_state)
-    for action in plan:
-        if not is_applicable(state, action):
-            return False
-        apply_action(state, action)
-    return True
-
 #def apply_lifted_action(state, action):
 #    assert(isinstance(state, pddl.Action))
 #    assert(not action.parameters)
 #    for effect in state.effects:
 #        assert(not effect.parameters)
-
-def plan_cost(plan):
-    cost = 0
-    for action in plan:
-        cost += action.cost
-    return cost
-
-def substitute_derived(axiom_plan, action_instance):
-    # TODO: what if the propositional axiom has conditional derived
-    axiom_pre = {p for ax in axiom_plan for p in ax.condition}
-    axiom_eff = {ax.effect for ax in axiom_plan}
-    action_instance.precondition = list((set(action_instance.precondition) | axiom_pre) - axiom_eff)
 
 ##################################################
 
@@ -666,13 +568,6 @@ def add_preimage_effect(effect, preimage):
     #if effect in preimage:
     #    # Fluent effects kept, static dropped
     #    preimage.remove(effect)
-
-
-def has_conditional_effects(action_instance):
-    for conditions, effect in (action_instance.add_effects + action_instance.del_effects):
-        if conditions:
-            return True
-    return False
 
 
 def action_preimage(action, preimage, i):

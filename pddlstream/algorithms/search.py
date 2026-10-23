@@ -200,38 +200,3 @@ def abstrips_solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=Fal
 # TODO: reconcile shared objects on each level
 # Each operator in the hierarchy is a legal "operator" that may need to be refined
 
-def abstrips_solve_from_task_sequential(sas_task, temp_dir=TEMP_DIR, clean=False, debug=False,
-                                        hierarchy=[], subgoal_horizon=1, **kwargs):
-    # TODO: version that plans for each goal individually
-    # TODO: can reduce to goal serialization if binary flag for each subgoal
-    if not hierarchy:
-        return solve_from_task(sas_task, temp_dir=temp_dir, clean=clean, debug=debug, **kwargs)
-    start_time = time()
-    plan, cost = None, INF
-    with Verbose(debug):
-        last_plan = None
-        for level in range(len(hierarchy) + 1):
-            local_sas_task = deepcopy(sas_task)
-            prune_hierarchy_pre_eff(local_sas_task, hierarchy[level:])  # TODO: break if no pruned
-            # The goal itself is effectively a subgoal
-            # Handle this subgoal horizon
-            subgoal_plan = [local_sas_task.goal.pairs[:]]
-            # TODO: do I want to consider the "subgoal action" as a real action?
-            if last_plan is not None:
-                subgoal_var = add_subgoals(local_sas_task, last_plan)
-                subgoal_plan = [[(subgoal_var, val)] for val in range(1,
-                    local_sas_task.variables.ranges[subgoal_var], subgoal_horizon)] + subgoal_plan
-                hierarchy_horizon = min(hierarchy[level-1].horizon, len(subgoal_plan))
-                subgoal_plan = subgoal_plan[:hierarchy_horizon]
-            plan, cost = plan_subgoals(local_sas_task, subgoal_plan, temp_dir, **kwargs)
-            if (level == len(hierarchy)) or (plan is None):
-                # TODO: fall back on normal
-                # TODO: search in space of subgoals
-                break
-            last_plan = [name_from_action(action, args) for action, args in plan]
-        if clean:
-            safe_rm_dir(temp_dir)
-        print('Total runtime: {:.3f}'.format(elapsed_time(start_time)))
-    # TODO: record which level of abstraction each operator is at when returning
-    # TODO: return instantiated actions here rather than names (including pruned pre/eff)
-    return plan, cost

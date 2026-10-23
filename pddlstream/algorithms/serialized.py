@@ -1,5 +1,4 @@
 from pddlstream.algorithms.meta import solve_restart, solve
-from pddlstream.language.temporal import parse_domain
 from pddlstream.utils import INF, Verbose, str_from_object, SEPARATOR
 from pddlstream.algorithms.algorithm import parse_problem
 from pddlstream.algorithms.focused import solve_focused
@@ -8,7 +7,7 @@ from pddlstream.language.conversion import Certificate, Object, \
 from pddlstream.language.constants import PDDLProblem, get_function, get_prefix, print_solution, AND, get_args, And, \
     Solution, Or, is_plan
 from pddlstream.algorithms.downward import get_problem, task_from_domain_problem, \
-    get_action_instances, apply_action, evaluation_from_fd, get_fluents
+    get_action_instances, apply_action, evaluation_from_fd, get_fluents, parse_sequential_domain
 from pddlstream.algorithms.common import evaluations_from_init
 
 
@@ -109,91 +108,7 @@ def solve_serialized(initial_problem, stream_info={}, unit_costs=False, unit_eff
 
 ##################################################
 
-def solve_deferred(initial_problem, stream_info={}, unit_costs=False, unit_efforts=False, verbose=True,
-                   retain_facts=True, **kwargs):
-    # TODO: serialize solving deferred problems
-    # TODO: can impose plan skeleton constraints as well
-    # TODO: investigate case where the first plan skeleton isn't feasible (e.g. due to blockage)
-    raise NotImplementedError()
+#######################################################
 
 #######################################################
 
-def create_simplified_problem(problem, use_actions=False, use_streams=False, new_goal=None):
-    # TODO: check whether goal is a conjunction
-    domain_pddl, constant_map, stream_pddl, stream_map, init, goal_parts = problem
-    if not use_streams:
-        stream_pddl = None
-    if new_goal is None:
-        new_goal = goal_parts
-    domain = parse_domain(domain_pddl) # TODO: Constant map value @base not mentioned in domain :constants
-    if not use_actions:
-        domain.actions[:] = [] # No actions
-    return PDDLProblem(domain, constant_map, stream_pddl, stream_map, init, new_goal)
-
-
-def test_init_goal(problem, **kwargs):
-    problem = create_simplified_problem(problem, use_actions=False, use_streams=False, new_goal=None)
-    plan, cost, certificate = solve(problem, **kwargs)
-    assert not plan
-    is_goal = is_plan(plan)
-    return is_goal, certificate
-
-#######################################################
-
-def solve_all_goals(initial_problem, **kwargs):
-    domain_pddl, constant_map, stream_pddl, stream_map, init, goal_parts = initial_problem
-    # TODO(caelan): cleaner specification of goal ordering
-    goal_formula = And(*goal_parts)
-    print(solve_all_goals.__name__, goal_formula)
-    problem = PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal_formula)
-    return solve_restart(problem, **kwargs)
-
-
-def solve_first_goal(initial_problem, **kwargs):
-    domain_pddl, constant_map, stream_pddl, stream_map, init, goal_parts = initial_problem
-
-    achieved_parts = []
-    unachieved_parts = []
-    for task_part in goal_parts:
-        # TODO: store any stream evaluations (tests) and limit complexity
-        problem = create_simplified_problem(initial_problem, new_goal=task_part)
-        solution = solve_restart(problem, **kwargs)
-        plan, _, _ = solution
-        if plan is None:
-            unachieved_parts.append(task_part)
-        elif len(plan) == 0:
-            achieved_parts.append(task_part)
-        else:
-            raise RuntimeError(task_part)
-    # print(achieved_parts)
-    # print(unachieved_parts)
-
-    # TODO: reset to initial state if not achieved
-    goal_formula = And(*achieved_parts)
-    if unachieved_parts:
-        goal_formula = And(Or(*unachieved_parts), goal_formula)
-    print(solve_all_goals.__name__, goal_formula)
-    problem = PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal_formula)
-    return solve_restart(problem, **kwargs)
-
-
-def solve_next_goal(initial_problem, serialize=True, **kwargs):
-    domain_pddl, constant_map, stream_pddl, stream_map, init, goal_parts = initial_problem
-    # TODO: store serialization state to ensure progress is made
-    # goal_formula = And(Or(*task_parts), *reset_parts) # TODO: still possibly having the disjunctive goal issue
-    indices = list(range(0, len(goal_parts), 1)) if serialize else [len(goal_parts)]
-    for i in indices:
-        goal_parts = goal_parts[:i+1]
-        goal_formula = And(*goal_parts)
-        problem = PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal_formula)
-        print('Goal {}: {}'.format(i, goal_formula))
-
-        # TODO: reset streams?
-        solution = solve_restart(problem, **kwargs)
-        # TODO: detect which goals were achieved
-        plan, _, _ = solution
-        if plan is None:
-            return solution
-        if (i == len(indices) - 1) or (len(plan) >= 1):
-            return solution
-    return Solution(plan=[], cost=0, certificate=[])

@@ -115,10 +115,6 @@ def evaluations_from_init(init):
     return evaluations
 
 
-def combine_complexities(complexities, complexity_op=COMPLEXITY_OP):
-    return complexity_op([0] + list(complexities))
-
-
 def compute_complexity(evaluations, facts, complexity_op=COMPLEXITY_OP):
     if not facts:
         return 0
@@ -126,12 +122,6 @@ def compute_complexity(evaluations, facts, complexity_op=COMPLEXITY_OP):
 
 ##################################################
 
-def optimistic_complexity(evaluations, optimistic_facts, fact):
-    if fact in optimistic_facts: # Matters due to reachieving
-        return optimistic_facts[fact]
-    evaluation = evaluation_from_fact(fact)
-    #if evaluation in evaluations:
-    return evaluations[evaluation].complexity
     #return optimistic_facts[fact]
 
 

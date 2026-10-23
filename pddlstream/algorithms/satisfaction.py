@@ -84,9 +84,6 @@ def bindings_from_plan(plan_skeleton, action_plan):
         bindings.update(get_mapping(parameter_names, args2))
     return bindings
 
-def are_domainated(clusters1, clusters2):
-    return all(any(c1 <= c2 for c2 in clusters2) for c1 in clusters1)
-
 def dump_assignment(solution):
     bindings, cost, evaluations = solution
     print()
@@ -99,11 +96,6 @@ def dump_assignment(solution):
     print('Assignments:')
     for param in sorted(bindings):
         print('{} = {}'.format(param, str_from_object(bindings[param])))
-
-def visualize_problem(problem, **kwargs):
-    stream_pddl, stream_map, init, terms = problem
-    terms = set(map(obj_from_existential_expression, terms))
-    return visualize_constraints(terms, **kwargs)
 
 ##################################################
 

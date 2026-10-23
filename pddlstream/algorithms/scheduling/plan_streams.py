@@ -4,7 +4,7 @@ from collections import defaultdict, namedtuple
 
 from pddlstream.algorithms.downward import get_problem, task_from_domain_problem, get_cost_scale, \
     conditions_hold, apply_action, scale_cost, fd_from_fact, make_domain, make_predicate, evaluation_from_fd, \
-    plan_preimage, fact_from_fd, USE_FORBID, pddl_from_instance, parse_action
+    plan_preimage, fact_from_fd, pddl_from_instance
 from pddlstream.algorithms.instantiate_task import instantiate_task, sas_from_instantiated, FD_INSTANTIATE
 from pddlstream.algorithms.scheduling.add_optimizers import add_optimizer_effects, \
     using_optimizers, recover_simultaneous
@@ -20,8 +20,8 @@ from pddlstream.algorithms.scheduling.utils import partition_results, \
     add_unsatisfiable_to_goal, get_instance_facts
 from pddlstream.algorithms.search import solve_from_task
 from pddlstream.algorithms.advanced import UNIVERSAL_TO_CONDITIONAL
-from pddlstream.language.constants import Not, get_prefix, EQ, FAILED, OptPlan, Action
-from pddlstream.language.conversion import obj_from_pddl_plan, evaluation_from_fact, \
+from pddlstream.language.constants import Not, get_prefix, EQ, FAILED, OptPlan
+from pddlstream.language.conversion import evaluation_from_fact, \
     fact_from_evaluation, transform_plan_args, transform_action_args, obj_from_pddl
 from pddlstream.language.external import Result
 from pddlstream.language.exogenous import get_fluent_domain
@@ -29,8 +29,6 @@ from pddlstream.language.function import Function
 from pddlstream.language.stream import StreamResult
 from pddlstream.language.optimizer import UNSATISFIABLE
 from pddlstream.language.statistics import compute_plan_effort
-from pddlstream.language.temporal import SimplifiedDomain, solve_tfd
-from pddlstream.language.write_pddl import get_problem_pddl
 from pddlstream.language.object import Object
 from pddlstream.utils import Verbose, INF, topological_sort, get_ancestors
 
@@ -261,48 +259,16 @@ def recover_stream_plan(evaluations, current_plan, opt_evaluations, goal_express
 
 ##################################################
 
-def solve_optimistic_temporal(domain, stream_domain, applied_results, all_results,
-                              opt_evaluations, node_from_atom, goal_expression,
-                              effort_weight, debug=False, **kwargs):
-    # TODO: assert that the unused parameters are off
-    assert domain is stream_domain
-    #assert len(applied_results) == len(all_results)
-    problem = get_problem(opt_evaluations, goal_expression, domain)
-    with Verbose():
-        instantiated = instantiate_task(task_from_domain_problem(domain, problem))
-    if instantiated is None:
-        return instantiated, None, None, INF
-    problem = get_problem_pddl(opt_evaluations, goal_expression, domain.pddl)
-    pddl_plan, makespan = solve_tfd(domain.pddl, problem, debug=debug, **kwargs)
-    if pddl_plan is None:
-        return instantiated, None, pddl_plan, makespan
-    instance_from_action_args = defaultdict(list)
-    for instance in instantiated.actions:
-        name, args = parse_action(instance)
-        instance_from_action_args[name, args].append(instance)
-        #instance.action, instance.var_mapping
-    action_instances = []
-    for action in pddl_plan:
-        instances = instance_from_action_args[action.name, action.args]
-        if len(instances) != 1:
-            for action in instances:
-                action.dump()
-        #assert len(instances) == 1 # TODO: support 2 <= case
-        action_instances.append(instances[0])
-    temporal_plan = obj_from_pddl_plan(pddl_plan) # pddl_plan is sequential
-    return instantiated, action_instances, temporal_plan, makespan
-
 def solve_optimistic_sequential(domain, stream_domain, applied_results, all_results,
                                 opt_evaluations, node_from_atom, goal_expression,
                                 effort_weight, debug=False, **kwargs):
     #print(sorted(map(fact_from_evaluation, opt_evaluations)))
-    temporal_plan = None
     problem = get_problem(opt_evaluations, goal_expression, stream_domain)  # begin_metric
     with Verbose(verbose=debug):
         task = task_from_domain_problem(stream_domain, problem)
         instantiated = instantiate_task(task)
     if instantiated is None:
-        return instantiated, None, temporal_plan, INF
+        return instantiated, None, INF
 
     cost_from_action = {action: action.cost for action in instantiated.actions}
     add_stream_efforts(node_from_atom, instantiated, effort_weight)
@@ -321,12 +287,12 @@ def solve_optimistic_sequential(domain, stream_domain, applied_results, all_resu
     # solve_from_task | serialized_solve_from_task | abstrips_solve_from_task | abstrips_solve_from_task_sequential
     renamed_plan, _ = solve_from_task(sas_task, debug=debug, **kwargs)
     if renamed_plan is None:
-        return instantiated, None, temporal_plan, INF
+        return instantiated, None, INF
 
     action_instances = [action_from_name[name if RENAME_ACTIONS else '({} {})'.format(name, ' '.join(args))]
                         for name, args in renamed_plan]
     cost = get_plan_cost(action_instances, cost_from_action)
-    return instantiated, action_instances, temporal_plan, cost
+    return instantiated, action_instances, cost
 
 ##################################################
 
@@ -354,9 +320,7 @@ def plan_streams(evaluations, goal_expression, domain, all_results, negative, ef
     if UNIVERSAL_TO_CONDITIONAL or using_optimizers(all_results):
         goal_expression = add_unsatisfiable_to_goal(stream_domain, goal_expression)
 
-    temporal = isinstance(stream_domain, SimplifiedDomain)
-    optimistic_fn = solve_optimistic_temporal if temporal else solve_optimistic_sequential
-    instantiated, action_instances, temporal_plan, cost = optimistic_fn(
+    instantiated, action_instances, cost = solve_optimistic_sequential(
         domain, stream_domain, applied_results, all_results, opt_evaluations,
         node_from_atom, goal_expression, effort_weight, **kwargs)
     if action_instances is None:
@@ -374,8 +338,4 @@ def plan_streams(evaluations, goal_expression, domain, all_results, negative, ef
 
     stream_plan, opt_plan = recover_stream_plan(evaluations, stream_plan, opt_evaluations, goal_expression, stream_domain,
         node_from_atom, action_instances, axiom_plans, negative, replan_step)
-    if temporal_plan is not None:
-        # TODO: handle deferred streams
-        assert all(isinstance(action, Action) for action in opt_plan.action_plan)
-        opt_plan.action_plan[:] = temporal_plan
     return OptSolution(stream_plan, opt_plan, cost)

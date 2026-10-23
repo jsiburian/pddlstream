@@ -19,22 +19,9 @@ VERBOSE_WILD = False
 DEFAULT_UNIQUE = False
 NEGATIVE_BLOCKED = True
 NEGATIVE_SUFFIX = '-negative'
-CACHE_OPTIMISTIC = True
-
 # TODO: could also make only wild facts and automatically identify output tuples satisfying certified
 # TODO: default effort cost of streams with more inputs to be higher (but negated are free)
 # TODO: automatically convert to test streams on inputs
-
-##################################################
-
-def get_empty_fn():
-    return lambda *input_values: None
-
-def get_constant_fn(constant):
-    return lambda *input_values: constant
-
-def get_identity_fn(indices):
-    return lambda *input_values: tuple(input_values[i] for i in indices)
 
 ##################################################
 
@@ -90,12 +77,6 @@ class PartialInputs(object):
     def __repr__(self):
         return repr(self.__dict__)
 
-def get_constant_gen_fn(stream, constant):
-    def gen_fn(*input_values):
-        assert (len(stream.inputs) == len(input_values))
-        yield [tuple(constant for _ in range(len(stream.outputs)))]
-    return gen_fn
-
 # def get_unique_fn(stream):
 #     # TODO: this should take into account the output number...
 #     def fn(*input_values):
@@ -124,20 +105,6 @@ class WildOutput(object):
         self.replan = replan # Reports back whether the problem has changed substantially
     def __iter__(self):
         return iter([self.values, self.facts])
-
-class FluentOutput(object): # TODO: unify with OptimizerOutput
-    # TODO: allow fluent streams to report the subset of facts that caused failure
-    def __init__(self, assignments=[], facts=[], infeasible=[]):
-        self.assignments = list(assignments)
-        self.facts = list(facts)
-        self.infeasible = list(map(frozenset, infeasible))
-    def to_wild(self):
-        return WildOutput(self.assignments, self.facts)
-    def __bool__(self):
-        return bool(self.assignments)
-    def __repr__(self):
-        #return '{}{}'.format(self.__class__.__name__, str_from_object(self.__dict__))
-        return str_from_object(self.__dict__)
 
 class StreamInfo(ExternalInfo):
     def __init__(self, opt_gen_fn=None, negate=False, simultaneous=False,
@@ -532,21 +499,6 @@ class Stream(External):
         raise NotImplementedError()
     def __repr__(self):
         return '{}:{}->{}'.format(self.name, self.inputs, self.outputs)
-
-##################################################
-
-def create_equality_stream():
-    return Stream(name='equality', gen_fn=from_test(universe_test),
-                  inputs=['?o'], domain=[('Object', '?o')],
-                  outputs=[], certified=[('=', '?o', '?o')],
-                  info=StreamInfo(eager=True), fluents=[])
-
-def create_inequality_stream():
-    #from pddlstream.algorithms.downward import IDENTICAL
-    return Stream(name='inequality', gen_fn=from_test(lambda o1, o2: o1 != o2),
-                  inputs=['?o1', '?o2'], domain=[('Object', '?o1'), ('Object', '?o2')],
-                  outputs=[], certified=[('=', '?o1', '?o2')],
-                  info=StreamInfo(eager=True), fluents=[])
 
 ##################################################
 

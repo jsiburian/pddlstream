@@ -46,7 +46,7 @@ def solve_pddlstream(debug=False):
     print('Arguments:', args)
 
     problem = get_problem()
-    planner = 'lmcut-astar' # cerberus
+    planner = 'lmcut-astar'
     solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit, planner=planner, debug=debug)
     print_solution(solution)
 

@@ -42,31 +42,6 @@ def partition_externals(externals, verbose=False):
 
 ##################################################
 
-def recover_optimistic_outputs(stream_plan):
-    if not is_plan(stream_plan):
-        return stream_plan
-    new_mapping = {}
-    new_stream_plan = []
-    for result in stream_plan:
-        new_result = result.remap_inputs(new_mapping)
-        new_stream_plan.append(new_result)
-        if isinstance(new_result, StreamResult):
-            opt_result = new_result.instance.opt_results[0] # TODO: empty if disabled
-            new_mapping.update(safe_zip(new_result.output_objects, opt_result.output_objects))
-    return new_stream_plan
-
-def check_dominated(skeleton_queue, stream_plan):
-    if not is_plan(stream_plan):
-        return True
-    for skeleton in skeleton_queue.skeletons:
-        # TODO: has stream_plans and account for different output object values
-        if frozenset(stream_plan) <= frozenset(skeleton.stream_plan):
-            print(stream_plan)
-            print(skeleton.stream_plan)
-    raise NotImplementedError()
-
-##################################################
-
 @scoped_solve
 def solve_abstract(problem, constraints=PlanConstraints(), stream_info={}, replan_actions=set(),
                   unit_costs=False, success_cost=INF,

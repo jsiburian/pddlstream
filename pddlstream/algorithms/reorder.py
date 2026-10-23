@@ -8,7 +8,7 @@ from pddlstream.language.external import Result
 from pddlstream.language.statistics import Stats, Performance, EPSILON
 from pddlstream.language.stream import StreamResult
 from pddlstream.utils import INF, neighbors_from_orders, topological_sort, get_connected_components, \
-    sample_topological_sort, is_acyclic, layer_sort, Score, safe_zip
+    is_acyclic, layer_sort, Score, safe_zip
 
 
 def get_output_objects(result):
@@ -53,35 +53,6 @@ def get_partial_orders(stream_plan, use_facts=True, **kwargs):
 def get_stream_plan_components(external_plan, **kwargs):
     partial_orders = get_partial_orders(external_plan, **kwargs)
     return get_connected_components(external_plan, partial_orders)
-
-def dump_components(stream_plan):
-    for i, result in enumerate(stream_plan):
-        components = get_stream_plan_components(stream_plan[:i+1])
-        print(i, len(components), components)
-
-##################################################
-
-def get_future_p_successes(stream_plan):
-    # TODO: should I use this instead of p_success in some places?
-    # TODO: learn this instead by estimating conditional probabilities of certain sequence
-    # TODO: propagate stats_heuristic
-    orders = get_partial_orders(stream_plan)
-    incoming_edges, outgoing_edges = neighbors_from_orders(orders)
-    descendants_map = {}
-    for s1 in reversed(stream_plan):
-        descendants_map[s1] = s1.external.get_p_success()
-        for s2 in outgoing_edges[s1]:
-            descendants_map[s1] *= descendants_map[s2]
-    return descendants_map
-
-def compute_expected_cost(stream_plan, stats_fn=Performance.get_statistics):
-    if not is_plan(stream_plan):
-        return INF
-    expected_cost = 0.
-    for result in reversed(stream_plan):
-        p_success, overhead = stats_fn(result)
-        expected_cost = overhead + p_success * expected_cost
-    return expected_cost
 
 ##################################################
 
@@ -160,30 +131,6 @@ def dynamic_programming(store, vertices, valid_head_fn, stats_fn=Performance.get
     return ordering
 
 ##################################################
-
-def dummy_reorder_stream_plan(stream_plan, **kwargs):
-    return stream_plan
-
-def random_reorder_stream_plan(stream_plan, **kwargs):
-    if not stream_plan:
-        return stream_plan
-    return sample_topological_sort(stream_plan, get_partial_orders(stream_plan))
-
-def greedy_reorder_stream_plan(stream_plan, **kwargs):
-    if not stream_plan:
-        return stream_plan
-    return topological_sort(stream_plan, get_partial_orders(stream_plan),
-                            priority_fn=lambda s: s.external.get_statistics().overhead)
-
-##################################################
-
-def dump_layers(distances):
-    streams_from_layer = {}
-    for stream, layer in distances.items():
-        streams_from_layer.setdefault(layer, []).append(stream)
-    for layer, streams in streams_from_layer.items():
-        print(layer, sorted(streams, key=Result.stats_heuristic, reverse=True))
-    return streams_from_layer
 
 def compute_distances(stream_plan):
     stream_orders = get_partial_orders(stream_plan)
@@ -277,12 +224,6 @@ def reorder_stream_plan(store, stream_plan, algorithm=None, **kwargs):
     if algorithm is None:
         algorithm = 'layer' if len(stats) <= 1 else 'optimal'
 
-    if algorithm == 'dummy':
-        return dummy_reorder_stream_plan(stream_plan, **kwargs)
-    if algorithm == 'random':
-        return random_reorder_stream_plan(stream_plan, **kwargs)
-    if algorithm == 'greedy':
-        return greedy_reorder_stream_plan(stream_plan, **kwargs)
     if algorithm == 'layer':
         #print('Heuristic reordering:', stats)
         return layer_reorder_stream_plan(stream_plan, **kwargs)
