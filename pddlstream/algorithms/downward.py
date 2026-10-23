@@ -39,7 +39,8 @@ def find_build(fd_path):
         if os.path.exists(path):
             return path
     # TODO: could also just automatically compile
-    raise RuntimeError('Please compile FastDownward first [.../pddlstream$ ./downward/build.py]')
+    raise RuntimeError('FastDownward is not compiled in {}. Run [.../pddlstream$ pixi run setup] '
+                       '(pddlstream must be installed in editable mode)'.format(fd_path))
 
 # TODO: check at runtime so users can use utils without FD
 FD_PATH = get_file_path(__file__, '../../downward/')

@@ -5,3 +5,7 @@ visualizations
 statistics
 gurobi.log
 .DS_Store
+# pixi environments and editable-install metadata
+.pixi/
+*.egg-info/
+/build/

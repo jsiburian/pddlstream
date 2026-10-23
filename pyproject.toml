@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pddlstream"
+version = "0.1.0"
+description = "PDDLStream: integrating symbolic planners and blackbox samplers via optimistic adaptive planning"
+readme = "README.md"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+authors = [{ name = "Caelan Reed Garrett" }]
+requires-python = ">=3.12"
+dependencies = ["numpy>=2"]
+
+[project.urls]
+Homepage = "https://github.com/caelan/pddlstream"
+
+[tool.setuptools.packages.find]
+# Only the library is packaged; examples/ and the FastDownward submodule stay in the checkout.
+# FastDownward is located relative to the source tree, so install in editable mode (pixi does this).
+include = ["pddlstream*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."] # The examples package is not installed
+markers = ["slow: takes several minutes (deselected by default; run with -m slow)"]
+addopts = "-m 'not slow'"
+
+##################################################
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+requires-pixi = ">=0.60"
+
+[tool.pixi.dependencies]
+python = "3.14.*"
+numpy = ">=2.3,<3"
+psutil = "*" # Only needed when a solver is given max_memory
+
+[tool.pixi.pypi-dependencies]
+pddlstream = { path = ".", editable = true }
+
+# Toolchain for compiling the FastDownward submodule
+[tool.pixi.feature.build.dependencies]
+cmake = ">=3.31"
+make = "*"
+c-compiler = "*"
+cxx-compiler = "*"
+
+# Pure-Python and Tkinter examples
+[tool.pixi.feature.examples.dependencies]
+scipy = "*"
+tk = "*"
+
+# PyBullet examples (scipy is imported by the nested motion-planners submodule)
+[tool.pixi.feature.pybullet.dependencies]
+pybullet = ">=3.25"
+scipy = "*"
+setuptools = "*" # Provides distutils for the optional IKFast build
+
+# visualize=True (pygraphviz) and viewer screenshots
+[tool.pixi.feature.viz.dependencies]
+pygraphviz = "*"
+matplotlib-base = "*"
+pillow = "*"
+pyscreenshot = "*"
+
+# Optimizer examples (requires a Gurobi license for non-trivial models)
+[tool.pixi.feature.gurobi.pypi-dependencies]
+gurobipy = ">=13"
+
+[tool.pixi.feature.test.dependencies]
+pytest = "*"
+
+[tool.pixi.environments]
+default = { features = ["build", "examples", "pybullet", "test"], solve-group = "default" }
+full = { features = ["build", "examples", "pybullet", "test", "viz", "gurobi"], solve-group = "default" }
+
+[tool.pixi.tasks]
+submodules = { cmd = "git submodule update --init --recursive", description = "Fetch the FastDownward and pybullet-planning submodules" }
+# The FastDownward fork declares cmake_minimum_required(2.8.3), which CMake 4 rejects without this policy floor.
+# GCC 15 errors on an uninstantiated template in the bundled tl::optional (ext/optional.hh); -Wno-template-body
+# downgrades that check. CMake reads CXXFLAGS only on first configure, so run clean-fd after changing it.
+build-fd = { cmd = "python build.py", cwd = "downward", env = { CMAKE_POLICY_VERSION_MINIMUM = "3.5", CXXFLAGS = "-Wno-template-body" }, description = "Compile FastDownward" }
+clean-fd = { cmd = "rm -rf downward/builds", description = "Delete the FastDownward build (needed after switching compilers)" }
+setup = { depends-on = ["submodules", "build-fd"], description = "Fetch submodules and compile FastDownward" }
+build-ikfast = { cmd = "python setup.py", cwd = "examples/pybullet/utils/pybullet_tools/ikfast/pr2", description = "Optional: compile the PR2 IKFast solver (otherwise pybullet IK is used)" }
+test = { cmd = "pytest", description = "Run the example test suite" }
