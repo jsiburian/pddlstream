@@ -57,6 +57,7 @@ ALGORITHM_OPTIONS = {
 
 
 def create_parser(default_algorithm=DEFAULT_ALGORITHM):
+    """An argparse parser with the options that examples share: -a/--algorithm and -u/--unit (unit costs)."""
     # https://docs.python.org/3/library/argparse.html#the-add-argument-method
     parser = argparse.ArgumentParser()  # Automatically includes help
     parser.add_argument(
@@ -78,7 +79,7 @@ def create_parser(default_algorithm=DEFAULT_ALGORITHM):
 
 
 def solve(
-    problem,
+    problem: PDDLProblem,
     algorithm=DEFAULT_ALGORITHM,
     constraints=PlanConstraints(),
     stream_info={},
@@ -101,50 +102,21 @@ def solve(
     visualize=False,
     verbose=True,
     deterministic=False,
-    config=None,
+    config: SolverConfig | None = None,
     **kwargs,
-):
-    """
-    Solves a PDDLStream problem generically using one of the available algorithms
-    :param problem: a PDDLStream problem
-    :param algorithm: a PDDLStream algorithm name
-    :param constraints: PlanConstraints on the set of legal solutions
-    :param stream_info: a dictionary from stream name to StreamInfo altering how individual streams are handled
-    :param replan_actions: the actions declared to induce replanning for the purpose of deferred stream evaluation
+) -> SolveResult:
+    """Solves a PDDLStream problem with one of the algorithms: incremental, focused, binding or adaptive (the
+    default).
 
-    :param unit_costs: use unit action costs rather than numeric costs
-    :param success_cost: the exclusive (strict) upper bound on plan cost to successfully terminate
-    :param max_time: the maximum runtime
-    :param max_iterations: the maximum number of search iterations
-    :param max_memory: the maximum amount of memory
-
-    :param initial_complexity: the initial stream complexity limit
-    :param complexity_step: the increase in the stream complexity limit per iteration
-    :param max_complexity: the maximum stream complexity limit
-
-    :param max_skeletons: the maximum number of plan skeletons (max_skeletons=None indicates not adaptive)
-    :param search_sample_ratio: the desired ratio of sample time / search time when max_skeletons!=None
-    :param max_failures: the maximum number of stream failures before switching phases when max_skeletons=None
-
-    :param unit_efforts: use unit stream efforts rather than estimated numeric efforts
-    :param max_effort: the maximum amount of stream effort
-    :param effort_weight: a multiplier for stream effort compared to action costs
-    :param reorder: if True, reorder stream plans to minimize the expected sampling overhead
-
-    :param visualize: if True, draw the constraint network and stream plan as a graphviz file
-    :param verbose: if True, print the result of each stream application
-    :param deterministic: if True, make seeded runs repeatable: time-based decisions (e.g. the sampling budget) count
-        work units instead of seconds, and saved stream statistics are not loaded. max_time is still wall-clock time
-    :param config: a SolverConfig holding these options; keyword arguments that differ from their defaults
-        override its fields
-    :param kwargs: the other SolverConfig fields, such as the search options planner (a key of SEARCH_OPTIONS),
-        max_planner_time and debug. Each search runs in a private temporary directory, except that debug=True
-        prints FastDownward's output and keeps its files in ./temp/ (temp_dir=... chooses another directory).
-        Unknown names raise a TypeError before solving starts
-
-    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
-        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
-        attributes report how the solve ended
+    :param problem: a PDDLProblem
+    :param constraints: PlanConstraints that plans must satisfy, such as plan skeletons
+    :param stream_info: a StreamInfo, FunctionInfo or PredicateInfo by stream or function name
+    :param replan_actions: actions after which deferred streams are evaluated and the solver replans
+    :param config: a SolverConfig holding the options; keyword arguments that differ from their defaults override it
+    The other parameters, and any SolverConfig field passed as a keyword argument (e.g. planner, max_planner_time,
+    debug), are documented in SolverConfig. Unknown names raise a TypeError before solving starts. With debug=True,
+    FastDownward's output is printed and its files are kept in ./temp/.
+    Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
     """
     arguments = {name: value for name, value in locals().items() if name in FIELD_NAMES}
     defaults = {name: p.default for name, p in inspect.signature(solve).parameters.items() if name in FIELD_NAMES}

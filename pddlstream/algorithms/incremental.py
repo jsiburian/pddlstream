@@ -90,29 +90,15 @@ def solve_incremental(
     deterministic=False,
     **search_kwargs,
 ):
-    """
-    Solves a PDDLStream problem by alternating between applying all possible streams and searching
-    :param problem: a PDDLStream problem
-    :param constraints: PlanConstraints on the set of legal solutions
+    """The incremental algorithm: alternates between calling every stream instance up to the complexity limit and
+    searching for a plan with the facts found so far. It needs no optimistic stream outputs, but calls many
+    streams that the plan does not need.
 
-    :param unit_costs: use unit action costs rather than numeric costs
-    :param success_cost: the exclusive (strict) upper bound on plan cost to successfully terminate
-
-    :param max_time: the maximum runtime
-    :param max_iterations: the maximum number of search iterations
-    :param max_memory: the maximum amount of memory
-
-    :param initial_complexity: the initial stream complexity limit
-    :param complexity_step: the increase in the stream complexity limit per iteration
-    :param max_complexity: the maximum stream complexity limit
-
-    :param verbose: if True, print the result of each stream application
-    :param deterministic: if True, make seeded runs repeatable by not loading saved stream statistics
-    :param search_kwargs: keyword args for the search subroutine
-
-    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
-        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
-        attributes report how the solve ended
+    :param problem: a PDDLProblem
+    :param constraints: PlanConstraints that plans must satisfy, such as plan skeletons
+    The other parameters are SolverConfig fields, documented there (max_complexity=0 uses only the initial facts,
+    complexity_step=INF calls everything at once); search_kwargs are its search options (planner, debug, ...).
+    Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
     """
     # max_complexity = 0 => current
     # complexity_step = INF => exhaustive

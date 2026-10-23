@@ -11,13 +11,29 @@ from pddlstream.language.statistics import DEFAULT_SEARCH_OVERHEAD, Performance,
 
 logger = logging.getLogger(__name__)
 
+# As a PDDLProblem's stream_map, these replace every stream's procedure with placeholder outputs, to test the domain
+# before writing the samplers: DEBUG gives every call new placeholders, SHARED_DEBUG one set per stream
 DEBUG = 'debug'
 SHARED_DEBUG = 'shared_debug'
 DEBUG_MODES = [DEBUG, SHARED_DEBUG]
 
-never_defer = lambda *args, **kwargs: False
-defer_unique = lambda result, *args, **kwargs: result.is_refined()
-defer_shared = lambda *args, **kwargs: True
+
+# A StreamInfo's defer_fn decides whether a stream call can wait until the plan reaches the step that needs it
+
+
+def never_defer(*args, **kwargs):
+    """Calls the stream before executing the plan (the default)."""
+    return False
+
+
+def defer_unique(result, *args, **kwargs):
+    """Defers the call if its optimistic outputs are unique to it."""
+    return result.is_refined()
+
+
+def defer_shared(*args, **kwargs):
+    """Always defers the call."""
+    return True
 
 
 def select_inputs(instance, inputs):
@@ -28,6 +44,8 @@ def select_inputs(instance, inputs):
 
 
 def get_defer_any_unbound(unique=False):
+    """A defer_fn that defers a call while any of its inputs is still unbound (with unique, also defer_unique)."""
+
     def defer_any_unbound(result, bound_objects=set(), *args, **kwargs):
         # The set bound_objects may contain shared objects in which case replanning is required
         if unique and not defer_unique(result):
@@ -38,6 +56,8 @@ def get_defer_any_unbound(unique=False):
 
 
 def get_defer_all_unbound(inputs='', unique=False):  # TODO: shortcut for all inputs
+    """A defer_fn that defers a call while all of the given inputs (space-separated) are unbound (with unique, also
+    defer_unique)."""
     inputs = tuple(inputs.split())
     # Empty implies defer_shared
 

@@ -1,5 +1,6 @@
 from collections import namedtuple
 from copy import deepcopy
+from typing import NamedTuple
 
 from pddlstream.core.evaluations import INTERNAL_EVALUATION, add_fact
 from pddlstream.core.objects import Object, OptimisticObject
@@ -18,11 +19,18 @@ from pddlstream.core.utils import (
 from pddlstream.fastdownward.tasks import add_predicate, fd_from_fact, make_effects, make_preconditions, make_predicate
 from pddlstream.fastdownward.translator import pddl
 
-OrderedSkeleton = namedtuple('OrderedSkeleton', ['actions', 'orders'])  # TODO: AND/OR tree
+
+class OrderedSkeleton(NamedTuple):  # TODO: AND/OR tree
+    """A plan skeleton whose steps are partially ordered: actions holds (name, args) pairs, where args may contain
+    free parameters ('?x') and WILD, and orders holds (before, after) pairs of step indices."""
+
+    actions: list
+    orders: set
+
 
 INTERNAL_PREFIX = '_'  # TODO: possibly apply elsewhere
 
-WILD = '*'
+WILD = '*'  # In a skeleton step, stands for any number of arbitrary arguments
 ASSIGNED_PREDICATE = '{}assigned'
 BOUND_PREDICATE = '{}bound'  # TODO: switch with assigned
 GROUP_PREDICATE = '{}group'
@@ -38,6 +46,15 @@ def linear_order(actions):
 
 
 class PlanConstraints:
+    """Constraints on the plans that a solver may return.
+
+    :param skeletons: plan skeletons, each a list of (name, args) steps or an OrderedSkeleton; plans must follow one
+    :param groups: sets of values by group name, so that a skeleton argument may name a group instead of a value
+    :param exact: plans consist of exactly a skeleton's steps (otherwise other actions may be interleaved)
+    :param hint: not used
+    :param max_cost: plans must cost less than this
+    """
+
     def __init__(self, skeletons=None, groups={}, exact=True, hint=False, max_cost=INF):
         # TODO: constraint that the skeleton is the tail of the plan
         if skeletons is not None:

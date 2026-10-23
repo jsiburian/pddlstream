@@ -55,6 +55,14 @@ NEGATIVE_SUFFIX = '-negative'
 
 
 class PartialInputs:
+    """An optimistic generator whose placeholder outputs depend only on some of the stream's inputs.
+
+    :param inputs: the inputs the placeholders depend on, as a space-separated string (by default none, so every
+        instance shares them)
+    :param unique: give every stream instance its own placeholders instead
+    :param test: produce placeholders only for inputs that pass this test
+    """
+
     def __init__(self, inputs='', unique=DEFAULT_UNIQUE, test=universe_test):
         self.inputs = tuple(inputs.split())
         self.unique = unique  # TODO: refactor this
@@ -99,6 +107,14 @@ def get_debug_gen_fn(stream, shared=True):
 
 
 class WildOutput:
+    """What a wild stream returns: output values, plus facts it certifies beyond its declared certified facts.
+
+    :param values: a list of output tuples
+    :param facts: additional certified facts
+    :param enumerated: the stream has no further outputs for these inputs
+    :param replan: the facts change the problem substantially, so the solver should replan
+    """
+
     def __init__(self, values=[], facts=[], actions=[], enumerated=False, replan=False):
         self.values = values
         self.facts = facts
@@ -113,6 +129,23 @@ class WildOutput:
 
 
 class StreamInfo(ExternalInfo):
+    """How a stream is used, by stream name in solve(..., stream_info={...}).
+
+    :param opt_gen_fn: produces the optimistic outputs that planning uses before the stream is called (by default
+        PartialInputs(), one shared placeholder per output)
+    :param negate: whether a test stream may also be used negated, i.e. as "the test fails"
+    :param simultaneous: plan with the stream as an action of the search instead of applying it beforehand
+    :param verbose: print the results of each call
+    :param eager: call the stream on every new input in every iteration, before searching (for cheap tests)
+    :param eager_skeleton: not used yet
+    :param defer_fn: decides whether a call can be deferred until the plan reaches it (e.g. never_defer,
+        defer_unique, defer_shared)
+    :param p_success: the prior probability that a call produces outputs
+    :param overhead: the prior expected cost of a call
+    :param effort: a fixed effort that replaces the estimate from p_success and overhead
+    :param estimate: estimate p_success and overhead from the calls so far instead
+    """
+
     def __init__(
         self, opt_gen_fn=None, negate=False, simultaneous=False, verbose=True, **kwargs
     ):  # TODO: set negate to None to express no user preference

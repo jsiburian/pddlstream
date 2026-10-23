@@ -33,6 +33,7 @@ def int_ceil(f):
 
 
 def read(filename):
+    """The contents of a text file."""
     with open(filename) as f:
         return f.read()
 
@@ -86,6 +87,7 @@ def clear_dir(d):
 
 
 def get_file_path(file, rel_path):
+    """rel_path relative to the directory of file (usually __file__)."""
     directory = os.path.dirname(os.path.abspath(file))
     return os.path.join(directory, rel_path)
 
@@ -242,6 +244,8 @@ class Saver:
 
 
 class Profiler(Saver):
+    """A context manager that profiles its body with cProfile and prints the top num functions by field."""
+
     fields = ['tottime', 'cumtime']
 
     def __init__(self, field='tottime', num=10):
@@ -552,6 +556,7 @@ def inclusive_range(start, stop, step=1):
 
 
 def read_pddl(this_file, pddl_filename):
+    """The contents of a PDDL file next to this_file (usually __file__)."""
     directory = os.path.dirname(os.path.abspath(this_file))
     return read(os.path.join(directory, pddl_filename))
 

@@ -42,6 +42,8 @@ class Solution(NamedTuple):
 
 
 class Status(enum.Enum):
+    """How a solve ended."""
+
     SUCCEEDED = 'succeeded'  # Found a plan
     FAILED = 'failed'  # Found no plan before a limit was reached (stats['timeout'] says whether time or memory ran out)
     INFEASIBLE = 'infeasible'  # Concluded that no plan exists, counting searches that hit max_planner_time as failed
@@ -122,6 +124,7 @@ class FunctionAction(NamedTuple):
 
 
 def is_plan(plan):
+    """Whether plan is a plan rather than FAILED or INFEASIBLE."""
     return not any(plan is status for status in NOT_PLAN)
 
 
@@ -167,6 +170,7 @@ def print_plan(plan):
 
 
 def print_solution(solution):
+    """Prints a solution's plan, cost and number of facts."""
     plan, cost, evaluations = solution
     if isinstance(evaluations, Certificate):  # Solvers return a Certificate of (all_facts, preimage_facts)
         evaluations = evaluations.all_facts

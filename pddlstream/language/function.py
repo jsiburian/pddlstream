@@ -25,6 +25,15 @@ def add_opt_function(name, base_fn, stream_map, stream_info, constant=0.0, coeff
 
 
 class FunctionInfo(ExternalInfo):
+    """How a function (e.g. a cost) is used, by name in solve(..., stream_info={...}).
+
+    :param opt_fn: an optimistic estimate (lower bound) of the function's value that planning uses before the
+        function is evaluated; by default 0 (False for predicates)
+    :param eager: evaluate the function on every new input in every iteration (the default for functions)
+    :param verbose: print each evaluation
+    The other keyword arguments are those of StreamInfo's base, e.g. p_success, overhead and defer_fn.
+    """
+
     _default_eager = True
 
     def __init__(self, opt_fn=None, eager=_default_eager, verbose=True, **kwargs):  # Setting eager=True as a heuristic
@@ -182,6 +191,8 @@ class Function(External):
 
 
 class PredicateInfo(FunctionInfo):
+    """How an external predicate (a test evaluated as needed) is used; like FunctionInfo, but not eager by default."""
+
     _default_eager = False
 
 

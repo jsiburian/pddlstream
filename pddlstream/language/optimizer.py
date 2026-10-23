@@ -30,6 +30,9 @@ UNSATISFIABLE = f'unsatisfiable{NEGATIVE_SUFFIX}'
 
 
 class OptimizerOutput:
+    """What an optimizer's procedure returns: values for its variables, extra facts, and sets of constraints found
+    jointly infeasible (to rule them out together)."""
+
     def __init__(self, assignments=[], facts=[], infeasible=[]):  # infeasible=None
         self.assignments = list(assignments)
         self.facts = list(facts)

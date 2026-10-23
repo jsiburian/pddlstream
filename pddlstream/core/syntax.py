@@ -67,10 +67,12 @@ def Or(*expressions: Formula) -> Formula:
 
 
 def Not(expression: Formula) -> Formula:
+    """The negation of a formula."""
     return (NOT, expression)
 
 
 def Imply(expression1: Formula, expression2: Formula) -> Formula:
+    """The implication expression1 -> expression2."""
     return (IMPLY, expression1, expression2)
 
 
@@ -80,6 +82,7 @@ def Equal(expression1: Any, expression2: Any) -> Formula:
 
 
 def Minimize(expression: Formula) -> Formula:
+    """A cost term to minimize, e.g. in an optimizer's constraints."""
     return (MINIMIZE, expression)
 
 

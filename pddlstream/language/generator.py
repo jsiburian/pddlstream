@@ -1,9 +1,19 @@
+"""Helpers that turn Python procedures into stream procedures for a PDDLProblem's stream_map.
+
+A stream procedure takes a stream's input values and returns a generator of lists of output tuples, one list per
+call. These helpers build one from simpler procedures, e.g. from_fn(f) for a function that returns one output tuple.
+"""
+
 import time
 from collections import deque, namedtuple
-from collections.abc import Iterator
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from itertools import count
+from typing import Any
 
 from pddlstream.core.utils import INF, elapsed_time
+
+Outputs = Sequence[Any]  # One output tuple: a value for each of a stream's outputs
+StreamProcedure = Callable[..., Iterator[list]]  # Input values -> generator of lists of output tuples
 
 # TODO: indicate wild stream output just from the output form
 # TODO: depth limited and cycle-free optimistic objects
@@ -57,16 +67,19 @@ def get_next(generator, default=[]):
 # Methods that convert some procedure -> function to a generator of lists
 
 
-def from_list_gen_fn(list_gen_fn):
-    # Purposefully redundant for now
+def from_list_gen_fn(list_gen_fn: StreamProcedure) -> StreamProcedure:
+    """From a generator function that yields lists of output tuples (already a stream procedure)."""
     return list_gen_fn
 
 
-def from_gen_fn(gen_fn):
+def from_gen_fn(gen_fn: Callable[..., Iterable[Outputs | None]]) -> StreamProcedure:
+    """From a generator function that yields one output tuple per call, or None when it has none this call."""
     return from_list_gen_fn(lambda *args, **kwargs: ([] if ov is None else [ov] for ov in gen_fn(*args, **kwargs)))
 
 
-def from_sampler(sampler, max_attempts=INF):
+def from_sampler(sampler: Callable[..., Outputs], max_attempts: float = INF) -> StreamProcedure:
+    """From a function that samples one output tuple per call, called at most max_attempts times."""
+
     def gen_fn(*input_values):
         attempts = count()
         while next(attempts) < max_attempts:
@@ -80,11 +93,14 @@ def from_sampler(sampler, max_attempts=INF):
 # Methods that convert some procedure -> function to a BoundedGenerator
 
 
-def from_list_fn(list_fn):
+def from_list_fn(list_fn: Callable[..., list]) -> StreamProcedure:
+    """From a function that returns all of its output tuples as a list; it is called once."""
     return lambda *args, **kwargs: BoundedGenerator(iter([list_fn(*args, **kwargs)]), max_calls=1)
 
 
-def from_fn(fn):
+def from_fn(fn: Callable[..., Outputs | None]) -> StreamProcedure:
+    """From a function that returns one output tuple, or None; it is called once."""
+
     def list_fn(*args, **kwargs):
         outputs = fn(*args, **kwargs)
         return [] if outputs is None else [outputs]
@@ -92,27 +108,33 @@ def from_fn(fn):
     return from_list_fn(list_fn)
 
 
-def outputs_from_boolean(boolean):
+def outputs_from_boolean(boolean: bool) -> tuple | None:
+    """A test's result as outputs: the empty tuple (success) or None (failure)."""
     return tuple() if boolean else None
 
 
-def from_test(test):
+def from_test(test: Callable[..., bool]) -> StreamProcedure:
+    """From a test that returns whether the stream's certified facts hold for its inputs."""
     return from_fn(lambda *args, **kwargs: outputs_from_boolean(test(*args, **kwargs)))
 
 
-def from_constant(constant):
+def from_constant(constant: Outputs | None) -> StreamProcedure:
+    """A stream procedure that returns the same output tuple for any inputs."""
     return from_fn(fn_from_constant(constant))
 
 
-def negate_test(test):
+def negate_test(test: Callable[..., bool]) -> Callable[..., bool]:
+    """The test that succeeds exactly when test fails."""
     return lambda *args, **kwargs: not test(*args, **kwargs)
 
 
-def from_gen(gen):
+def from_gen(gen: Iterable[Outputs | None]) -> StreamProcedure:
+    """From a fixed sequence of output tuples, shared by all inputs."""
     return from_gen_fn(lambda *args, **kwargs: iter(gen))
 
 
-def empty_gen():
+def empty_gen() -> StreamProcedure:
+    """A stream procedure that never produces outputs."""
     return from_gen([])
 
 
@@ -121,7 +143,8 @@ def empty_gen():
 # Methods that convert some procedure -> function
 
 
-def fn_from_constant(constant):
+def fn_from_constant(constant: Any) -> Callable[..., Any]:
+    """A function that returns constant for any arguments."""
     return lambda *args, **kwargs: constant
 
 

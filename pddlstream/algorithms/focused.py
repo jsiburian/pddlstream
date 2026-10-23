@@ -71,43 +71,18 @@ def solve_abstract(
     deterministic=False,
     **search_kwargs,
 ):
-    """
-    Solves a PDDLStream problem by first planning with optimistic stream outputs and then querying streams
-    :param problem: a PDDLStream problem
-    :param constraints: PlanConstraints on the set of legal solutions
-    :param stream_info: a dictionary from stream name to StreamInfo altering how individual streams are handled
-    :param replan_actions: the actions declared to induce replanning for the purpose of deferred stream evaluation
+    """The algorithm behind focused, binding and adaptive: plans with optimistic stream outputs, then samples the
+    streams that the plans use.
 
-    :param unit_costs: use unit action costs rather than numeric costs
-    :param success_cost: the exclusive (strict) upper bound on plan cost to successfully terminate
-
-    :param max_time: the maximum runtime
-    :param max_iterations: the maximum number of search iterations
-    :param max_memory: the maximum amount of memory
-
-    :param initial_complexity: the initial stream complexity limit
-    :param complexity_step: the increase in the stream complexity limit per iteration
-    :param max_complexity: the maximum stream complexity limit
-
-    :param max_skeletons: the maximum number of plan skeletons (max_skeletons=None indicates not adaptive)
-    :param search_sample_ratio: the desired ratio of sample time / search time when max_skeletons!=None
-    :param bind: if True, propagates parameter bindings when max_skeletons=None
-    :param max_failures: the maximum number of stream failures before switching phases when max_skeletons=None
-
-    :param unit_efforts: use unit stream efforts rather than estimated numeric efforts
-    :param max_effort: the maximum amount of stream effort
-    :param effort_weight: a multiplier for stream effort compared to action costs
-    :param reorder: if True, reorder stream plans to minimize the expected sampling overhead
-
-    :param visualize: if True, draw the constraint network and stream plan as a graphviz file
-    :param verbose: if True, print the result of each stream application
-    :param deterministic: if True, make seeded runs repeatable: time-based decisions (e.g. the sampling budget) count
-        work units instead of seconds, and saved stream statistics are not loaded. max_time is still wall-clock time
-    :param search_kwargs: keyword args for the search subroutine
-
-    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
-        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
-        attributes report how the solve ended
+    :param problem: a PDDLProblem
+    :param constraints: PlanConstraints that plans must satisfy, such as plan skeletons
+    :param stream_info: a StreamInfo, FunctionInfo or PredicateInfo by stream or function name
+    :param replan_actions: actions after which deferred streams are evaluated and the solver replans
+    :param bind: propagate the outputs of sampled streams to the rest of the stream plan (without skeletons)
+    :param max_failures: stream failures before switching back to planning (without skeletons)
+    The other parameters are SolverConfig fields, documented there; search_kwargs are its search options
+    (planner, max_planner_time, debug, ...). Note that search_sample_ratio defaults to 0 here, unlike in solve().
+    Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
     """
     # TODO: select whether to search or sample based on expected success rates
     # TODO: no optimizers during search with relaxed_stream_plan
@@ -279,14 +254,10 @@ solve_focused = solve_abstract  # TODO: deprecate solve_focused
 
 
 def solve_focused_original(problem, fail_fast=False, **kwargs):
-    """
-    Solves a PDDLStream problem by first planning with optimistic stream outputs and then querying streams
-    :param problem: a PDDLStream problem
-    :param fail_fast: whether to switch phases as soon as a stream fails
-    :param kwargs: keyword args for solve_focused
-    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
-        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
-        attributes report how the solve ended
+    """The focused algorithm: plans with optimistic stream outputs, calls the plan's streams, and repeats (raising
+    the complexity limit when no plan is found) until a plan's streams all succeed. fail_fast switches back to
+    planning after the first stream failure. The other keyword arguments are those of solve_abstract.
+    Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
     """
     max_failures = 0 if fail_fast else INF
     return solve_abstract(
@@ -295,14 +266,10 @@ def solve_focused_original(problem, fail_fast=False, **kwargs):
 
 
 def solve_binding(problem, fail_fast=False, **kwargs):
-    """
-    Solves a PDDLStream problem by first planning with optimistic stream outputs and then querying streams
-    :param problem: a PDDLStream problem
-    :param fail_fast: whether to switch phases as soon as a stream fails
-    :param kwargs: keyword args for solve_focused
-    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
-        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
-        attributes report how the solve ended
+    """The binding algorithm: like focused, but the outputs that the plan's streams produce are bound into the rest of
+    the stream plan before it is called. fail_fast switches back to planning after the first stream failure. The
+    other keyword arguments are those of solve_abstract.
+    Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
     """
     max_failures = 0 if fail_fast else INF
     return solve_abstract(
@@ -311,15 +278,13 @@ def solve_binding(problem, fail_fast=False, **kwargs):
 
 
 def solve_adaptive(problem, max_skeletons=INF, search_sample_ratio=1, **kwargs):
-    """
-    Solves a PDDLStream problem by first planning with optimistic stream outputs and then querying streams
-    :param problem: a PDDLStream problem
-    :param max_skeletons: the maximum number of plan skeletons to consider
-    :param search_sample_ratio: the desired ratio of search time / sample time
-    :param kwargs: keyword args for solve_focused
-    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
-        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
-        attributes report how the solve ended
+    """The adaptive algorithm, usually the best choice: like binding, but it keeps a queue of plan skeletons and
+    divides its time between sampling them and searching for new ones.
+
+    :param max_skeletons: the most skeletons to keep (None plans without skeletons, like binding)
+    :param search_sample_ratio: the desired ratio of sampling time to search time
+    The other keyword arguments are those of solve_abstract.
+    Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
     """
     max_skeletons = INF if max_skeletons is None else max_skeletons
     return solve_abstract(
@@ -333,14 +298,8 @@ def solve_adaptive(problem, max_skeletons=INF, search_sample_ratio=1, **kwargs):
 
 
 def solve_hierarchical(problem, **kwargs):
-    """
-    Solves a PDDLStream problem by first planning with optimistic stream outputs and then querying streams
-    :param problem: a PDDLStream problem
-    :param search_sample_ratio: the desired ratio of sample time / search time
-    :param kwargs: keyword args for solve_focused
-    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
-        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
-        attributes report how the solve ended
+    """The adaptive algorithm with a single plan skeleton that it samples until it succeeds.
+    Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
     """
     return solve_adaptive(
         problem, max_skeletons=1, search_sample_ratio=INF, **kwargs
