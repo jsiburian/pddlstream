@@ -166,7 +166,7 @@ class Result(CreationHash):
 
 
 class Instance(CreationHash):
-    _Result = None
+    _Result: type | None = None  # Set by subclasses
 
     def __init__(self, external, input_objects):
         self.external = external
@@ -279,7 +279,7 @@ class Instance(CreationHash):
 
 
 class External(Performance):
-    _Instance = None
+    _Instance: type | None = None  # Set by subclasses
 
     def __init__(self, name, info, inputs, domain):
         super().__init__(name, info)

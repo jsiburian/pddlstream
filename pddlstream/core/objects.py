@@ -3,6 +3,7 @@ sampled yet (OptimisticObject)."""
 
 from collections import defaultdict, namedtuple
 from itertools import count
+from typing import Any
 
 from pddlstream.core.syntax import get_parameter_name
 from pddlstream.core.utils import CreationHash, is_hashable, str_from_object
@@ -16,9 +17,9 @@ PREFIX_LEN = 1
 
 class Object(CreationHash):
     _prefix = 'v'
-    _obj_from_id = {}
-    _obj_from_value = {}
-    _obj_from_name = {}
+    _obj_from_id: dict[int, 'Object'] = {}
+    _obj_from_value: dict[Any, 'Object'] = {}
+    _obj_from_name: dict[str, 'Object'] = {}
 
     def __init__(self, value, stream_instance=None, name=None):
         self.value = value
@@ -96,7 +97,7 @@ class SharedOptValue(namedtuple('SharedOptTuple', ['stream', 'inputs', 'input_ob
 
 
 class DebugValue:  # TODO: could just do an object
-    _output_counts = defaultdict(count)
+    _output_counts: defaultdict[str, count] = defaultdict(count)
     _prefix = '@'  # $ | @
 
     def __init__(self, stream, input_values, output_parameter):
@@ -126,9 +127,9 @@ class SharedDebugValue(namedtuple('SharedDebugValue', ['stream', 'output_paramet
 
 class OptimisticObject(CreationHash):
     _prefix = f'{OPT_PREFIX}o'  # $ % #
-    _obj_from_inputs = {}
-    _obj_from_name = {}
-    _count_from_prefix = {}
+    _obj_from_inputs: dict[Any, 'OptimisticObject'] = {}
+    _obj_from_name: dict[str, 'OptimisticObject'] = {}
+    _count_from_prefix: dict[str, count] = {}
 
     def __init__(self, value, param):
         # TODO: store first created instance

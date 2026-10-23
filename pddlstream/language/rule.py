@@ -11,7 +11,7 @@ from pddlstream.language.external import parse_lisp_list
 from pddlstream.language.generator import from_test, universe_test
 from pddlstream.language.stream import Stream, StreamInfo
 
-RULES = []  # TODO: no global
+RULES: list = []  # TODO: no global
 
 
 def parse_rule(lisp_list, stream_map, stream_info):
