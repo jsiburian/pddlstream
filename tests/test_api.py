@@ -3,6 +3,8 @@
 import importlib
 import inspect
 import pathlib
+import subprocess
+import sys
 
 import pytest
 
@@ -204,3 +206,23 @@ def test_downstream_usage(tmp_path):
     ]
     assert cost == 1
     assert ('path', 'hall', 'kitchen', ('hall', 'kitchen')) in [tuple(fact) for fact in certificate.all_facts]
+
+
+def test_package_names():
+    import pddlstream
+    from pddlstream.algorithms.meta import solve
+    from pddlstream.language.constants import PDDLProblem
+
+    assert (pddlstream.solve is solve) and (pddlstream.PDDLProblem is PDDLProblem)
+    assert [name for name in pddlstream.__all__ if not hasattr(pddlstream, name)] == []
+
+
+def test_package_import_is_lazy():
+    code = (
+        'import sys, pddlstream\n'
+        "assert 'pddlstream.algorithms.meta' not in sys.modules\n"
+        'pddlstream.solve\n'
+        "assert 'pddlstream.algorithms.meta' in sys.modules"
+    )
+    result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr

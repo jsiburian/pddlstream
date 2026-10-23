@@ -159,6 +159,7 @@ The **Adaptive** algorithm typically performs best for domains with many possibl
 <!--For domains with few sampling pathways, the **Incremental** algorithm typically performs best (link to specific examples)-->
 
 The meta procedure `solve(...)` (in `pddlstream/algorithms/meta.py`) allows the user to toggle between available algorithms using the keyword argument **algorithm={}**.
+It and the other names that most programs need can be imported from the package itself, e.g. `from pddlstream import solve, PDDLProblem, And, StreamInfo, from_gen_fn`.
 Its options are the fields of `SolverConfig` (`pddlstream/core/config.py`), which also documents them: pass them as keyword arguments, or build a config once and reuse it with `solve(problem, config=config)`, where keyword arguments override its fields.
 Misspelled options raise a `TypeError` before solving starts.
 The solvers return a `SolveResult`, which unpacks as `plan, cost, certificate` like before; `result.status` says whether a plan was found (`Status.SUCCEEDED`), a limit was reached first (`Status.FAILED`), or the solver concluded that no plan exists (`Status.INFEASIBLE`), and `result.stats` holds the printed summary (iterations, search, sampling and total time, ...).
