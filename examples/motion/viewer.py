@@ -90,9 +90,6 @@ def sample_box(box):
     (lower, upper) = box
     return np.random.random(2) * (upper - lower) + lower
 
-def inf_sequence():
-    return iter(int, 1)
-
 def draw_environment(obstacles, regions):
     viewer = PRMViewer()
     for box in obstacles:

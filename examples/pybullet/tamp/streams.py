@@ -1,6 +1,6 @@
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import iterate_approach_path
 from examples.pybullet.utils.pybullet_tools.utils import pairwise_collision, get_distance, multiply, set_pose, \
-    interpolate_poses, invert, wait_if_gui
+    interpolate_poses, invert
 
 BASE_CONSTANT = 1
 BASE_VELOCITY = 0.25
@@ -78,22 +78,3 @@ def get_cfree_traj_pose_test(robot, collisions=True):
     return test
 
 
-def get_cfree_traj_grasp_pose_test(problem, collisions=True):
-    def test(c, a, b1, g, b2, p2):
-        raise NotImplementedError()
-        if not collisions or (b1 == b2):
-            return True
-        state = c.assign()
-        if (b1 in state.attachments) or (b2 in state.attachments):
-            return True
-        p2.assign()
-        grasp_attachment = g.get_attachment(problem.robot, a)
-        for _ in c.apply(state):
-            state.assign()
-            grasp_attachment.assign()
-            if pairwise_collision(b1, b2):
-                return False
-            if pairwise_collision(problem.robot, b2):
-                return False
-        return True
-    return test

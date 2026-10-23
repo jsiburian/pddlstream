@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.meta import solve, create_parser, FOCUSED_ALGORITHMS
+from pddlstream.algorithms.meta import solve, create_parser
 from pddlstream.language.generator import from_test, from_fn, universe_test
-from pddlstream.language.stream import StreamInfo
 from pddlstream.language.constants import And, print_solution, PDDLProblem, Output
 from pddlstream.utils import read, get_file_path
 

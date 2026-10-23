@@ -2,14 +2,8 @@ from collections import namedtuple
 
 import numpy as np
 
-from examples.discrete_tamp.viewer import MAX_COLS, MAX_ROWS
-from pddlstream.language.generator import outputs_from_boolean
 
 GRASP = np.array([0, 0])
-
-
-def is_valid(p):
-    return np.greater_equal(p, [0, 0]) and np.greater([MAX_COLS, MAX_ROWS], p)
 
 
 def get_length(vec, ord=1):
@@ -22,14 +16,6 @@ def get_difference(p1, p2):
 
 def collision_test(p1, p2):
     return get_length(get_difference(p1, p2)) < 1e-3
-
-
-def noisy_collision_gen_fn(*args):
-    while True:
-        if np.random.random() < 0.75:
-            yield outputs_from_boolean(False)
-        else:
-            yield outputs_from_boolean(not collision_test(*args))
 
 
 def distance_fn(q1, q2):

@@ -127,27 +127,6 @@ def stream_plan_preimage(stream_plan):
     return preimage
 
 
-def stream_plan_complexity(evaluations, stream_plan, stream_calls, complexity_op=COMPLEXITY_OP):
-    if not is_plan(stream_plan):
-        return INF
-    # TODO: difference between a result having a particular complexity and the next result having something
-    optimistic_facts = {fact: evaluations[evaluation_from_fact(fact)].complexity
-                        for fact in stream_plan_preimage(stream_plan)}
-    result_complexities = []
-    for i, result in enumerate(stream_plan):
-        # if result.external.get_complexity(num_calls=INF) == 0: # TODO: skip if true
-        result_complexity = complexity_op([0] + [optimistic_facts[fact]
-                                                 for fact in result.get_domain()])
-        num_calls = stream_calls[i]
-        result_complexity += result.external.get_complexity(num_calls)
-        result_complexities.append(result_complexity)
-        for fact in result.get_certified():
-            if fact not in optimistic_facts:
-                optimistic_facts[fact] = result_complexity
-    complexity = complexity_op([0] + result_complexities)
-    return complexity
-
-
 def is_instance_ready(evaluations, instance):
     return all(evaluation_from_fact(f) in evaluations
                for f in instance.get_domain())

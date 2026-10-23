@@ -4,8 +4,7 @@ from examples.pybullet.utils.pybullet_tools.pr2_problems import create_pr2, crea
 from examples.pybullet.utils.pybullet_tools.pr2_utils import get_other_arm, get_carry_conf, set_arm_conf, open_arm, \
     arm_conf, REST_LEFT_ARM, close_arm, set_group_conf
 from examples.pybullet.utils.pybullet_tools.utils import get_bodies, sample_placement, pairwise_collision, \
-    add_data_path, load_pybullet, set_point, Point, create_box, stable_z, joint_from_name, get_point, wait_for_user,\
-    RED, GREEN, BLUE, BLACK, WHITE, BROWN, TAN, GREY
+    add_data_path, load_pybullet, set_point, Point, create_box, stable_z, get_point, RED, GREEN, BLUE, GREY
 
 def sample_placements(body_surfaces, obstacles=None, min_distances={}):
     if obstacles is None:
@@ -33,7 +32,6 @@ def packed(arm='left', grasp_type='top', num=5):
     base_limits = (-base_extent/2.*np.ones(2), base_extent/2.*np.ones(2))
     block_width = 0.07
     block_height = 0.1
-    block_area = block_width*block_width
 
     plate_width = 0.27
     print('Width:', plate_width)
@@ -44,7 +42,7 @@ def packed(arm='left', grasp_type='top', num=5):
     initial_conf = get_carry_conf(arm, grasp_type)
 
     add_data_path()
-    floor = load_pybullet("plane.urdf")
+    load_pybullet("plane.urdf")
     pr2 = create_pr2()
     set_arm_conf(pr2, arm, initial_conf)
     open_arm(pr2, arm)
@@ -82,7 +80,7 @@ def blocked(arm='left', grasp_type='side', num=1):
     initial_conf = get_carry_conf(arm, grasp_type)
 
     add_data_path()
-    floor = load_pybullet("plane.urdf")
+    load_pybullet("plane.urdf")
     pr2 = create_pr2()
     set_arm_conf(pr2, arm, initial_conf)
     open_arm(pr2, arm)

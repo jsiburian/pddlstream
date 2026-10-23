@@ -9,8 +9,6 @@ from pddlstream.utils import str_eq
 GROUND_NAME = 'grey'
 BLOCK_WIDTH = 2
 BLOCK_HEIGHT = BLOCK_WIDTH
-GROUND_Y = 0.
-
 SUCTION_HEIGHT = 1.
 GRASP = -np.array([0, BLOCK_HEIGHT + SUCTION_HEIGHT/2]) # TODO: side grasps
 CARRY_Y = 2*BLOCK_WIDTH+SUCTION_HEIGHT
@@ -91,13 +89,6 @@ def inverse_kin_fn(b, p, g):
     return (a,)
 
 
-def unreliable_ik_fn(*args):
-    # For testing the algorithms
-    while 1e-2 < np.random.random():
-        yield None
-    yield inverse_kin_fn(*args)
-
-
 def get_region_test(regions):
     def test(b, p, r):
         return interval_contains(regions[r], get_block_interval(b, p))
@@ -146,13 +137,6 @@ def get_pose_gen(regions):
                 break
             yield (p,)
     return gen_fn
-
-
-def interpolate(waypoints, velocity=1):
-    import scipy
-    differences = [0.] + [np.linalg.norm(q2 - q1) for q1, q2 in zip(waypoints[:-1], waypoints[1:])]
-    times = np.cumsum(differences) / velocity
-    return scipy.interpolate.interp1d(times, waypoints, kind='linear')
 
 
 def plan_motion(q1, q2, fluents=[]):

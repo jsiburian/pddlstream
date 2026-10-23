@@ -1,7 +1,6 @@
 import os
-import pickle
 
-from collections import Counter, namedtuple
+from collections import namedtuple
 
 from pddlstream.language.constants import is_plan
 from pddlstream.utils import INF, read_pickle, ensure_dir, write_pickle, get_python_version, CreationHash

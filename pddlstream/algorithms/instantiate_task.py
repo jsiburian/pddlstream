@@ -8,7 +8,7 @@ from pddlstream.algorithms.downward import get_literals, get_precondition, get_f
 from pddlstream.algorithms.relation import Relation, compute_order, solve_satisfaction
 from pddlstream.language.constants import is_parameter
 from pddlstream.utils import flatten, apply_mapping, MockSet, elapsed_time, Verbose, safe_remove, ensure_dir, \
-    str_from_object, user_input, Profiler
+    str_from_object
 
 import pddl
 import instantiate

@@ -4,7 +4,7 @@ from itertools import product
 import numpy as np
 
 from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.constants import PDDLProblem, Or, Exists, print_solution, Output, And
+from pddlstream.language.constants import PDDLProblem, print_solution, Output, And
 from pddlstream.utils import read_pddl, INF
 from pddlstream.language.stream import StreamInfo
 from pddlstream.language.function import FunctionInfo

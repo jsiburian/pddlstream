@@ -8,11 +8,10 @@ from pddlstream.algorithms.meta import solve, create_parser
 from pddlstream.language.constants import And, Equal, TOTAL_COST, print_solution, Fact, PDDLProblem
 from pddlstream.language.generator import from_test, from_list_fn
 from pddlstream.language.stream import WildOutput
-from pddlstream.utils import read, safe_zip
+from pddlstream.utils import read
 from examples.discrete_tamp.run import apply_plan
-from examples.discrete_tamp.primitives import GRASP, is_valid, get_length, get_difference, collision_test, distance_fn, \
+from examples.discrete_tamp.primitives import GRASP, get_length, get_difference, collision_test, distance_fn, \
     DiscreteTAMPState, DiscreteTAMPProblem
-from pddlstream.language.stream import StreamInfo
 from examples.discrete_tamp.viewer import MAX_COLS
 
 array = lambda args: tuple(map(int, args))

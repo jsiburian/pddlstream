@@ -4,17 +4,13 @@ import random
 from collections import OrderedDict
 from examples.pybullet.utils.pybullet_tools.utils import add_data_path, load_pybullet, set_point, Point, create_box, \
     stable_z, HUSKY_URDF, load_model, TURTLEBOT_URDF, joints_from_names, \
-    set_joint_positions, get_joint_positions, link_from_name, get_link_pose, draw_pose, wait_for_user, \
-    get_center_extent, draw_aabb, get_aabb, HideOutput, GREY, BLACK, RED, BLUE, BROWN, TAN, GREEN, get_bodies
+    set_joint_positions, HideOutput, GREY, BLACK, BLUE, BROWN, TAN, get_bodies
 from examples.pybullet.tamp.problems import sample_placements
 
 BASE_JOINTS = ['x', 'y', 'theta']
 
 def get_base_joints(robot):
     return joints_from_names(robot, BASE_JOINTS)
-
-def get_base_conf(robot):
-    return get_joint_positions(robot, get_base_joints(robot))
 
 def set_base_conf(robot, conf):
     set_joint_positions(robot, get_base_joints(robot), conf)

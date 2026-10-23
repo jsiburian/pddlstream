@@ -1,6 +1,5 @@
 from tkinter import Tk, Canvas, Toplevel
 
-import colorsys
 
 
 # NOTE - this will overwrite (but remember) existing drawings
@@ -10,11 +9,6 @@ MAX_ROWS = 5
 MAX_COLS = 9
 
 COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'violet', 'white', 'black']
-
-
-def tk_from_rgb(rgb):
-    assert all(0 <= c < 256 for c in rgb)
-    return "#%02x%02x%02x" % rgb
 
 
 class DiscreteTAMPViewer(object):

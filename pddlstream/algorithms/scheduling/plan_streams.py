@@ -29,8 +29,7 @@ from pddlstream.language.function import Function
 from pddlstream.language.stream import StreamResult
 from pddlstream.language.optimizer import UNSATISFIABLE
 from pddlstream.language.statistics import compute_plan_effort
-from pddlstream.language.object import Object
-from pddlstream.utils import Verbose, INF, topological_sort, get_ancestors
+from pddlstream.utils import Verbose, INF, get_ancestors
 
 RENAME_ACTIONS = True
 

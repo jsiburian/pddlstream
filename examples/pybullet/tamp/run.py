@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from examples.pybullet.tamp.streams import get_cfree_approach_pose_test, get_cfree_pose_pose_test, get_cfree_traj_pose_test, \
-    get_cfree_traj_grasp_pose_test, BASE_CONSTANT, distance_fn, move_cost_fn
+    BASE_CONSTANT, distance_fn
 
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import Pose, Conf, get_ik_ir_gen, get_motion_gen, \
     get_stable_gen, get_grasp_gen, control_commands
@@ -18,7 +18,7 @@ from pddlstream.language.constants import Equal, And, print_solution, Exists, ge
     get_parameter_name, PDDLProblem
 from pddlstream.utils import read, INF, get_file_path, Profiler
 from pddlstream.language.function import FunctionInfo
-from pddlstream.language.stream import StreamInfo, DEBUG
+from pddlstream.language.stream import StreamInfo
 
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import apply_commands, State
 from examples.pybullet.pr2.run import post_process

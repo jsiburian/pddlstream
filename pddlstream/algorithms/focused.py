@@ -1,4 +1,3 @@
-import time
 
 from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
 from pddlstream.algorithms.advanced import enforce_simultaneous, automatically_negate_externals
@@ -21,8 +20,8 @@ from pddlstream.language.optimizer import ComponentStream
 from pddlstream.algorithms.recover_optimizers import combine_optimizers
 from pddlstream.language.statistics import load_stream_statistics, \
     write_stream_statistics, compute_plan_effort
-from pddlstream.language.stream import Stream, StreamResult
-from pddlstream.utils import INF, implies, str_from_object, safe_zip
+from pddlstream.language.stream import Stream
+from pddlstream.utils import INF, implies, str_from_object
 
 def get_negative_externals(externals):
     negative_predicates = list(filter(lambda s: type(s) is Predicate, externals)) # and s.is_negative()

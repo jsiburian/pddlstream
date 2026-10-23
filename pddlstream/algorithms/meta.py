@@ -17,7 +17,6 @@ from pddlstream.algorithms.scheduling.recover_streams import evaluations_from_st
 from pddlstream.language.constants import is_plan, Certificate, PDDLProblem, get_prefix, Solution
 from pddlstream.language.conversion import value_from_obj_expression, EQ
 from pddlstream.language.external import DEBUG, SHARED_DEBUG
-from pddlstream.language.stream import PartialInputs
 from pddlstream.utils import elapsed_time, INF, Verbose, irange, SEPARATOR
 
 FOCUSED_ALGORITHMS = ['focused', 'binding', 'adaptive']

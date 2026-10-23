@@ -3,10 +3,10 @@ import numpy as np
 
 from pddlstream.algorithms.meta import create_parser
 from examples.motion.viewer import sample_box, get_distance, is_collision_free, \
-    create_box, draw_solution, draw_roadmap, draw_environment
+    create_box, draw_solution, draw_roadmap
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.language.generator import from_gen_fn, from_test
-from pddlstream.utils import read, user_input, str_from_object, INF, Profiler
+from pddlstream.utils import read, user_input, str_from_object, Profiler
 from pddlstream.language.constants import PDDLProblem, print_solution
 from pddlstream.algorithms.constraints import PlanConstraints
 
@@ -35,7 +35,6 @@ def create_problem(goal, obstacles=(), regions={}, max_distance=.5):
     samples = []
     def region_gen(region):
         lower, upper = regions[region]
-        area = np.prod(upper - lower)
         # TODO: sample proportional to area
         while True:
             q = ARRAY(sample_box(regions[region]))

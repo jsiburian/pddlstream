@@ -7,9 +7,9 @@ refinement.CONSTRAIN_PLANS = False
 
 from pddlstream.algorithms.meta import solve, create_parser
 from pddlstream.language.constants import And, print_solution
-from pddlstream.language.stream import DEBUG, SHARED_DEBUG, StreamInfo, PartialInputs
+from pddlstream.language.stream import SHARED_DEBUG, StreamInfo, PartialInputs
 from pddlstream.language.constants import PDDLProblem, read_pddlstream_pair
-from pddlstream.utils import read, get_file_path, Profiler
+from pddlstream.utils import Profiler
 
 ROBOT = 'gripper'
 CUP = 'cup'

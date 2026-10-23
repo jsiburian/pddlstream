@@ -9,7 +9,7 @@ from examples.discrete_tamp.primitives import GRASP, collision_test, distance_fn
 from examples.discrete_tamp.viewer import DiscreteTAMPViewer, COLORS
 from pddlstream.language.constants import And, Equal, TOTAL_COST, print_solution, PDDLProblem
 from pddlstream.language.generator import from_gen_fn, from_fn, from_test
-from pddlstream.utils import user_input, read, INF
+from pddlstream.utils import user_input, read
 
 
 # TODO: Can infer domain from usage or from specification

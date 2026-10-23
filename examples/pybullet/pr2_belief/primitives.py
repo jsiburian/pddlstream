@@ -9,9 +9,7 @@ from examples.pybullet.utils.pybullet_tools.pr2_utils import HEAD_LINK_NAME, get
     MAX_KINECT_DISTANCE, plan_scan_path, get_group_joints, get_group_conf, set_group_conf
 from examples.pybullet.utils.pybullet_tools.utils import link_from_name, create_mesh, set_pose, get_link_pose, \
     wait_for_duration, unit_pose, remove_body, is_center_stable, get_body_name, get_name, point_from_pose, \
-    plan_waypoints_joint_motion, pairwise_collision, plan_direct_joint_motion, BodySaver, set_joint_positions, \
-    INF, get_length, multiply, wait_for_user, LockRenderer, set_color, RED, GREEN, apply_alpha, dump_body, \
-    get_link_subtree, child_link_from_joint, get_link_name
+    plan_waypoints_joint_motion, pairwise_collision, plan_direct_joint_motion, BodySaver, get_length, wait_for_user, LockRenderer, RED, GREEN, apply_alpha, get_link_subtree, child_link_from_joint
 
 VIS_RANGE = (0.5, 1.5)
 REG_RANGE = (0.5, 1.5)
@@ -86,26 +84,6 @@ def plan_head_traj(task, head_conf):
     head_joints = get_group_joints(robot, 'head')
     head_path = plan_direct_joint_motion(robot, head_joints, head_conf,
                                   obstacles=obstacles, self_collisions=SELF_COLLISIONS)
-    assert(head_path is not None)
-    return create_trajectory(robot, head_joints, head_path)
-
-def inspect_trajectory(task, trajectory):
-    if not trajectory.path:
-        return
-    robot = trajectory.path[0].body
-    obstacles = get_fixed_bodies(task) # TODO: movable objects
-    # TODO: minimum distance of some sort (to prevent from looking at the bottom)
-    # TODO: custom lower limit as well
-    head_waypoints = []
-    for target_point in get_target_path(trajectory):
-        head_conf = inverse_visibility(robot, target_point)
-        # TODO: could also draw the sequence of inspected points as the head moves
-        if head_conf is None:
-            continue
-        head_waypoints.append(head_conf)
-    head_joints = get_group_joints(robot, 'head')
-    head_path = plan_waypoints_joint_motion(robot, head_joints, head_waypoints,
-                                            obstacles=obstacles, self_collisions=SELF_COLLISIONS)
     assert(head_path is not None)
     return create_trajectory(robot, head_joints, head_path)
 

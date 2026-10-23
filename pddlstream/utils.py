@@ -4,12 +4,10 @@ import pickle
 import shutil
 import sys
 import time
-import random
 import cProfile
 import pstats
-import io
 
-from collections import defaultdict, deque, Counter, namedtuple
+from collections import defaultdict, deque, Counter
 from itertools import count
 from heapq import heappush, heappop
 
@@ -53,7 +51,7 @@ def read_pickle(filename):
     with open(filename, 'rb') as f:
         try:
             return pickle.load(f)
-        except UnicodeDecodeError as e:
+        except UnicodeDecodeError:
             return pickle.load(f, encoding='latin1')
 
 

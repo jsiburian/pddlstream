@@ -53,8 +53,7 @@ def create_optimizer(min_take=0, max_take=INF, max_wallet=INF, max_time=5, integ
                     cash, = args
                     objective_terms.append(cash)
             elif fact[0] == NOT:
-                fact = fact[1]
-                predicate, args = fact[0], map(get_var, fact[1:])
+                pass  # Negated facts add no constraints
             else:
                 prefix, args = fact[0], map(get_var, fact[1:])
                 if prefix == 'ge':

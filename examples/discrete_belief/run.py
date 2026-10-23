@@ -5,8 +5,8 @@ from pddlstream.algorithms.meta import solve, create_parser
 from pddlstream.language.function import FunctionInfo
 from pddlstream.language.generator import from_fn, from_test
 
-from examples.discrete_belief.dist import DDist, MixtureDD, DeltaDist, UniformDist, totalProbability, JDist
-from pddlstream.algorithms.downward import get_cost_scale, set_cost_scale, MAX_FD_COST
+from examples.discrete_belief.dist import DDist, MixtureDD, DeltaDist, UniformDist, totalProbability
+from pddlstream.algorithms.downward import get_cost_scale, MAX_FD_COST
 
 from pddlstream.language.constants import And, print_solution, PDDLProblem
 from pddlstream.language.stream import StreamInfo
@@ -84,26 +84,10 @@ def revisit_mdp_cost(success_cost, failure_cost, p):
     return (success_cost - failure_cost) + geometric_cost(failure_cost, p)
 
 
-def continue_mdp_cost(success_cost, failure_cost, p):
-    """
-    Cost for MDP where failures move to the intended state
-    failure_cost should be much larger than success_cost
-    """
-    return p * success_cost + failure_cost * (1 - p)
-
 ##################################################
 
 def prob_occupied(l, d):
     return float(d.prob(l))
-
-def prob_collision(d1, d2):
-    # TODO: collision options
-    # 1) Constraint that cannot collide above threshold (infinite collision cost)
-    # 2) Choose threshold but incorporate into cost
-    # 3) Choose threshold but incorporate into transitions (most general but might use collisions)
-    d_joint = JDist(d1, lambda _: d2)
-    d_collision = d_joint.project(lambda pair: pair[0] == pair[1])
-    return float(d_collision.prob(True))
 
 def ge_fn(o, d, l, p):
     return bool(p <= prob_occupied(l, d)) # TODO: numpy boolean

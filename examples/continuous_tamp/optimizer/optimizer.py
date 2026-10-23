@@ -1,19 +1,16 @@
 import numpy as np
 import random
-import time
 
-from examples.continuous_tamp.primitives import BLOCK_WIDTH, sample_region, plan_motion, GRASP
-from pddlstream.language.constants import partition_facts, NOT, MINIMIZE, get_constraints, is_parameter
+from examples.continuous_tamp.primitives import BLOCK_WIDTH, plan_motion, GRASP
+from pddlstream.language.constants import partition_facts, NOT, MINIMIZE, is_parameter
 from pddlstream.language.optimizer import OptimizerOutput
-from pddlstream.utils import INF, elapsed_time
+from pddlstream.utils import INF
 
 MIN_CLEARANCE = 1e-3 # 0 | 1e-3
 
-NAN = float('nan')
-
 def has_gurobi():
     try:
-        import gurobipy
+        import gurobipy  # noqa: F401
     except ImportError:
         return False
     return True
@@ -48,10 +45,6 @@ def copy_model(model):
 def vars_from_expr(expr):
     return [expr.getVar(i) for i in range(expr.size())]
 
-def set_value(var, value):
-    var.LB = value
-    var.UB = value
-
 def set_guess(var, value, hard=True):
     if hard:
         # solver will try to build a single feasible solution from the provided set of variable values
@@ -83,13 +76,6 @@ def contained_constraint(model, regions, name, b, p, r):
     model.addLConstr(px + BLOCK_WIDTH / 2, GRB.LESS_EQUAL, x2, name=name)
     model.addLConstr(py, GRB.EQUAL, 0, name=name)
 
-def motion_constraint(model, name, q1, t, q2):
-    from gurobipy import GRB
-    for i in range(len(q1)):
-        model.addLConstr(t[0][i], GRB.EQUAL, q1[i], name=name)
-    for i in range(len(q2)):
-        model.addLConstr(t[1][i], GRB.EQUAL, q2[i], name=name)
-
 def distance_cost(model, q1, q2, norm=1):
     from gurobipy import GRB
     # TODO: cost on endpoints and subtract from total cost
@@ -109,27 +95,6 @@ def distance_cost(model, q1, q2, norm=1):
     return terms
 
 ##################################################
-
-def sample_sphere_surface(d, uniform=True):
-    # TODO: hyperspherical coordinates
-    # https://en.wikipedia.org/wiki/N-sphere#Spherical_coordinates
-    while True:
-        v = np.random.randn(d)
-        r = np.sqrt(v.dot(v))
-        if not uniform or (r <= 1.):
-            return v / r
-
-def sample_sphere(d, **kwargs):
-    v = sample_sphere_surface(d, **kwargs)
-    r = np.random.rand()
-    return np.power(r, 1./d)*v
-
-def sample_subspace(d, m):
-    # TODO: linear spaces sampling method
-    # https://arxiv.org/abs/1810.06271
-    A = np.random.randn(m, d)
-    b = np.random.randn(m)
-    return A, b
 
 ##################################################
 
@@ -155,47 +120,6 @@ def sample_targets(model, variables):
             # TODO: start with feasible solution and then expand
     return objective_terms
 
-def sample_solutions(model, variables, num_samples=INF, norm=2, closest=True):
-    from gurobipy import GRB, quicksum, abs_
-    start_time = time.time()
-    objective = model.getObjective()
-    if norm == 2:
-        model.setParam(GRB.Param.NonConvex, 2) # PSDTol
-    objective_terms = []
-    if closest:
-        min_distance = model.addVar(lb=0., ub=GRB.INFINITY)
-        objective_terms.append(min_distance)
-    solutions = [] # TODO: sample initial solution from this set
-    while len(solutions) < num_samples:
-        terms = []
-        for var in variables:
-            for index, coord in enumerate(var):
-                value = coord.X
-                set_guess(coord, value, hard=True)
-                delta = model.addVar(lb=-GRB.INFINITY, ub=GRB.INFINITY)
-                model.addConstr(delta == coord - value)
-                if norm == 1:
-                    term = model.addVar(lb=0., ub=GRB.INFINITY)
-                    model.addConstr(term == abs_(delta))
-                elif norm == 2:
-                    term = delta*delta
-                else:
-                    raise NotImplementedError(norm)
-                terms.append(term) # TODO: scale
-        distance = quicksum(terms)
-        if closest:
-            model.addConstr(min_distance <= distance)
-        else:
-            objective_terms.append(distance) # TODO: weight
-
-        model.setObjective(quicksum(objective_terms), sense=GRB.MAXIMIZE) # MINIMIZE | MAXIMIZE
-        model.optimize()
-        print('# {} | objective: {:.3f} | cost: {:.3f} | runtime: {:.3f}'.format(
-            len(solutions), model.ObjVal, objective.getValue(), elapsed_time(start_time))) # min_distance.X
-        solution = [value_from_var(var) for var in variables]
-        solutions.append(solution)
-        yield solution
-
 ##################################################
 
 def get_optimize_fn(regions, collisions=True, max_time=5., hard=False,
@@ -206,7 +130,7 @@ def get_optimize_fn(regions, collisions=True, max_time=5., hard=False,
     # https://www.fico.com/fico-xpress-optimization/docs/latest/examples/python/GUID-E77AC35C-9488-3F0A-98B4-7F5FD81AFF1D.html
     if not has_gurobi():
         raise ImportError('This generator requires Gurobi: http://www.gurobi.com/')
-    from gurobipy import Model, GRB, quicksum, abs_
+    from gurobipy import Model, GRB, quicksum
 
     min_x = min(x1 for x1, _ in regions.values())
     max_x = max(x2 for _, x2 in regions.values())
@@ -378,10 +302,6 @@ def compute_inconsistent(model):
     infeasible = {int(c.constrName) for c in model.getConstrs() if c.IISConstr}
     return infeasible
 
-def enumerate_inconsistent(model):
-    # TODO: exhaustively enumerate IIS
-    raise NotImplementedError()
-
 ##################################################
 
 def constraints_from_indices(model, indices):
@@ -422,7 +342,7 @@ def relax_constraints(model, indices):
     # http://www.sce.carleton.ca/faculty/chinneck/docs/ChinneckDravnieks.pdf
     model.setObjective(0.0)
     elastic_constraints = constraints_from_indices(model, indices)
-    objective = model.feasRelax(relaxobjtype=0, # feasRelaxS
+    model.feasRelax(relaxobjtype=0, # feasRelaxS
                                 minrelax=True,
                                 vars=[], lbpen=[], ubpen=[],
                                 constrs=elastic_constraints,
@@ -455,42 +375,6 @@ def elastic_filter(original_model, indices, postproces=True):
 
 ##################################################
 
-def identify_infeasibility(fn, parameters, terms, **kwargs):
-    # TODO: apply to general constraint networks
-    output = fn(parameters, terms, **kwargs)
-    if output:
-        return output
-    active_indices = {i for i, term in enumerate(terms) if term[0] != MINIMIZE}
-    for index in list(active_indices):
-        constraints = [terms[i] for i in active_indices - {index}]
-        output = fn(parameters, constraints, **kwargs)
-        if output:
-            active_indices.remove(index)
-    # TODO: be careful about removing variables
-    infeasible_facts = [terms[index] for index in sorted(active_indices)]
-    print('Inconsistent:', infeasible_facts)
-    return OptimizerOutput(infeasible=[infeasible_facts])
-
-def identify_feasible_subsets(facts, model):
-    # TODO: add facts corresponding to feasible subproblems
-    # The trouble is that it's not clear which constraints would be useful to relax
-    model.setObjective(0.0)
-    model.computeIIS()
-    print('IIS is minimal\n' if model.IISMinimal else 'IIS is not minimal\n')
-    iss_constraints = {c.constrName for c in model.getConstrs() if c.IISConstr}
-    iss_facts = [facts[int(name)] for name in sorted(iss_constraints)]
-    print(iss_facts)
-    for c in model.getConstrs():
-        if c.constrName in iss_constraints:
-            model.remove(c)
-    # TODO: reoptimize
-    # TODO: drop the objective function and decompose into smaller clusters
-    # Iterate over subsets of constraints that are allowed to be violated/removed
-    # The relaxation is a heuristic to more intelligently guide this search
-    # Use L1 penalization to enforce sparsity. Could even frame as a MILP
-    # The assumption is that there is intersection between the failure and a solution
-    raise NotImplementedError()
-
 ##################################################
 
 def cfree_motion_fn(outputs, facts, hint={}):
@@ -514,19 +398,4 @@ def cfree_motion_fn(outputs, facts, hint={}):
     return plan_motion(q0, q1)
 
 ##################################################
-
-def get_cfree_pose_fn(regions):
-    def fn(outputs, certified):
-        b, r = None, None
-        placed = {}
-        for fact in certified:
-            if fact[0] == 'contained':
-                b, _, r = fact[1:]
-            if fact[0] == NOT:
-                _, _, b2, p2 = fact[1][1:]
-                placed[b2] = p2
-        p = sample_region(b, regions[r])
-        return (p,)
-
-    return fn
 

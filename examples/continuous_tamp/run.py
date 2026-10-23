@@ -192,10 +192,6 @@ TIGHT_SKELETON = [
     ('move', ['r0', '?q4', WILD, '?q5']),
 ]
 
-MUTEXES = [
-    # TODO: add mutexes to reduce search over skeletons
-]
-
 ##################################################
 
 def get_stream_info(defer_fn=defer_shared):

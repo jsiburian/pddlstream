@@ -1,13 +1,10 @@
-import time
 
 from collections import namedtuple, deque, Counter
 from itertools import combinations
 
-from pddlstream.language.constants import is_plan
-from pddlstream.language.external import Result
 from pddlstream.language.statistics import Stats, Performance, EPSILON
 from pddlstream.language.stream import StreamResult
-from pddlstream.utils import INF, neighbors_from_orders, topological_sort, get_connected_components, \
+from pddlstream.utils import neighbors_from_orders, topological_sort, get_connected_components, \
     is_acyclic, layer_sort, Score, safe_zip
 
 
@@ -24,9 +21,6 @@ def get_object_orders(stream_plan):
             if set(get_output_objects(stream1)) & stream2.instance.get_all_input_objects():
                 partial_orders.add((stream1, stream2))
     return partial_orders
-
-def get_initial_orders(init_facts, stream_plan):
-    return {(fact, stream) for stream in stream_plan for fact in stream.get_domain() if fact in init_facts}
 
 def get_fact_orders(stream_plan, init_facts=set()):
     # TODO: explicitly recover this from plan_streams
@@ -77,7 +71,6 @@ def dynamic_programming(store, vertices, valid_head_fn, stats_fn=Performance.get
     # TODO: works in the absence of partial orders
     # TODO: can also more manually reorder
     # 2^N rather than N!
-    start_time = time.time()
     effort_orders = set() # 1 cheaper than 2
     if prune:
         effort_orders.update(compute_pruning_orders(vertices, stats_fn=stats_fn, **kwargs))

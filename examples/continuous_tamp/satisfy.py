@@ -5,11 +5,10 @@ import argparse
 import numpy as np
 from numpy import array
 
-from examples.continuous_tamp.primitives import get_random_seed, tight, MOVE_COST, GRASP
-from examples.continuous_tamp.run import pddlstream_from_tamp, display_plan, set_deterministic, TIGHT_SKELETON
+from examples.continuous_tamp.primitives import get_random_seed, tight
+from examples.continuous_tamp.run import pddlstream_from_tamp, display_plan, set_deterministic
 from pddlstream.language.stream import StreamInfo
-from pddlstream.language.function import FunctionInfo
-from pddlstream.language.constants import Not, Minimize, is_parameter
+from pddlstream.language.constants import Minimize, is_parameter
 from pddlstream.algorithms.satisfaction_planning import solve_pddlstream_satisfaction
 from pddlstream.algorithms.satisfaction import constraint_satisfaction, dump_assignment, SatisfactionProblem
 from pddlstream.language.temporal import retime_plan

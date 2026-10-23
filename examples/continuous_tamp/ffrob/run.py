@@ -3,15 +3,13 @@
 import argparse
 
 from examples.continuous_tamp.primitives import get_pose_gen, distance_fn, inverse_kin, \
-    get_region_test, plan_motion, MOVE_COST, GRASP
-from examples.continuous_tamp.run import display_plan, initialize, create_problem, dump_pddlstream, step_plan
+    get_region_test, plan_motion, GRASP
+from examples.continuous_tamp.run import initialize, create_problem, dump_pddlstream, step_plan
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.language.constants import PDDLProblem, print_solution
-from pddlstream.language.function import FunctionInfo
 from pddlstream.language.generator import from_gen_fn, from_test, from_fn, from_list_fn
-from pddlstream.language.stream import StreamInfo, WildOutput
-from pddlstream.language.temporal import retime_plan
-from pddlstream.utils import read, INF, get_file_path, Profiler
+from pddlstream.language.stream import WildOutput
+from pddlstream.utils import read, get_file_path, Profiler
 
 def test_cfree(r, b1, g1, b2, g2):
     return True

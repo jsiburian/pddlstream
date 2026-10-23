@@ -6,7 +6,7 @@ from pddlstream.language.constants import EQ, get_prefix, get_args, str_from_pla
 from pddlstream.language.conversion import str_from_fact, evaluation_from_fact
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.object import OptimisticObject
-from pddlstream.utils import clear_dir, ensure_dir, str_from_object, user_input, flatten
+from pddlstream.utils import clear_dir, ensure_dir, str_from_object, flatten
 
 # https://www.graphviz.org/doc/info/
 
@@ -32,7 +32,7 @@ def has_pygraphviz():
     # TODO: networkx
     # https://github.com/caelan/pddlstream/blob/82ee5e363585d0af8ff9532ecc14641687d5b56b/examples/fault_tolerant/data_network/run.py#L189
     try:
-        import pygraphviz
+        import pygraphviz  # noqa: F401
     except ImportError:
         return False
     return True

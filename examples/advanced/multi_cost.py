@@ -6,7 +6,7 @@ from pddlstream.language.generator import from_gen
 from pddlstream.language.stream import StreamInfo
 from pddlstream.language.function import FunctionInfo, add_opt_function
 from pddlstream.language.object import UniqueOptValue, SharedOptValue
-from pddlstream.utils import flatten, Profiler, SEPARATOR, inf_generator, INF
+from pddlstream.utils import Profiler, inf_generator, INF
 
 DOMAIN_PDDL = """
 (define (domain cost)

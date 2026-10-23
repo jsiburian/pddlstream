@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.constants import PDDLProblem, Or, Exists, print_solution
+from pddlstream.language.constants import PDDLProblem, Or, print_solution
 from pddlstream.language.stream import StreamInfo
 from pddlstream.language.generator import from_fn, from_test
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 try:
-    import pybullet as p
+    import pybullet  # noqa: F401
 except ImportError:
     raise ImportError('This example requires PyBullet (https://pypi.org/project/pybullet/)')
 
@@ -257,7 +257,7 @@ def main(time_step=0.01):
 
     # TODO: nonuniform distribution to bias towards other actions
     # TODO: closed world and open world
-    real_world = connect(use_gui=not args.viewer)
+    connect(use_gui=not args.viewer)
     add_data_path()
     task, state = get_problem1(localized='rooms', p_other=0.25) # surfaces | rooms
     for body in task.get_bodies():

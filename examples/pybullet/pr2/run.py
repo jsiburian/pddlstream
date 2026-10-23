@@ -4,20 +4,17 @@ from pddlstream.algorithms.meta import solve, create_parser
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import Pose, Conf, get_ik_ir_gen, get_motion_gen, \
     get_stable_gen, get_grasp_gen, Attach, Detach, Clean, Cook, control_commands, \
     get_gripper_joints, GripperCommand, apply_commands, State
-from examples.pybullet.utils.pybullet_tools.pr2_problems import cleaning_problem, cooking_problem
+from examples.pybullet.utils.pybullet_tools.pr2_problems import cooking_problem
 from examples.pybullet.utils.pybullet_tools.pr2_utils import get_arm_joints, ARM_NAMES, get_group_joints, get_group_conf
-from examples.pybullet.utils.pybullet_tools.utils import connect, get_pose, is_placement, point_from_pose, \
-    disconnect, get_joint_positions, enable_gravity, save_state, restore_state, HideOutput, \
-    get_distance, LockRenderer, get_min_limit, get_max_limit, has_gui, WorldSaver, wait_if_gui, add_line, SEPARATOR
-from pddlstream.language.generator import from_gen_fn, from_list_fn, from_fn, fn_from_constant, empty_gen, from_test
+from examples.pybullet.utils.pybullet_tools.utils import connect, get_pose, is_placement, disconnect, get_joint_positions, HideOutput, \
+    LockRenderer, get_max_limit, has_gui, WorldSaver, wait_if_gui, SEPARATOR
+from pddlstream.language.generator import from_gen_fn, from_list_fn, from_fn, from_test
 from pddlstream.language.constants import Equal, AND, print_solution, PDDLProblem
-from pddlstream.utils import read, INF, get_file_path, find_unique, Profiler, str_from_object
+from pddlstream.utils import read, INF, get_file_path, Profiler, str_from_object
 from pddlstream.language.function import FunctionInfo
 from pddlstream.language.stream import StreamInfo, PartialInputs
-from pddlstream.language.object import SharedOptValue
 from pddlstream.language.external import defer_shared, never_defer
-from examples.pybullet.tamp.streams import get_cfree_approach_pose_test, get_cfree_pose_pose_test, get_cfree_traj_pose_test, \
-    move_cost_fn
+from examples.pybullet.tamp.streams import get_cfree_approach_pose_test, get_cfree_pose_pose_test, get_cfree_traj_pose_test
 from collections import namedtuple
 
 BASE_CONSTANT = 1
@@ -40,36 +37,11 @@ def place_movable(certified):
 
 
 def move_cost_fn(c):
-    [t] = c.commands
-    distance = t.distance(distance_fn=lambda q1, q2: get_distance(q1[:2], q2[:2]))
     return 1
 
 #######################################################
 
-def extract_point2d(v):
-    if isinstance(v, Conf):
-        return v.values[:2]
-    if isinstance(v, Pose):
-        return point_from_pose(v.value)[:2]
-    if isinstance(v, SharedOptValue):
-        if v.stream == 'sample-pose':
-            r, = v.values
-            return point_from_pose(get_pose(r))[:2]
-        if v.stream == 'inverse-kinematics':
-            p, = v.values
-            return extract_point2d(p)
-    if isinstance(v, CustomValue):
-        if v.stream == 'p-sp':
-            r, = v.values
-            return point_from_pose(get_pose(r))[:2]
-        if v.stream == 'q-ik':
-            p, = v.values
-            return extract_point2d(p)
-    raise ValueError(v.stream)
-
 def opt_move_cost_fn(t):
-    q1, q2 = t.values
-    distance = get_distance(extract_point2d(q1), extract_point2d(q2))
     return 1
 
 #######################################################

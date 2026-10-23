@@ -54,6 +54,5 @@ def test_continuous_tamp(use_skeleton):
 @pytest.mark.skipif(not (ROOT / 'examples/pybullet/utils/pybullet_tools/utils.py').exists(),
                     reason='pybullet-planning submodule not checked out')
 def test_numpy_math_shim():
-    import examples.pybullet  # Restores numpy.math for the pinned submodule
     from examples.pybullet.utils.pybullet_tools.utils import get_yaw
     assert get_yaw((1, 1)) == pytest.approx(0.785398, abs=1e-6)

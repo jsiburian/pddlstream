@@ -69,7 +69,6 @@ def pddlstream_from_belief():
     block = 'block1'
     pose = Uncertain()
     conf = np.array([0, 1])
-    booth = np.array([0, 2])
 
     init = [
         ('Initial',), # Forces move first

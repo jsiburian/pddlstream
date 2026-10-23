@@ -3,7 +3,7 @@
 import numpy as np
 
 from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.generator import from_fn, from_constant, from_test, universe_test, empty_test
+from pddlstream.language.generator import from_fn, from_constant, from_test, empty_test
 from pddlstream.language.stream import StreamInfo
 from pddlstream.utils import read, get_file_path, Profiler
 from pddlstream.language.constants import print_solution, PDDLProblem
