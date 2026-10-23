@@ -31,6 +31,26 @@ markers = [
 ]
 addopts = "-m 'not slow and not gui and not gurobi'"
 
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+# Submodules with their own style
+extend-exclude = ["downward", "examples/pybullet/utils"]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "UP", "ERA"]
+ignore = [
+    "E731", # Short named lambdas are used for callbacks and key functions
+    "E741", # `l` is the conventional name for a literal
+]
+
+[tool.ruff.lint.per-file-ignores]
+# The translator is importable only after FastDownward's path is added to sys.path
+"pddlstream/algorithms/downward.py" = ["E402"]
+
 ##################################################
 
 [tool.pixi.workspace]
@@ -80,6 +100,10 @@ test-gurobi = { cmd = "pytest -m gurobi", description = "Run the optimizer examp
 [tool.pixi.feature.test.dependencies]
 pytest = "*"
 
+# Pinned to a minor version: ruff's formatting and rule set change between minor releases
+[tool.pixi.feature.lint.dependencies]
+ruff = "0.17.*"
+
 # Python versions: 3.14 by default; 3.11 to match Isaac Sim (RoboLab)
 [tool.pixi.feature.py314.dependencies]
 python = "3.14.*"
@@ -88,7 +112,7 @@ python = "3.14.*"
 python = "3.11.*"
 
 [tool.pixi.environments]
-default = { features = ["py314", "build", "examples", "pybullet", "test"], solve-group = "default" }
+default = { features = ["py314", "build", "examples", "pybullet", "test", "lint"], solve-group = "default" }
 full = { features = ["py314", "build", "examples", "pybullet", "test", "viz", "gurobi"], solve-group = "default" }
 py311 = { features = ["py311", "build", "examples", "pybullet", "test"], solve-group = "py311" }
 
@@ -104,3 +128,5 @@ build-ikfast = { cmd = "python setup.py", cwd = "examples/pybullet/utils/pybulle
 test = { cmd = "pytest", description = "Run the fast test suite" }
 test-gui = { cmd = "pytest -m 'gui and not slow and not gurobi'", description = "Run the examples that open viewers, under xvfb-run" }
 bench = { cmd = "python tests/benchmark.py", description = "Time the benchmark cases against the saved baseline (--save to update it)" }
+lint = { cmd = "ruff check && ruff format --check", description = "Check lint rules and formatting" }
+format = { cmd = "ruff check --fix && ruff format", description = "Fix lint findings and format the code" }
