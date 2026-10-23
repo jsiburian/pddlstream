@@ -1,7 +1,7 @@
 import os
 from collections import namedtuple
 
-from pddlstream.utils import INF, str_from_object, read
+from pddlstream.utils import INF, read, str_from_object
 
 EQ = '='  # xnor
 AND = 'and'

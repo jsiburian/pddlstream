@@ -1,16 +1,16 @@
-from collections import namedtuple, deque, Counter
+from collections import Counter, deque, namedtuple
 from itertools import combinations
 
-from pddlstream.language.statistics import Stats, Performance, EPSILON
+from pddlstream.language.statistics import EPSILON, Performance, Stats
 from pddlstream.language.stream import StreamResult
 from pddlstream.utils import (
-    neighbors_from_orders,
-    topological_sort,
+    Score,
     get_connected_components,
     is_acyclic,
     layer_sort,
-    Score,
+    neighbors_from_orders,
     safe_zip,
+    topological_sort,
 )
 
 

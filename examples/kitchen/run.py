@@ -1,7 +1,6 @@
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.constants import And, print_solution
-from pddlstream.language.stream import SHARED_DEBUG, StreamInfo, PartialInputs
-from pddlstream.language.constants import PDDLProblem, read_pddlstream_pair
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import And, PDDLProblem, print_solution, read_pddlstream_pair
+from pddlstream.language.stream import SHARED_DEBUG, PartialInputs, StreamInfo
 from pddlstream.utils import Profiler
 
 ROBOT = 'gripper'

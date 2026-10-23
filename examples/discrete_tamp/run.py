@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 
 import os
+
 import numpy as np
 
-from pddlstream.algorithms.meta import solve, create_parser
 from examples.discrete_tamp.primitives import (
     GRASP,
+    DiscreteTAMPState,
     collision_test,
     distance_fn,
-    DiscreteTAMPState,
     get_shift_one_problem,
 )
-from examples.discrete_tamp.viewer import DiscreteTAMPViewer, COLORS
-from pddlstream.language.constants import And, Equal, TOTAL_COST, print_solution, PDDLProblem
-from pddlstream.language.generator import from_gen_fn, from_fn, from_test
-from pddlstream.utils import user_input, read
-
+from examples.discrete_tamp.viewer import COLORS, DiscreteTAMPViewer
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import TOTAL_COST, And, Equal, PDDLProblem, print_solution
+from pddlstream.language.generator import from_fn, from_gen_fn, from_test
+from pddlstream.utils import read, user_input
 
 # TODO: Can infer domain from usage or from specification
 

@@ -2,34 +2,34 @@ from collections.abc import Sequence
 from itertools import product
 
 from pddlstream.language.constants import (
-    EQ,
     AND,
-    OR,
-    NOT,
     CONNECTIVES,
-    QUANTIFIERS,
-    OPERATORS,
+    EQ,
+    NOT,
     OBJECTIVES,
-    Head,
+    OPERATORS,
+    OR,
+    QUANTIFIERS,
+    Action,
+    Assignment,
+    Certificate,
+    DurativeAction,
+    Equal,
     Evaluation,
-    get_prefix,
+    Fact,
+    FunctionAction,
+    Head,
+    Not,
+    OptPlan,
+    Solution,
+    StreamAction,
     get_args,
+    get_prefix,
     is_parameter,
     is_plan,
-    Fact,
-    Not,
-    Equal,
-    Action,
-    StreamAction,
-    FunctionAction,
-    DurativeAction,
-    Solution,
-    Assignment,
-    OptPlan,
-    Certificate,
 )
 from pddlstream.language.object import Object, OptimisticObject
-from pddlstream.utils import str_from_object, apply_mapping
+from pddlstream.utils import apply_mapping, str_from_object
 
 
 def replace_expression(parent, fn):

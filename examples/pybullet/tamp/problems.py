@@ -1,31 +1,31 @@
 import numpy as np
 
-from examples.pybullet.utils.pybullet_tools.pr2_problems import create_pr2, create_table, Problem
+from examples.pybullet.utils.pybullet_tools.pr2_problems import Problem, create_pr2, create_table
 from examples.pybullet.utils.pybullet_tools.pr2_utils import (
-    get_other_arm,
-    get_carry_conf,
-    set_arm_conf,
-    open_arm,
-    arm_conf,
     REST_LEFT_ARM,
+    arm_conf,
     close_arm,
+    get_carry_conf,
+    get_other_arm,
+    open_arm,
+    set_arm_conf,
     set_group_conf,
 )
 from examples.pybullet.utils.pybullet_tools.utils import (
-    get_bodies,
-    sample_placement,
-    pairwise_collision,
-    add_data_path,
-    load_pybullet,
-    set_point,
-    Point,
-    create_box,
-    stable_z,
-    get_point,
-    RED,
-    GREEN,
     BLUE,
+    GREEN,
     GREY,
+    RED,
+    Point,
+    add_data_path,
+    create_box,
+    get_bodies,
+    get_point,
+    load_pybullet,
+    pairwise_collision,
+    sample_placement,
+    set_point,
+    stable_z,
 )
 
 

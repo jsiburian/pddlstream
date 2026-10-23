@@ -1,51 +1,52 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.meta import solve, create_parser
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import (
-    Pose,
-    Conf,
-    get_ik_ir_gen,
-    get_motion_gen,
-    get_stable_gen,
-    get_grasp_gen,
-    Attach,
-    Detach,
-    Clean,
-    Cook,
-    control_commands,
-    get_gripper_joints,
-    GripperCommand,
-    apply_commands,
-    State,
-)
-from examples.pybullet.utils.pybullet_tools.pr2_problems import cooking_problem
-from examples.pybullet.utils.pybullet_tools.pr2_utils import get_arm_joints, ARM_NAMES, get_group_joints, get_group_conf
-from examples.pybullet.utils.pybullet_tools.utils import (
-    connect,
-    get_pose,
-    is_placement,
-    disconnect,
-    get_joint_positions,
-    HideOutput,
-    LockRenderer,
-    get_max_limit,
-    has_gui,
-    WorldSaver,
-    wait_if_gui,
-    SEPARATOR,
-)
-from pddlstream.language.generator import from_gen_fn, from_list_fn, from_fn, from_test
-from pddlstream.language.constants import Equal, AND, print_solution, PDDLProblem
-from pddlstream.utils import read, INF, get_file_path, Profiler, str_from_object
-from pddlstream.language.function import FunctionInfo
-from pddlstream.language.stream import StreamInfo, PartialInputs
-from pddlstream.language.external import defer_shared, never_defer
+from collections import namedtuple
+
 from examples.pybullet.tamp.streams import (
     get_cfree_approach_pose_test,
     get_cfree_pose_pose_test,
     get_cfree_traj_pose_test,
 )
-from collections import namedtuple
+from examples.pybullet.utils.pybullet_tools.pr2_primitives import (
+    Attach,
+    Clean,
+    Conf,
+    Cook,
+    Detach,
+    GripperCommand,
+    Pose,
+    State,
+    apply_commands,
+    control_commands,
+    get_grasp_gen,
+    get_gripper_joints,
+    get_ik_ir_gen,
+    get_motion_gen,
+    get_stable_gen,
+)
+from examples.pybullet.utils.pybullet_tools.pr2_problems import cooking_problem
+from examples.pybullet.utils.pybullet_tools.pr2_utils import ARM_NAMES, get_arm_joints, get_group_conf, get_group_joints
+from examples.pybullet.utils.pybullet_tools.utils import (
+    SEPARATOR,
+    HideOutput,
+    LockRenderer,
+    WorldSaver,
+    connect,
+    disconnect,
+    get_joint_positions,
+    get_max_limit,
+    get_pose,
+    has_gui,
+    is_placement,
+    wait_if_gui,
+)
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import AND, Equal, PDDLProblem, print_solution
+from pddlstream.language.external import defer_shared, never_defer
+from pddlstream.language.function import FunctionInfo
+from pddlstream.language.generator import from_fn, from_gen_fn, from_list_fn, from_test
+from pddlstream.language.stream import PartialInputs, StreamInfo
+from pddlstream.utils import INF, Profiler, get_file_path, read, str_from_object
 
 BASE_CONSTANT = 1
 BASE_VELOCITY = 0.5

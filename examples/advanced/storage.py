@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.meta import solve, create_parser, analyze_goal
-from pddlstream.language.constants import PDDLProblem, print_solution, And
+from pddlstream.algorithms.meta import analyze_goal, create_parser, solve
+from pddlstream.language.constants import And, PDDLProblem, print_solution
 from pddlstream.language.stream import DEBUG
-from pddlstream.utils import flatten, Profiler, SEPARATOR
+from pddlstream.utils import SEPARATOR, Profiler, flatten
 
 # Kitchen Storage
 

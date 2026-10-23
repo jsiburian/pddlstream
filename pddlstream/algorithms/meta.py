@@ -1,29 +1,28 @@
 import argparse
 import time
-
 from collections import defaultdict
 
 from pddlstream.algorithms.algorithm import parse_problem
 from pddlstream.algorithms.common import evaluations_from_init
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.downward import (
+    INTERNAL_AXIOM,
+    fact_from_fd,
+    fd_from_evaluations,
+    fd_from_fact,
     get_problem,
     task_from_domain_problem,
-    fact_from_fd,
-    fd_from_fact,
-    fd_from_evaluations,
-    INTERNAL_AXIOM,
 )
+from pddlstream.algorithms.focused import get_negative_externals, solve_adaptive, solve_binding, solve_focused_original
 from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.algorithms.focused import solve_focused_original, solve_binding, solve_adaptive, get_negative_externals
-from pddlstream.algorithms.instantiate_task import instantiate_task, convert_instantiated
+from pddlstream.algorithms.instantiate_task import convert_instantiated, instantiate_task
 from pddlstream.algorithms.refinement import optimistic_process_streams
-from pddlstream.algorithms.scheduling.reinstantiate import reinstantiate_axiom
 from pddlstream.algorithms.scheduling.recover_streams import evaluations_from_stream_plan
-from pddlstream.language.constants import is_plan, Certificate, PDDLProblem, get_prefix, Solution
-from pddlstream.language.conversion import value_from_obj_expression, EQ
+from pddlstream.algorithms.scheduling.reinstantiate import reinstantiate_axiom
+from pddlstream.language.constants import Certificate, PDDLProblem, Solution, get_prefix, is_plan
+from pddlstream.language.conversion import EQ, value_from_obj_expression
 from pddlstream.language.external import DEBUG, SHARED_DEBUG
-from pddlstream.utils import elapsed_time, INF, Verbose, irange, SEPARATOR
+from pddlstream.utils import INF, SEPARATOR, Verbose, elapsed_time, irange
 
 FOCUSED_ALGORITHMS = ['focused', 'binding', 'adaptive']
 ALGORITHMS = ['incremental'] + FOCUSED_ALGORITHMS

@@ -2,10 +2,10 @@
 
 import os
 
-from pddlstream.algorithms.meta import solve, create_parser
+from pddlstream.algorithms.meta import create_parser, solve
 from pddlstream.algorithms.search import solve_from_pddl
+from pddlstream.language.constants import PDDLProblem, print_solution
 from pddlstream.utils import read
-from pddlstream.language.constants import print_solution, PDDLProblem
 
 
 def read_pddl(filename):

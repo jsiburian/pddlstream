@@ -2,27 +2,26 @@ import functools
 from collections import Counter
 from contextlib import contextmanager
 
-from pddlstream.algorithms.common import evaluations_from_init, SOLUTIONS
+from pddlstream.algorithms.common import SOLUTIONS, evaluations_from_init
 from pddlstream.algorithms.constraints import add_plan_constraints
 from pddlstream.algorithms.downward import (
-    parse_lisp,
-    parse_goal,
     has_costs,
-    set_unit_costs,
     normalize_domain_goal,
+    parse_goal,
+    parse_lisp,
     parse_sequential_domain,
+    set_unit_costs,
 )
-from pddlstream.language.constants import get_prefix, get_args
+from pddlstream.language.constants import get_args, get_prefix
 from pddlstream.language.conversion import obj_from_value_expression
-from pddlstream.language.exogenous import compile_to_exogenous, FutureValue
+from pddlstream.language.exogenous import FutureValue, compile_to_exogenous
 from pddlstream.language.external import External
 from pddlstream.language.function import parse_function, parse_predicate
-from pddlstream.language.object import Object, OptimisticObject, DebugValue
+from pddlstream.language.object import DebugValue, Object, OptimisticObject
 from pddlstream.language.optimizer import parse_optimizer
-from pddlstream.language.rule import parse_rule, apply_rules_to_streams, RULES
-from pddlstream.language.stream import parse_stream, Stream, StreamInstance
-from pddlstream.utils import INF, WallClock, WorkClock, set_clock, reset_creation_hashes
-
+from pddlstream.language.rule import RULES, apply_rules_to_streams, parse_rule
+from pddlstream.language.stream import Stream, StreamInstance, parse_stream
+from pddlstream.utils import INF, WallClock, WorkClock, reset_creation_hashes, set_clock
 
 # TODO: rename file to parsing
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.meta import solve, create_parser
 from examples.discrete_belief.dist import DeltaDist, MixtureDist, UniformDist
 from examples.discrete_belief.run import revisit_mdp_cost
-from pddlstream.language.constants import And, Equal, print_solution, PDDLProblem
-from pddlstream.utils import read, get_file_path, INF, Profiler
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import And, Equal, PDDLProblem, print_solution
+from pddlstream.utils import INF, Profiler, get_file_path, read
 
 ROOM = 'room'
 TABLE = 'table'

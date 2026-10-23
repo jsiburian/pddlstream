@@ -3,39 +3,39 @@ from collections.abc import Sequence
 
 from pddlstream.algorithms.common import INTERNAL_EVALUATION, add_fact
 from pddlstream.algorithms.downward import make_axiom
-from pddlstream.language.constants import AND, get_prefix, get_args, is_parameter, Fact, concatenate, StreamAction
+from pddlstream.language.constants import AND, Fact, StreamAction, concatenate, get_args, get_prefix, is_parameter
 from pddlstream.language.conversion import (
-    list_from_conjunction,
-    substitute_expression,
-    get_formula_operators,
-    values_from_objects,
-    obj_from_value_expression,
     evaluation_from_fact,
+    get_formula_operators,
+    list_from_conjunction,
+    obj_from_value_expression,
     objects_from_values,
+    substitute_expression,
     substitute_fact,
+    values_from_objects,
 )
 from pddlstream.language.external import (
-    ExternalInfo,
-    Result,
-    Instance,
-    External,
     DEBUG,
     SHARED_DEBUG,
+    External,
+    ExternalInfo,
+    Instance,
+    Result,
+    convert_constants,
     get_procedure_fn,
     parse_lisp_list,
     select_inputs,
-    convert_constants,
 )
-from pddlstream.language.generator import get_next, from_fn, universe_test, BoundedGenerator
+from pddlstream.language.generator import BoundedGenerator, from_fn, get_next, universe_test
 from pddlstream.language.object import (
+    DebugValue,
     Object,
     OptimisticObject,
-    UniqueOptValue,
-    SharedOptValue,
-    DebugValue,
     SharedDebugValue,
+    SharedOptValue,
+    UniqueOptValue,
 )
-from pddlstream.utils import str_from_object, get_mapping, irange, apply_mapping, get_clock
+from pddlstream.utils import apply_mapping, get_clock, get_mapping, irange, str_from_object
 
 VERBOSE_FAILURES = True
 VERBOSE_WILD = False

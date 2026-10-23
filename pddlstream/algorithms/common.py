@@ -1,9 +1,9 @@
 import time
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 
-from pddlstream.language.constants import is_plan, get_length, FAILED
+from pddlstream.language.constants import FAILED, get_length, is_plan
 from pddlstream.language.conversion import evaluation_from_fact, obj_from_value_expression, revert_solution
-from pddlstream.utils import INF, elapsed_time, check_memory, get_clock
+from pddlstream.utils import INF, check_memory, elapsed_time, get_clock
 
 # Complexity is a way to characterize the number of external evaluations required for a solution
 # Most algorithms regularize to prefer lower complexity solutions

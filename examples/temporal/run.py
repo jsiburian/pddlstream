@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
 from itertools import product
+
 import numpy as np
 
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.constants import PDDLProblem, print_solution, Output, And
-from pddlstream.utils import read_pddl, INF
-from pddlstream.language.stream import StreamInfo
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import And, Output, PDDLProblem, print_solution
 from pddlstream.language.function import FunctionInfo
 from pddlstream.language.generator import from_fn, from_test
+from pddlstream.language.stream import StreamInfo
+from pddlstream.utils import INF, read_pddl
 
 # TODO: 2 modes - check for possible inconsistency before or fail if inconsistency is detected after
 

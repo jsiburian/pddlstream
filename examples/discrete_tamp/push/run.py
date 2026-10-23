@@ -2,24 +2,25 @@
 
 import math
 import os
+
 import numpy as np
 
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.constants import And, Equal, TOTAL_COST, print_solution, Fact, PDDLProblem
-from pddlstream.language.generator import from_test, from_list_fn
-from pddlstream.language.stream import WildOutput
-from pddlstream.utils import read
-from examples.discrete_tamp.run import apply_plan
 from examples.discrete_tamp.primitives import (
     GRASP,
-    get_length,
-    get_difference,
+    DiscreteTAMPProblem,
+    DiscreteTAMPState,
     collision_test,
     distance_fn,
-    DiscreteTAMPState,
-    DiscreteTAMPProblem,
+    get_difference,
+    get_length,
 )
+from examples.discrete_tamp.run import apply_plan
 from examples.discrete_tamp.viewer import MAX_COLS
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import TOTAL_COST, And, Equal, Fact, PDDLProblem, print_solution
+from pddlstream.language.generator import from_list_fn, from_test
+from pddlstream.language.stream import WildOutput
+from pddlstream.utils import read
 
 array = lambda args: tuple(map(int, args))
 

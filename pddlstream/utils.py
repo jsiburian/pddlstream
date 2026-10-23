@@ -1,16 +1,15 @@
+import cProfile
 import math
 import os
 import pickle
-import shutil
-import tempfile
-import sys
-import time
-import cProfile
 import pstats
-
-from collections import defaultdict, deque, Counter
+import shutil
+import sys
+import tempfile
+import time
+from collections import Counter, defaultdict, deque
+from heapq import heappop, heappush
 from itertools import count
-from heapq import heappush, heappop
 
 import numpy as np
 

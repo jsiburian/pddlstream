@@ -3,9 +3,9 @@
 import argparse
 
 from pddlstream.algorithms.meta import ALGORITHMS
+from pddlstream.algorithms.satisfaction import SatisfactionProblem, constraint_satisfaction, dump_assignment
 from pddlstream.algorithms.satisfaction_planning import solve_pddlstream_satisfaction
-from pddlstream.algorithms.satisfaction import constraint_satisfaction, dump_assignment, SatisfactionProblem
-from pddlstream.language.generator import from_test, from_gen_fn, from_fn
+from pddlstream.language.generator import from_fn, from_gen_fn, from_test
 from pddlstream.language.stream import StreamInfo
 from pddlstream.utils import INF
 

@@ -1,9 +1,9 @@
-from collections import namedtuple, defaultdict
+from collections import defaultdict, namedtuple
 from heapq import heappop, heappush
 
-from pddlstream.language.conversion import is_negated_atom, fact_from_evaluation, evaluation_from_fact
+from pddlstream.language.conversion import evaluation_from_fact, fact_from_evaluation, is_negated_atom
 from pddlstream.language.statistics import check_effort
-from pddlstream.utils import HeapElement, INF
+from pddlstream.utils import INF, HeapElement
 
 Node = namedtuple('Node', ['effort', 'result'])  # TODO: include level
 EFFORT_OP = sum  # max | sum

@@ -1,39 +1,35 @@
 #!/usr/bin/env python
 
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, control_commands
-from examples.pybullet.utils.pybullet_tools.pr2_utils import get_group_joints
-from examples.pybullet.utils.pybullet_tools.utils import (
-    connect,
-    disconnect,
-    HideOutput,
-    LockRenderer,
-    wait_for_user,
-    RED,
-    has_gui,
-)
-
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.generator import from_gen_fn, from_fn, from_test
-from pddlstream.language.constants import And, print_solution, PDDLProblem
-from pddlstream.utils import read, INF, get_file_path, Profiler
-from pddlstream.language.stream import StreamInfo
-
-from examples.pybullet.pr2_belief.problems import BeliefState
-from examples.pybullet.pr2_belief.primitives import Register, Scan
-
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import apply_commands
-from examples.pybullet.utils.pybullet_tools.utils import draw_base_limits, WorldSaver
 from examples.pybullet.common import get_custom_limits as get_base_custom_limits
-
+from examples.pybullet.pr2_belief.primitives import Register, Scan
+from examples.pybullet.pr2_belief.problems import BeliefState
 from examples.pybullet.pr2_rovers.problems import PROBLEMS
 from examples.pybullet.pr2_rovers.streams import (
-    get_reachable_test,
-    get_inv_vis_gen,
-    get_inv_com_gen,
     get_above_gen,
     get_base_motion_fn,
     get_head_motion_fn,
+    get_inv_com_gen,
+    get_inv_vis_gen,
+    get_reachable_test,
 )
+from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, apply_commands, control_commands
+from examples.pybullet.utils.pybullet_tools.pr2_utils import get_group_joints
+from examples.pybullet.utils.pybullet_tools.utils import (
+    RED,
+    HideOutput,
+    LockRenderer,
+    WorldSaver,
+    connect,
+    disconnect,
+    draw_base_limits,
+    has_gui,
+    wait_for_user,
+)
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import And, PDDLProblem, print_solution
+from pddlstream.language.generator import from_fn, from_gen_fn, from_test
+from pddlstream.language.stream import StreamInfo
+from pddlstream.utils import INF, Profiler, get_file_path, read
 
 CLASSES = ['blue', 'red', 'rock', 'soil']
 

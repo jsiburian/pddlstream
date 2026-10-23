@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.constants import PDDLProblem, Or, print_solution
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import Or, PDDLProblem, print_solution
 
 DOMAIN_PDDL = """
 (define (domain debug)

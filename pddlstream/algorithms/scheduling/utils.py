@@ -1,9 +1,9 @@
-from pddlstream.algorithms.downward import add_predicate, make_predicate, get_literals, fact_from_fd
+from pddlstream.algorithms.downward import add_predicate, fact_from_fd, get_literals, make_predicate
+from pddlstream.fastdownward.translator import pddl
 from pddlstream.language.constants import And, Not
 from pddlstream.language.conversion import evaluation_from_fact
 from pddlstream.language.function import FunctionResult
 from pddlstream.utils import apply_mapping
-from pddlstream.fastdownward.translator import pddl
 
 
 def partition_results(evaluations, results, apply_now):

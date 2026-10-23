@@ -1,8 +1,7 @@
-from pddlstream.language.conversion import substitute_expression, list_from_conjunction, str_from_head
-from pddlstream.language.constants import Not, Equal, get_prefix, get_args, is_head, FunctionAction
-from pddlstream.language.external import ExternalInfo, Result, Instance, External, DEBUG_MODES, get_procedure_fn
-from pddlstream.utils import str_from_object, apply_mapping, get_clock
-
+from pddlstream.language.constants import Equal, FunctionAction, Not, get_args, get_prefix, is_head
+from pddlstream.language.conversion import list_from_conjunction, str_from_head, substitute_expression
+from pddlstream.language.external import DEBUG_MODES, External, ExternalInfo, Instance, Result, get_procedure_fn
+from pddlstream.utils import apply_mapping, get_clock, str_from_object
 
 ##################################################
 

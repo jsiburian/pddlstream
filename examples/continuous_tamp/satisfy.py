@@ -6,13 +6,13 @@ import numpy as np
 from numpy import array
 
 from examples.continuous_tamp.primitives import get_random_seed, tight
-from examples.continuous_tamp.run import pddlstream_from_tamp, display_plan, set_deterministic
-from pddlstream.language.stream import StreamInfo
-from pddlstream.language.constants import Minimize, is_parameter
+from examples.continuous_tamp.run import display_plan, pddlstream_from_tamp, set_deterministic
+from pddlstream.algorithms.satisfaction import SatisfactionProblem, constraint_satisfaction, dump_assignment
 from pddlstream.algorithms.satisfaction_planning import solve_pddlstream_satisfaction
-from pddlstream.algorithms.satisfaction import constraint_satisfaction, dump_assignment, SatisfactionProblem
+from pddlstream.language.constants import Minimize, is_parameter
+from pddlstream.language.stream import StreamInfo
 from pddlstream.language.temporal import retime_plan
-from pddlstream.utils import Profiler, INF
+from pddlstream.utils import INF, Profiler
 
 # Be careful about uniqueness here
 CONF0 = array([-5.0, 6.0])

@@ -1,14 +1,14 @@
 import os
+
 import numpy as np
 
-from pddlstream.algorithms.meta import create_parser
-from examples.motion.viewer import sample_box, get_distance, is_collision_free, create_box, draw_solution, draw_roadmap
-from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.language.generator import from_gen_fn, from_test
-from pddlstream.utils import read, user_input, str_from_object, Profiler
-from pddlstream.language.constants import PDDLProblem, print_solution
+from examples.motion.viewer import create_box, draw_roadmap, draw_solution, get_distance, is_collision_free, sample_box
 from pddlstream.algorithms.constraints import PlanConstraints
-
+from pddlstream.algorithms.incremental import solve_incremental
+from pddlstream.algorithms.meta import create_parser
+from pddlstream.language.constants import PDDLProblem, print_solution
+from pddlstream.language.generator import from_gen_fn, from_test
+from pddlstream.utils import Profiler, read, str_from_object, user_input
 
 ARRAY = np.array  # No hashing
 

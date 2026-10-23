@@ -3,12 +3,12 @@
 import numpy as np
 
 import pddlstream.language.exogenous as exogenous
-from pddlstream.algorithms.meta import solve, create_parser
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import PDDLProblem, print_solution
+from pddlstream.language.external import defer_shared, never_defer
 from pddlstream.language.generator import from_fn
 from pddlstream.language.stream import StreamInfo
-from pddlstream.utils import read, get_file_path, Profiler
-from pddlstream.language.constants import print_solution, PDDLProblem
-from pddlstream.language.external import defer_shared, never_defer
+from pddlstream.utils import Profiler, get_file_path, read
 
 exogenous.EXOGENOUS_AXIOMS = True
 exogenous.REPLACE_STREAM = False

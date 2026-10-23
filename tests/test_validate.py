@@ -2,13 +2,12 @@
 
 import pytest
 
+from examples.blocksworld.run import get_problem as get_blocksworld
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.validate import validate_solution
 from pddlstream.language.constants import And, Certificate, PDDLProblem, Solution, StreamAction
 from pddlstream.utils import INF
-
-from examples.blocksworld.run import get_problem as get_blocksworld
 
 
 @pytest.fixture(scope='module')

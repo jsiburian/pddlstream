@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.generator import from_test, from_fn, universe_test
-from pddlstream.language.constants import And, print_solution, PDDLProblem, Output
-from pddlstream.utils import read, get_file_path
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import And, Output, PDDLProblem, print_solution
+from pddlstream.language.generator import from_fn, from_test, universe_test
+from pddlstream.utils import get_file_path, read
 
 TRAJ = [0, 1]
 

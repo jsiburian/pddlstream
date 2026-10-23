@@ -1,8 +1,8 @@
+import random
+import string
 from collections import namedtuple
 
 import numpy as np
-import string
-import random
 
 from pddlstream.utils import str_eq
 

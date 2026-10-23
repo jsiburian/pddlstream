@@ -1,5 +1,5 @@
 from examples.continuous_tamp.optimizer.optimizer import has_gurobi
-from pddlstream.language.constants import is_parameter, MINIMIZE, NOT
+from pddlstream.language.constants import MINIMIZE, NOT, is_parameter
 from pddlstream.language.generator import from_list_fn
 from pddlstream.language.optimizer import OptimizerOutput
 from pddlstream.utils import INF
@@ -12,7 +12,7 @@ def create_optimizer(min_take=0, max_take=INF, max_wallet=INF, max_time=5, integ
     # https://www.fico.com/fico-xpress-optimization/docs/latest/examples/python/GUID-E77AC35C-9488-3F0A-98B4-7F5FD81AFF1D.html
     if not has_gurobi():
         raise ImportError('This generator requires Gurobi: http://www.gurobi.com/')
-    from gurobipy import Model, GRB, quicksum, GurobiError
+    from gurobipy import GRB, GurobiError, Model, quicksum
 
     def fn(outputs, facts, hint={}):
         print(outputs, facts)

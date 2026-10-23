@@ -5,7 +5,6 @@ from pddlstream.algorithms.instantiate_task import translate_and_write_pddl
 from pddlstream.fastdownward.planner import run_search, search_workspace, write_pddl, write_sas_task
 from pddlstream.utils import INF, Verbose, elapsed_time
 
-
 # TODO: manual_patterns
 # Specify on the discrete variables that are updated via conditional effects
 # http://www.fast-downward.org/Doc/PatternCollectionGenerator

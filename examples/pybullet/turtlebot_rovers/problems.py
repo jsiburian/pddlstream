@@ -1,28 +1,29 @@
-import numpy as np
 import random
-
 from collections import OrderedDict
+
+import numpy as np
+
+from examples.pybullet.tamp.problems import sample_placements
 from examples.pybullet.utils.pybullet_tools.utils import (
-    add_data_path,
-    load_pybullet,
-    set_point,
-    Point,
-    create_box,
-    stable_z,
-    HUSKY_URDF,
-    load_model,
-    TURTLEBOT_URDF,
-    joints_from_names,
-    set_joint_positions,
-    HideOutput,
-    GREY,
     BLACK,
     BLUE,
     BROWN,
+    GREY,
+    HUSKY_URDF,
     TAN,
+    TURTLEBOT_URDF,
+    HideOutput,
+    Point,
+    add_data_path,
+    create_box,
     get_bodies,
+    joints_from_names,
+    load_model,
+    load_pybullet,
+    set_joint_positions,
+    set_point,
+    stable_z,
 )
-from examples.pybullet.tamp.problems import sample_placements
 
 BASE_JOINTS = ['x', 'y', 'theta']
 

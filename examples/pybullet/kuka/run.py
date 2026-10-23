@@ -1,49 +1,49 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.meta import solve, create_parser
+from examples.pybullet.tamp.streams import get_cfree_obj_approach_pose_test, get_cfree_pose_pose_test
 from examples.pybullet.utils.pybullet_tools.kuka_primitives import (
-    BodyPose,
     BodyConf,
+    BodyPose,
     Command,
-    get_grasp_gen,
-    get_stable_gen,
-    get_ik_fn,
     get_free_motion_gen,
+    get_grasp_gen,
     get_holding_motion_gen,
+    get_ik_fn,
     get_movable_collision_test,
+    get_stable_gen,
     get_tool_link,
 )
 from examples.pybullet.utils.pybullet_tools.utils import (
+    BLOCK_URDF,
+    DRAKE_IIWA_URDF,
+    SINK_URDF,
+    SMALL_BLOCK_URDF,
+    STOVE_URDF,
+    HideOutput,
+    LockRenderer,
+    Point,
+    Pose,
     WorldSaver,
     connect,
-    get_pose,
-    set_pose,
-    Pose,
-    Point,
-    set_default_camera,
-    stable_z,
-    BLOCK_URDF,
-    SMALL_BLOCK_URDF,
-    get_configuration,
-    SINK_URDF,
-    STOVE_URDF,
-    load_model,
-    is_placement,
-    get_body_name,
     disconnect,
-    DRAKE_IIWA_URDF,
-    get_bodies,
-    HideOutput,
-    wait_for_user,
-    LockRenderer,
-    has_gui,
-    draw_pose,
     draw_global_system,
+    draw_pose,
+    get_bodies,
+    get_body_name,
+    get_configuration,
+    get_pose,
+    has_gui,
+    is_placement,
+    load_model,
+    set_default_camera,
+    set_pose,
+    stable_z,
+    wait_for_user,
 )
-from pddlstream.language.generator import from_gen_fn, from_fn, from_test
-from pddlstream.utils import read, INF, get_file_path, Profiler, str_from_object, negate_test
-from pddlstream.language.constants import print_solution, PDDLProblem
-from examples.pybullet.tamp.streams import get_cfree_pose_pose_test, get_cfree_obj_approach_pose_test
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import PDDLProblem, print_solution
+from pddlstream.language.generator import from_fn, from_gen_fn, from_test
+from pddlstream.utils import INF, Profiler, get_file_path, negate_test, read, str_from_object
 
 
 def get_fixed(robot, movable):

@@ -1,15 +1,14 @@
 import time
-
 from itertools import product
 
 from pddlstream.algorithms.instantiation import Instantiator
-from pddlstream.algorithms.scheduling.plan_streams import plan_streams, OptSolution
+from pddlstream.algorithms.scheduling.plan_streams import OptSolution, plan_streams
 from pddlstream.language.constants import FAILED, INFEASIBLE, is_plan
 from pddlstream.language.conversion import evaluation_from_fact, substitute_expression
-from pddlstream.language.function import FunctionResult, Function
-from pddlstream.language.stream import StreamResult
+from pddlstream.language.function import Function, FunctionResult
 from pddlstream.language.statistics import check_effort
-from pddlstream.utils import INF, safe_zip, get_mapping, elapsed_time
+from pddlstream.language.stream import StreamResult
+from pddlstream.utils import INF, elapsed_time, get_mapping, safe_zip
 
 
 def is_refined(stream_plan):

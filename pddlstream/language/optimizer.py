@@ -1,23 +1,23 @@
 from collections import defaultdict
 
+from pddlstream.algorithms.reorder import get_stream_plan_components
 from pddlstream.algorithms.scheduling.utils import partition_external_plan
-from pddlstream.language.constants import get_prefix, get_args, get_parameter_name, Minimize
-from pddlstream.language.conversion import substitute_expression, list_from_conjunction
-from pddlstream.language.external import parse_lisp_list, get_procedure_fn
-from pddlstream.language.function import PredicateResult, FunctionResult
+from pddlstream.language.constants import Minimize, get_args, get_parameter_name, get_prefix
+from pddlstream.language.conversion import list_from_conjunction, substitute_expression
+from pddlstream.language.external import get_procedure_fn, parse_lisp_list
+from pddlstream.language.function import FunctionResult, PredicateResult
+from pddlstream.language.generator import get_next
 from pddlstream.language.object import Object
 from pddlstream.language.stream import (
-    StreamInfo,
+    NEGATIVE_SUFFIX,
+    PartialInputs,
     Stream,
+    StreamInfo,
     StreamInstance,
     StreamResult,
-    PartialInputs,
-    NEGATIVE_SUFFIX,
     WildOutput,
 )
-from pddlstream.language.generator import get_next
 from pddlstream.utils import get_mapping, safe_zip, str_from_object
-from pddlstream.algorithms.reorder import get_stream_plan_components
 
 DEFAULT_SIMULTANEOUS = False
 DEFAULT_UNIQUE = True  # TODO: would it ever even make sense to do shared here?

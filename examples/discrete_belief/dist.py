@@ -1,7 +1,7 @@
-from .miscUtil import argmaxWithVal
-
-import random
 import copy
+import random
+
+from .miscUtil import argmaxWithVal
 
 
 # Think of this as a mixture of a distribution and something like a uniform,

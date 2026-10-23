@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.search import solve_from_pddl
 from pddlstream.algorithms.focused import solve_focused
 from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.language.constants import print_solution, PDDLProblem
+from pddlstream.algorithms.search import solve_from_pddl
+from pddlstream.language.constants import PDDLProblem, print_solution
 
 DOMAIN_PDDL = """
 (define (domain blocksworld)

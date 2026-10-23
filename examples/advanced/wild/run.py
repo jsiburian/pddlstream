@@ -2,10 +2,10 @@
 
 import random
 
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.constants import PDDLProblem, And, Exists, print_solution
-from pddlstream.language.stream import StreamInfo
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import And, Exists, PDDLProblem, print_solution
 from pddlstream.language.generator import from_fn, from_sampler
+from pddlstream.language.stream import StreamInfo
 
 # TODO:
 # Push wild streams

@@ -5,12 +5,12 @@ import subprocess
 import sys
 
 from pddlstream.algorithms.common import evaluations_from_init
-from pddlstream.algorithms.downward import parse_sequential_domain, get_problem, task_from_domain_problem
+from pddlstream.algorithms.downward import get_problem, parse_sequential_domain, task_from_domain_problem
 from pddlstream.algorithms.instantiate_task import instantiate_task
 from pddlstream.algorithms.scheduling.reinstantiate import instantiate_unsatisfiable
+from pddlstream.fastdownward.translator import pddl
 from pddlstream.language.conversion import obj_from_value_expression
 from pddlstream.language.optimizer import UNSATISFIABLE
-from pddlstream.fastdownward.translator import pddl
 
 
 def test_instantiate_domain_costs(tmp_path, monkeypatch):

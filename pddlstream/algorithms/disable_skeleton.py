@@ -1,12 +1,12 @@
+from collections import Counter
+
 from pddlstream.algorithms.downward import make_axiom
 from pddlstream.algorithms.reorder import get_partial_orders, get_stream_plan_components
 from pddlstream.algorithms.scheduling.utils import partition_external_plan
-from pddlstream.language.optimizer import UNSATISFIABLE
 from pddlstream.language.conversion import get_args, substitute_expression
 from pddlstream.language.object import OptimisticObject, UniqueOptValue
-from pddlstream.utils import grow_component, adjacent_from_edges, incoming_from_edges, get_mapping, flatten
-
-from collections import Counter
+from pddlstream.language.optimizer import UNSATISFIABLE
+from pddlstream.utils import adjacent_from_edges, flatten, get_mapping, grow_component, incoming_from_edges
 
 
 def increase_free_variables(stream_plan):

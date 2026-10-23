@@ -1,19 +1,18 @@
+import copy
 from collections import defaultdict
 
 from pddlstream.algorithms.downward import (
-    get_literals,
+    GOAL_NAME,
     apply_action,
     get_derived_predicates,
-    literal_holds,
-    GOAL_NAME,
+    get_literals,
     get_precondition,
+    literal_holds,
 )
-from pddlstream.algorithms.instantiate_task import get_goal_instance, filter_negated, get_achieving_axioms
-from pddlstream.language.constants import is_parameter
-from pddlstream.utils import Verbose, MockSet, safe_zip, flatten
-
-import copy
+from pddlstream.algorithms.instantiate_task import filter_negated, get_achieving_axioms, get_goal_instance
 from pddlstream.fastdownward.translator import axiom_rules, build_model, instantiate, options, pddl, pddl_to_prolog
+from pddlstream.language.constants import is_parameter
+from pddlstream.utils import MockSet, Verbose, flatten, safe_zip
 
 
 def get_necessary_axioms(conditions, axioms, negative_from_name):

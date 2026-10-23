@@ -1,56 +1,55 @@
 import copy
-
 from collections import defaultdict, namedtuple
 
+from pddlstream.algorithms.advanced import UNIVERSAL_TO_CONDITIONAL
 from pddlstream.algorithms.downward import (
-    get_problem,
-    task_from_domain_problem,
-    conditions_hold,
     apply_action,
+    conditions_hold,
+    evaluation_from_fd,
+    fact_from_fd,
     fd_from_fact,
+    get_problem,
     make_domain,
     make_predicate,
-    evaluation_from_fd,
-    plan_preimage,
-    fact_from_fd,
     pddl_from_instance,
+    plan_preimage,
+    task_from_domain_problem,
 )
-from pddlstream.algorithms.instantiate_task import instantiate_task, sas_from_instantiated, FD_INSTANTIATE
-from pddlstream.fastdownward.translator import get_cost_scale, scale_cost
+from pddlstream.algorithms.instantiate_task import FD_INSTANTIATE, instantiate_task, sas_from_instantiated
 from pddlstream.algorithms.scheduling.add_optimizers import (
     add_optimizer_effects,
-    using_optimizers,
     recover_simultaneous,
+    using_optimizers,
 )
 from pddlstream.algorithms.scheduling.apply_fluents import convert_fluent_streams
-from pddlstream.algorithms.scheduling.negative import recover_negative_axioms, convert_negative
+from pddlstream.algorithms.scheduling.negative import convert_negative, recover_negative_axioms
 from pddlstream.algorithms.scheduling.postprocess import postprocess_stream_plan
 from pddlstream.algorithms.scheduling.recover_axioms import recover_axioms_plans
 from pddlstream.algorithms.scheduling.recover_functions import compute_function_plan
 from pddlstream.algorithms.scheduling.recover_streams import (
-    get_achieving_streams,
-    extract_stream_plan,
     evaluations_from_stream_plan,
+    extract_stream_plan,
+    get_achieving_streams,
 )
 from pddlstream.algorithms.scheduling.stream_action import add_stream_actions
-from pddlstream.algorithms.scheduling.utils import partition_results, add_unsatisfiable_to_goal, get_instance_facts
+from pddlstream.algorithms.scheduling.utils import add_unsatisfiable_to_goal, get_instance_facts, partition_results
 from pddlstream.algorithms.search import solve_from_task
-from pddlstream.algorithms.advanced import UNIVERSAL_TO_CONDITIONAL
-from pddlstream.language.constants import Not, get_prefix, EQ, FAILED, OptPlan
+from pddlstream.fastdownward.translator import get_cost_scale, scale_cost
+from pddlstream.language.constants import EQ, FAILED, Not, OptPlan, get_prefix
 from pddlstream.language.conversion import (
     evaluation_from_fact,
     fact_from_evaluation,
-    transform_plan_args,
-    transform_action_args,
     obj_from_pddl,
+    transform_action_args,
+    transform_plan_args,
 )
-from pddlstream.language.external import Result
 from pddlstream.language.exogenous import get_fluent_domain
+from pddlstream.language.external import Result
 from pddlstream.language.function import Function
-from pddlstream.language.stream import StreamResult
 from pddlstream.language.optimizer import UNSATISFIABLE
 from pddlstream.language.statistics import compute_plan_effort
-from pddlstream.utils import Verbose, INF, get_ancestors
+from pddlstream.language.stream import StreamResult
+from pddlstream.utils import INF, Verbose, get_ancestors
 
 RENAME_ACTIONS = True
 

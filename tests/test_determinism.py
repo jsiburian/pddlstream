@@ -2,9 +2,9 @@
 
 from pddlstream.algorithms.algorithm import solve_scope
 from pddlstream.algorithms.meta import solve
+from pddlstream.fastdownward.translator import pddl
 from pddlstream.language.object import Object
 from pddlstream.utils import CreationHash, WallClock, WorkClock, get_clock
-from pddlstream.fastdownward.translator import pddl
 
 
 def test_creation_hash():

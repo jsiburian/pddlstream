@@ -1,10 +1,10 @@
 from collections import OrderedDict
 
-from pddlstream.algorithms.downward import make_action, make_parameters, make_domain
+from pddlstream.algorithms.downward import make_action, make_domain, make_parameters
 from pddlstream.language.constants import Not
 from pddlstream.language.conversion import pddl_from_object
-from pddlstream.language.statistics import check_effort
 from pddlstream.language.function import FunctionResult
+from pddlstream.language.statistics import check_effort
 from pddlstream.language.stream import StreamResult
 from pddlstream.utils import INF
 

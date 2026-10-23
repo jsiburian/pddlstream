@@ -1,37 +1,37 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.meta import solve, create_parser
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, control_commands, Attach, Detach
-from examples.pybullet.utils.pybullet_tools.utils import connect, disconnect, HideOutput, LockRenderer, wait_for_user
-from pddlstream.language.generator import from_gen_fn, from_fn, from_test
-from pddlstream.language.constants import And, print_solution, Exists, PDDLProblem
-from pddlstream.utils import read, INF, get_file_path, Profiler
-from pddlstream.language.stream import StreamInfo
-
-from examples.pybullet.pr2_belief.problems import BeliefState
+from examples.pybullet.common import get_custom_limits as get_base_custom_limits
 from examples.pybullet.pr2_belief.primitives import Register, Scan
-
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import apply_commands
+from examples.pybullet.pr2_belief.problems import BeliefState
+from examples.pybullet.turtlebot_rovers.problems import KINECT_FRAME, PROBLEMS, get_base_joints
+from examples.pybullet.turtlebot_rovers.streams import (
+    VIS_RANGE,
+    get_above_gen,
+    get_cfree_ray_test,
+    get_inv_com_gen,
+    get_inv_vis_gen,
+    get_motion_fn,
+    get_reachable_test,
+)
+from examples.pybullet.utils.pybullet_tools.pr2_primitives import Attach, Conf, Detach, apply_commands, control_commands
 from examples.pybullet.utils.pybullet_tools.utils import (
-    draw_base_limits,
-    WorldSaver,
-    get_bodies,
     RED,
+    HideOutput,
+    LockRenderer,
+    WorldSaver,
+    connect,
+    disconnect,
+    draw_base_limits,
+    get_bodies,
     has_gui,
     remove_body,
+    wait_for_user,
 )
-from examples.pybullet.common import get_custom_limits as get_base_custom_limits
-
-from examples.pybullet.turtlebot_rovers.problems import PROBLEMS, get_base_joints, KINECT_FRAME
-from examples.pybullet.turtlebot_rovers.streams import (
-    get_reachable_test,
-    get_inv_vis_gen,
-    get_inv_com_gen,
-    get_above_gen,
-    get_motion_fn,
-    get_cfree_ray_test,
-    VIS_RANGE,
-)
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import And, Exists, PDDLProblem, print_solution
+from pddlstream.language.generator import from_fn, from_gen_fn, from_test
+from pddlstream.language.stream import StreamInfo
+from pddlstream.utils import INF, Profiler, get_file_path, read
 
 CLASSES = [
     'blue',

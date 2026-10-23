@@ -2,12 +2,12 @@
 
 import numpy as np
 
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.generator import from_fn, from_constant, from_test, empty_test
-from pddlstream.language.stream import StreamInfo
-from pddlstream.utils import read, get_file_path, Profiler
-from pddlstream.language.constants import print_solution, PDDLProblem
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import PDDLProblem, print_solution
 from pddlstream.language.external import defer_unique, never_defer
+from pddlstream.language.generator import empty_test, from_constant, from_fn, from_test
+from pddlstream.language.stream import StreamInfo
+from pddlstream.utils import Profiler, get_file_path, read
 
 GRASP = np.array([0, 1])
 

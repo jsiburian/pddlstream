@@ -1,57 +1,57 @@
 #!/usr/bin/env python
 
+from examples.pybullet.common import get_custom_limits
+from examples.pybullet.pr2.run import post_process
+from examples.pybullet.tamp.problems import PROBLEMS
 from examples.pybullet.tamp.streams import (
+    BASE_CONSTANT,
+    distance_fn,
     get_cfree_approach_pose_test,
     get_cfree_pose_pose_test,
     get_cfree_traj_pose_test,
-    BASE_CONSTANT,
-    distance_fn,
 )
-
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import (
-    Pose,
     Conf,
+    Pose,
+    State,
+    apply_commands,
+    control_commands,
+    get_grasp_gen,
     get_ik_ir_gen,
     get_motion_gen,
     get_stable_gen,
-    get_grasp_gen,
-    control_commands,
 )
-from examples.pybullet.utils.pybullet_tools.pr2_utils import get_arm_joints, ARM_NAMES, get_group_joints, get_group_conf
+from examples.pybullet.utils.pybullet_tools.pr2_utils import ARM_NAMES, get_arm_joints, get_group_conf, get_group_joints
 from examples.pybullet.utils.pybullet_tools.utils import (
-    connect,
-    get_pose,
-    is_placement,
-    disconnect,
-    get_joint_positions,
     HideOutput,
     LockRenderer,
+    WorldSaver,
+    connect,
+    disconnect,
+    draw_base_limits,
+    get_joint_positions,
+    get_pose,
+    has_gui,
+    is_placement,
+    str_from_object,
     wait_for_user,
 )
-from examples.pybullet.common import get_custom_limits
-
-from pddlstream.algorithms.meta import create_parser, solve
 from pddlstream.algorithms.common import SOLUTIONS
-from pddlstream.language.generator import from_gen_fn, from_list_fn, from_fn, from_test
+from pddlstream.algorithms.meta import create_parser, solve
 from pddlstream.language.constants import (
-    Equal,
     And,
-    print_solution,
+    Equal,
     Exists,
-    get_args,
-    is_parameter,
-    get_parameter_name,
     PDDLProblem,
+    get_args,
+    get_parameter_name,
+    is_parameter,
+    print_solution,
 )
-from pddlstream.utils import read, INF, get_file_path, Profiler
 from pddlstream.language.function import FunctionInfo
+from pddlstream.language.generator import from_fn, from_gen_fn, from_list_fn, from_test
 from pddlstream.language.stream import StreamInfo
-
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import apply_commands, State
-from examples.pybullet.pr2.run import post_process
-from examples.pybullet.utils.pybullet_tools.utils import draw_base_limits, WorldSaver, has_gui, str_from_object
-
-from examples.pybullet.tamp.problems import PROBLEMS
+from pddlstream.utils import INF, Profiler, get_file_path, read
 
 # TODO: collapse similar streams into a single stream when reodering
 

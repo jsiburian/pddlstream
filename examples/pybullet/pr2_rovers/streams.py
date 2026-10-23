@@ -1,17 +1,16 @@
 import numpy as np
 
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, Trajectory, create_trajectory
+from examples.pybullet.utils.pybullet_tools.pr2_primitives import Conf, Trajectory, create_trajectory, get_custom_limits
 from examples.pybullet.utils.pybullet_tools.pr2_utils import (
     get_group_joints,
-    visible_base_generator,
     inverse_visibility,
+    visible_base_generator,
 )
-from examples.pybullet.utils.pybullet_tools.pr2_primitives import get_custom_limits
 from examples.pybullet.utils.pybullet_tools.utils import (
-    pairwise_collision,
-    get_point,
     all_between,
     get_bodies,
+    get_point,
+    pairwise_collision,
     plan_direct_joint_motion,
     plan_joint_motion,
 )

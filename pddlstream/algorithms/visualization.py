@@ -3,17 +3,17 @@ import os
 from pddlstream.algorithms.reorder import get_partial_orders
 from pddlstream.language.constants import (
     EQ,
-    get_prefix,
     get_args,
-    str_from_plan,
+    get_prefix,
     is_parameter,
-    partition_facts,
     is_plan,
+    partition_facts,
+    str_from_plan,
 )
-from pddlstream.language.conversion import str_from_fact, evaluation_from_fact
+from pddlstream.language.conversion import evaluation_from_fact, str_from_fact
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.object import OptimisticObject
-from pddlstream.utils import clear_dir, ensure_dir, str_from_object, flatten
+from pddlstream.utils import clear_dir, ensure_dir, flatten, str_from_object
 
 # https://www.graphviz.org/doc/info/
 

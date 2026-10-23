@@ -4,15 +4,14 @@ import pathlib
 
 import pytest
 
+from examples.blocksworld.run import get_problem as get_blocksworld
+from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.focused import solve_hierarchical
-from pddlstream.algorithms.incremental import solve_immediate, solve_exhaustive
+from pddlstream.algorithms.incremental import solve_exhaustive, solve_immediate
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.serialized import solve_serialized
-from pddlstream.algorithms.constraints import PlanConstraints
-from pddlstream.language.constants import print_solution, is_plan
+from pddlstream.language.constants import is_plan, print_solution
 from pddlstream.language.generator import compose_gen_fns, from_fn, gen_fn_from_wild_gen_fn
-
-from examples.blocksworld.run import get_problem as get_blocksworld
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -42,7 +41,7 @@ def test_gen_fn_from_wild_gen_fn():
 @pytest.mark.parametrize('use_skeleton', [False, True])
 def test_continuous_tamp(use_skeleton):
     from examples.continuous_tamp.primitives import tight
-    from examples.continuous_tamp.run import pddlstream_from_tamp, set_deterministic, TIGHT_SKELETON
+    from examples.continuous_tamp.run import TIGHT_SKELETON, pddlstream_from_tamp, set_deterministic
 
     set_deterministic()
     constraints = PlanConstraints(skeletons=[TIGHT_SKELETON] if use_skeleton else None, exact=True)

@@ -1,8 +1,9 @@
-import numpy as np
 import random
 
-from examples.continuous_tamp.primitives import BLOCK_WIDTH, plan_motion, GRASP
-from pddlstream.language.constants import partition_facts, NOT, MINIMIZE, is_parameter
+import numpy as np
+
+from examples.continuous_tamp.primitives import BLOCK_WIDTH, GRASP, plan_motion
+from pddlstream.language.constants import MINIMIZE, NOT, is_parameter, partition_facts
 from pddlstream.language.optimizer import OptimizerOutput
 from pddlstream.utils import INF
 
@@ -155,7 +156,7 @@ def get_optimize_fn(
     # https://www.fico.com/fico-xpress-optimization/docs/latest/examples/python/GUID-E77AC35C-9488-3F0A-98B4-7F5FD81AFF1D.html
     if not has_gurobi():
         raise ImportError('This generator requires Gurobi: http://www.gurobi.com/')
-    from gurobipy import Model, GRB, quicksum
+    from gurobipy import GRB, Model, quicksum
 
     min_x = min(x1 for x1, _ in regions.values())
     max_x = max(x2 for _, x2 in regions.values())

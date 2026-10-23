@@ -2,55 +2,54 @@
 
 import os
 import random
-import numpy as np
 import time
-
 from itertools import product
 
-from pddlstream.algorithms.meta import solve, create_parser
+import numpy as np
+
 from examples.continuous_tamp.optimizer.optimizer import cfree_motion_fn, get_optimize_fn
 from examples.continuous_tamp.primitives import (
-    get_pose_gen,
+    ENVIRONMENT_NAMES,
+    GRASP,
+    MOVE_COST,
+    PROBLEMS,
+    STOVE_NAMES,
+    SUCTION_HEIGHT,
+    apply_action,
     collision_test,
     distance_fn,
-    inverse_kin_fn,
-    get_region_test,
-    plan_motion,
-    PROBLEMS,
     draw_state,
-    get_random_seed,
-    SUCTION_HEIGHT,
-    MOVE_COST,
-    GRASP,
-    update_state,
-    ENVIRONMENT_NAMES,
-    STOVE_NAMES,
     duration_fn,
-    apply_action,
+    get_pose_gen,
+    get_random_seed,
+    get_region_test,
+    inverse_kin_fn,
+    plan_motion,
+    update_state,
 )
+from pddlstream.algorithms.constraints import WILD, PlanConstraints
 from pddlstream.algorithms.downward import get_cost_scale
-from pddlstream.algorithms.constraints import PlanConstraints, WILD
+from pddlstream.algorithms.meta import create_parser, solve
 from pddlstream.algorithms.visualization import VISUALIZATIONS_DIR
+from pddlstream.language.constants import TOTAL_COST, And, Equal, Or, Output, PDDLProblem, print_solution
 from pddlstream.language.external import defer_shared, get_defer_all_unbound, get_defer_any_unbound
-from pddlstream.language.constants import And, Equal, PDDLProblem, TOTAL_COST, print_solution, Or, Output
 from pddlstream.language.function import FunctionInfo
-from pddlstream.language.generator import from_gen_fn, from_list_fn, from_test, from_fn
+from pddlstream.language.generator import from_fn, from_gen_fn, from_list_fn, from_test
 from pddlstream.language.stream import StreamInfo
-from pddlstream.language.temporal import get_end, compute_duration, retime_plan
+from pddlstream.language.temporal import compute_duration, get_end, retime_plan
 from pddlstream.utils import (
-    ensure_dir,
-    safe_rm_dir,
-    user_input,
-    read,
     INF,
+    Profiler,
+    ensure_dir,
     get_file_path,
-    str_from_object,
-    sorted_str_from_list,
     implies,
     inclusive_range,
-    Profiler,
+    read,
+    safe_rm_dir,
+    sorted_str_from_list,
+    str_from_object,
+    user_input,
 )
-
 
 ##################################################
 

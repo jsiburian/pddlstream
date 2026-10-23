@@ -5,68 +5,67 @@ try:
 except ImportError:
     raise ImportError('This example requires PyBullet (https://pypi.org/project/pybullet/)')
 
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.algorithms.search import ABSTRIPSLayer
-from pddlstream.language.generator import from_gen_fn, from_list_fn, from_fn, from_test, accelerate_list_gen_fn
-from pddlstream.utils import read, get_file_path, Profiler
-from pddlstream.language.constants import PDDLProblem, And, Equal, print_solution
-from pddlstream.language.stream import StreamInfo
-
+from examples.discrete_belief.run import MAX_COST, clip_cost, revisit_mdp_cost
 from examples.pybullet.pr2_belief.primitives import (
-    Scan,
-    ScanRoom,
+    REG_RANGE,
+    VIS_RANGE,
     Detect,
     Register,
-    plan_head_traj,
+    Scan,
+    ScanRoom,
     get_cone_commands,
-    move_look_trajectory,
-    get_vis_base_gen,
-    get_inverse_visibility_fn,
     get_in_range_test,
-    VIS_RANGE,
-    REG_RANGE,
+    get_inverse_visibility_fn,
+    get_vis_base_gen,
+    move_look_trajectory,
+    plan_head_traj,
 )
-from examples.pybullet.pr2_belief.problems import get_problem1, USE_DRAKE_PR2, create_pr2
-from examples.pybullet.utils.pybullet_tools.pr2_utils import (
-    ARM_NAMES,
-    get_arm_joints,
-    attach_viewcone,
-    is_drake_pr2,
-    get_group_joints,
-    get_group_conf,
-)
-from examples.pybullet.utils.pybullet_tools.utils import (
-    set_pose,
-    get_pose,
-    connect,
-    clone_world,
-    disconnect,
-    set_client,
-    add_data_path,
-    WorldSaver,
-    wait_for_user,
-    get_joint_positions,
-    get_configuration,
-    set_configuration,
-    ClientSaver,
-    HideOutput,
-    is_center_stable,
-    add_body_name,
-    draw_base_limits,
-)
+from examples.pybullet.pr2_belief.problems import USE_DRAKE_PR2, create_pr2, get_problem1
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import (
+    Attach,
     Conf,
+    Detach,
+    Trajectory,
+    apply_commands,
+    get_base_limits,
+    get_grasp_gen,
     get_ik_ir_gen,
     get_motion_gen,
     get_stable_gen,
-    get_grasp_gen,
-    Attach,
-    Detach,
-    apply_commands,
-    Trajectory,
-    get_base_limits,
 )
-from examples.discrete_belief.run import revisit_mdp_cost, MAX_COST, clip_cost
+from examples.pybullet.utils.pybullet_tools.pr2_utils import (
+    ARM_NAMES,
+    attach_viewcone,
+    get_arm_joints,
+    get_group_conf,
+    get_group_joints,
+    is_drake_pr2,
+)
+from examples.pybullet.utils.pybullet_tools.utils import (
+    ClientSaver,
+    HideOutput,
+    WorldSaver,
+    add_body_name,
+    add_data_path,
+    clone_world,
+    connect,
+    disconnect,
+    draw_base_limits,
+    get_configuration,
+    get_joint_positions,
+    get_pose,
+    is_center_stable,
+    set_client,
+    set_configuration,
+    set_pose,
+    wait_for_user,
+)
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.algorithms.search import ABSTRIPSLayer
+from pddlstream.language.constants import And, Equal, PDDLProblem, print_solution
+from pddlstream.language.generator import accelerate_list_gen_fn, from_fn, from_gen_fn, from_list_fn, from_test
+from pddlstream.language.stream import StreamInfo
+from pddlstream.utils import Profiler, get_file_path, read
 
 
 def pddlstream_from_state(state, teleport=False):

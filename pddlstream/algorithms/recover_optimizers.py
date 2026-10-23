@@ -1,6 +1,6 @@
 from pddlstream.algorithms.reorder import get_stream_plan_components
 from pddlstream.algorithms.scheduling.utils import partition_external_plan
-from pddlstream.language.constants import get_prefix, is_plan, get_args
+from pddlstream.language.constants import get_args, get_prefix, is_plan
 from pddlstream.language.conversion import evaluation_from_fact
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.optimizer import ComponentStream, OptimizerStream

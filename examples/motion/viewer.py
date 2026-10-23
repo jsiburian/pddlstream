@@ -1,4 +1,4 @@
-from tkinter import Tk, Canvas, Toplevel, LAST
+from tkinter import LAST, Canvas, Tk, Toplevel
 
 import numpy as np
 

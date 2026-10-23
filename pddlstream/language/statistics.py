@@ -1,9 +1,8 @@
 import os
-
 from collections import namedtuple
 
 from pddlstream.language.constants import is_plan
-from pddlstream.utils import INF, read_pickle, ensure_dir, write_pickle, CreationHash
+from pddlstream.utils import INF, CreationHash, ensure_dir, read_pickle, write_pickle
 
 LOAD_STATISTICS = True
 SAVE_STATISTICS = True

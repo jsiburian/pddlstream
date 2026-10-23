@@ -1,29 +1,20 @@
-from collections import namedtuple, defaultdict, deque, Counter
+from collections import Counter, defaultdict, deque, namedtuple
 from time import time
 
 from pddlstream.algorithms.downward import (
-    get_literals,
-    get_precondition,
+    GOAL_NAME,
+    get_conditional_effects,
+    get_conjunctive_parts,
     get_fluents,
     get_function_assignments,
-    parse_sequential_domain,
-    parse_problem,
-    task_from_domain_problem,
-    GOAL_NAME,
+    get_literals,
+    get_precondition,
     literal_holds,
-    get_conjunctive_parts,
-    get_conditional_effects,
+    parse_problem,
+    parse_sequential_domain,
+    task_from_domain_problem,
 )
 from pddlstream.algorithms.relation import Relation, compute_order, solve_satisfaction
-from pddlstream.language.constants import is_parameter
-from pddlstream.utils import (
-    flatten,
-    apply_mapping,
-    MockSet,
-    elapsed_time,
-    Verbose,
-    str_from_object,
-)
 from pddlstream.fastdownward.planner import write_sas_task
 from pddlstream.fastdownward.translator import (
     axiom_rules,
@@ -37,7 +28,15 @@ from pddlstream.fastdownward.translator import (
     translate,
     variable_order,
 )
-
+from pddlstream.language.constants import is_parameter
+from pddlstream.utils import (
+    MockSet,
+    Verbose,
+    apply_mapping,
+    elapsed_time,
+    flatten,
+    str_from_object,
+)
 
 FD_INSTANTIATE = True
 

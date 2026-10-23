@@ -1,7 +1,8 @@
-from collections import namedtuple, defaultdict
+from collections import defaultdict, namedtuple
 from itertools import count
+
 from pddlstream.language.constants import get_parameter_name
-from pddlstream.utils import str_from_object, is_hashable, CreationHash
+from pddlstream.utils import CreationHash, is_hashable, str_from_object
 
 USE_HASH = True
 USE_OBJ_STR = True

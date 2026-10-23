@@ -1,5 +1,4 @@
-from tkinter import Tk, Canvas, Toplevel
-
+from tkinter import Canvas, Tk, Toplevel
 
 # NOTE - this will overwrite (but remember) existing drawings
 # TODO - try PyGame, PyCairo, or Pyglet

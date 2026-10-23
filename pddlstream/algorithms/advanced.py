@@ -1,14 +1,14 @@
 from collections import defaultdict
 
 from pddlstream.algorithms.downward import fd_from_fact, get_conjunctive_parts, get_disjunctive_parts
-from pddlstream.language.constants import get_prefix, get_args
+from pddlstream.fastdownward.translator import pddl
+from pddlstream.language.constants import get_args, get_prefix
 from pddlstream.language.conversion import substitute_expression
 from pddlstream.language.fluent import get_predicate_map
 from pddlstream.language.function import Function
 from pddlstream.language.optimizer import UNSATISFIABLE, ConstraintStream
 from pddlstream.language.stream import Stream
 from pddlstream.utils import find_unique, get_mapping
-from pddlstream.fastdownward.translator import pddl
 
 UNIVERSAL_TO_CONDITIONAL = False
 # TODO: AUTOMATICALLY_NEGATE = False can omit collisions

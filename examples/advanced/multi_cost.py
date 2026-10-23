@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.meta import solve, create_parser
-from pddlstream.language.constants import PDDLProblem, print_solution, And, Output
-from pddlstream.language.generator import from_gen
-from pddlstream.language.stream import StreamInfo
+from pddlstream.algorithms.meta import create_parser, solve
+from pddlstream.language.constants import And, Output, PDDLProblem, print_solution
 from pddlstream.language.function import FunctionInfo, add_opt_function
-from pddlstream.language.object import UniqueOptValue, SharedOptValue
-from pddlstream.utils import Profiler, inf_generator, INF
+from pddlstream.language.generator import from_gen
+from pddlstream.language.object import SharedOptValue, UniqueOptValue
+from pddlstream.language.stream import StreamInfo
+from pddlstream.utils import INF, Profiler, inf_generator
 
 DOMAIN_PDDL = """
 (define (domain cost)

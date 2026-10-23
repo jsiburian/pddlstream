@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from pddlstream.algorithms.search import solve_from_pddl
 from examples.ipc.rovers.run import dump_plan
+from pddlstream.algorithms.search import solve_from_pddl
 
 DOMAIN_PDDL = """
 (define (domain sanity)
