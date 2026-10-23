@@ -158,7 +158,9 @@ Some of the algorithms are radically different than others (e.g. Incremental vs 
 The **Adaptive** algorithm typically performs best for domains with many possible sampling pathways, such as robot manipulation domains.
 <!--For domains with few sampling pathways, the **Incremental** algorithm typically performs best (link to specific examples)-->
 
-The meta procedure [solve(...)](https://github.com/caelan/pddlstream/blob/da1e52aeeff9a22ef647e95b617dd71904cdbe49/pddlstream/algorithms/meta.py#L37) allows the user to toggle between avaliable algorithms using the keyword argument **algorithm={}**.
+The meta procedure `solve(...)` (in `pddlstream/algorithms/meta.py`) allows the user to toggle between available algorithms using the keyword argument **algorithm={}**.
+Its options are the fields of `SolverConfig` (`pddlstream/core/config.py`), which also documents them: pass them as keyword arguments, or build a config once and reuse it with `solve(problem, config=config)`, where keyword arguments override its fields.
+Misspelled options raise a `TypeError` before solving starts.
 
 Property descriptions:
 * **Method**: the python function that calls the algorithm

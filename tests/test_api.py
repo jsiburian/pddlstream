@@ -23,6 +23,7 @@ PUBLIC_NAMES = {
     ],
     'pddlstream.algorithms.instantiate_task': ['FD_INSTANTIATE'],
     'pddlstream.algorithms.constraints': ['PlanConstraints', 'WILD', 'OrderedSkeleton'],
+    'pddlstream.core.config': ['SolverConfig'],
     'pddlstream.language.constants': [
         'PDDLProblem',
         'Solution',

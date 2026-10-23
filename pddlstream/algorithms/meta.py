@@ -1,4 +1,5 @@
 import argparse
+import inspect
 import time
 from collections import defaultdict
 
@@ -19,14 +20,33 @@ from pddlstream.algorithms.instantiate_task import convert_instantiated, instant
 from pddlstream.algorithms.refinement import optimistic_process_streams
 from pddlstream.algorithms.scheduling.recover_streams import evaluations_from_stream_plan
 from pddlstream.algorithms.scheduling.reinstantiate import reinstantiate_axiom
+from pddlstream.core.config import ALGORITHMS, DEFAULT_ALGORITHM, FIELD_NAMES, SolverConfig
+from pddlstream.core.config import FOCUSED_ALGORITHMS as FOCUSED_ALGORITHMS  # Re-exported (name as name)
 from pddlstream.language.constants import Certificate, PDDLProblem, Solution, get_prefix, is_plan
 from pddlstream.language.conversion import EQ, value_from_obj_expression
 from pddlstream.language.external import DEBUG, SHARED_DEBUG
 from pddlstream.utils import INF, SEPARATOR, Verbose, elapsed_time, irange
 
-FOCUSED_ALGORITHMS = ['focused', 'binding', 'adaptive']
-ALGORITHMS = ['incremental'] + FOCUSED_ALGORITHMS
-DEFAULT_ALGORITHM = 'adaptive'
+# The SolverConfig fields that each algorithm takes
+INCREMENTAL_OPTIONS = [
+    'unit_costs',
+    'success_cost',
+    'max_time',
+    'max_iterations',
+    'max_memory',
+    'initial_complexity',
+    'complexity_step',
+    'max_complexity',
+    'verbose',
+    'deterministic',
+]
+FOCUSED_OPTIONS = INCREMENTAL_OPTIONS + ['unit_efforts', 'max_effort', 'effort_weight', 'reorder', 'visualize']
+ALGORITHM_OPTIONS = {
+    'incremental': INCREMENTAL_OPTIONS,
+    'focused': FOCUSED_OPTIONS,
+    'binding': FOCUSED_OPTIONS,
+    'adaptive': FOCUSED_OPTIONS + ['max_skeletons', 'search_sample_ratio'],
+}
 
 ##################################################
 
@@ -76,7 +96,8 @@ def solve(
     visualize=False,
     verbose=True,
     deterministic=False,
-    **search_kwargs,
+    config=None,
+    **kwargs,
 ):
     """
     Solves a PDDLStream problem generically using one of the available algorithms
@@ -109,112 +130,32 @@ def solve(
     :param verbose: if True, print the result of each stream application
     :param deterministic: if True, make seeded runs repeatable: time-based decisions (e.g. the sampling budget) count
         work units instead of seconds, and saved stream statistics are not loaded. max_time is still wall-clock time
-    :param search_kwargs: keyword args for the search subroutine, such as planner (a key of SEARCH_OPTIONS),
+    :param config: a SolverConfig holding these options; keyword arguments that differ from their defaults
+        override its fields
+    :param kwargs: the other SolverConfig fields, such as the search options planner (a key of SEARCH_OPTIONS),
         max_planner_time and debug. Each search runs in a private temporary directory, except that debug=True
-        prints FastDownward's output and keeps its files in ./temp/ (temp_dir=... chooses another directory)
+        prints FastDownward's output and keeps its files in ./temp/ (temp_dir=... chooses another directory).
+        Unknown names raise a TypeError before solving starts
 
     :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
         (or None), cost is the cost of the plan (INF if no plan), and evaluations is init expanded
         using stream applications
     """
-
-    # TODO: print the arguments using locals()
-    # TODO: could instead make common arguments kwargs but then they could have different default values
+    arguments = {name: value for name, value in locals().items() if name in FIELD_NAMES}
+    defaults = {name: p.default for name, p in inspect.signature(solve).parameters.items() if name in FIELD_NAMES}
+    overrides = {name: value for name, value in arguments.items() if value != defaults[name]}
+    config = SolverConfig.from_kwargs(config, **overrides, **kwargs)
     # TODO: portfolios of PDDLStream algorithms
-    if algorithm == 'incremental':
-        return solve_incremental(
-            problem=problem,
-            constraints=constraints,
-            unit_costs=unit_costs,
-            success_cost=success_cost,
-            max_iterations=max_iterations,
-            max_time=max_time,
-            max_memory=max_memory,
-            initial_complexity=initial_complexity,
-            complexity_step=complexity_step,
-            max_complexity=max_complexity,
-            verbose=verbose,
-            deterministic=deterministic,
-            **search_kwargs,
-        )
 
-    fail_fast = max_failures < INF
-    if algorithm == 'focused':
-        return solve_focused_original(
-            problem,
-            constraints=constraints,
-            stream_info=stream_info,
-            replan_actions=replan_actions,
-            unit_costs=unit_costs,
-            success_cost=success_cost,
-            max_time=max_time,
-            max_iterations=max_iterations,
-            max_memory=max_memory,
-            initial_complexity=initial_complexity,
-            complexity_step=complexity_step,
-            max_complexity=max_complexity,
-            fail_fast=fail_fast,  # bind=bind, max_failures=max_failures,
-            unit_efforts=unit_efforts,
-            max_effort=max_effort,
-            effort_weight=effort_weight,
-            reorder=reorder,
-            visualize=visualize,
-            verbose=verbose,
-            deterministic=deterministic,
-            **search_kwargs,
-        )
-
-    if algorithm == 'binding':
-        return solve_binding(
-            problem,
-            constraints=constraints,
-            stream_info=stream_info,
-            replan_actions=replan_actions,
-            unit_costs=unit_costs,
-            success_cost=success_cost,
-            max_time=max_time,
-            max_iterations=max_iterations,
-            max_memory=max_memory,
-            initial_complexity=initial_complexity,
-            complexity_step=complexity_step,
-            max_complexity=max_complexity,
-            fail_fast=fail_fast,  # bind=bind, max_failures=max_failures,
-            unit_efforts=unit_efforts,
-            max_effort=max_effort,
-            effort_weight=effort_weight,
-            reorder=reorder,
-            visualize=visualize,
-            verbose=verbose,
-            deterministic=deterministic,
-            **search_kwargs,
-        )
-
-    if algorithm == 'adaptive':
-        return solve_adaptive(
-            problem,
-            constraints=constraints,
-            stream_info=stream_info,
-            replan_actions=replan_actions,
-            unit_costs=unit_costs,
-            success_cost=success_cost,
-            max_time=max_time,
-            max_iterations=max_iterations,
-            max_memory=max_memory,
-            initial_complexity=initial_complexity,
-            complexity_step=complexity_step,
-            max_complexity=max_complexity,
-            max_skeletons=max_skeletons,
-            search_sample_ratio=search_sample_ratio,
-            unit_efforts=unit_efforts,
-            max_effort=max_effort,
-            effort_weight=effort_weight,
-            reorder=reorder,
-            visualize=visualize,
-            verbose=verbose,
-            deterministic=deterministic,
-            **search_kwargs,
-        )
-    raise NotImplementedError(algorithm)
+    options = {name: getattr(config, name) for name in ALGORITHM_OPTIONS[config.algorithm]}
+    options.update(config.search_kwargs())
+    if config.algorithm == 'incremental':
+        return solve_incremental(problem, constraints=constraints, **options)
+    options.update(stream_info=stream_info, replan_actions=replan_actions)
+    if config.algorithm == 'adaptive':
+        return solve_adaptive(problem, constraints=constraints, **options)
+    solver = solve_focused_original if config.algorithm == 'focused' else solve_binding
+    return solver(problem, constraints=constraints, fail_fast=config.max_failures < INF, **options)
 
 
 ##################################################

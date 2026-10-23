@@ -1,4 +1,5 @@
 import functools
+import inspect
 from collections import Counter
 from contextlib import contextmanager
 
@@ -12,6 +13,7 @@ from pddlstream.algorithms.downward import (
     parse_sequential_domain,
     set_unit_costs,
 )
+from pddlstream.core.config import SEARCH_FIELDS, check_keywords
 from pddlstream.language.constants import get_args, get_prefix
 from pddlstream.language.conversion import obj_from_value_expression
 from pddlstream.language.exogenous import FutureValue, compile_to_exogenous
@@ -109,10 +111,15 @@ def solve_scope(deterministic=False):
 
 
 def scoped_solve(solve_fn):
-    """Runs a solver inside solve_scope; the solver also receives deterministic, e.g. to skip loading statistics."""
+    """Runs a solver inside solve_scope; the solver also receives deterministic, e.g. to skip loading statistics.
+    Keyword arguments that are neither the solver's parameters nor search options raise a TypeError up front, rather
+    than deep inside the search."""
+    parameters = inspect.signature(solve_fn).parameters
+    valid = [name for name, p in parameters.items() if p.kind is not inspect.Parameter.VAR_KEYWORD] + SEARCH_FIELDS
 
     @functools.wraps(solve_fn)
     def wrapper(problem, *args, deterministic=False, **kwargs):
+        check_keywords(kwargs, valid, f'{solve_fn.__name__}()')
         with solve_scope(deterministic):
             return solve_fn(problem, *args, deterministic=deterministic, **kwargs)
 
