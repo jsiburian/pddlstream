@@ -1,3 +1,5 @@
+"""Solves a constraint satisfaction problem by compiling it into a planning problem: clusters of constraints become
+actions whose parameters are the cluster's variables, and any PDDLStream algorithm solves the result."""
 from collections import namedtuple
 
 from pddlstream.algorithms.meta import solve

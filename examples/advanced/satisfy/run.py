@@ -3,7 +3,7 @@
 import argparse
 
 from pddlstream.algorithms.meta import ALGORITHMS
-from pddlstream.retired.satisfaction import solve_pddlstream_satisfaction
+from pddlstream.algorithms.satisfaction_planning import solve_pddlstream_satisfaction
 from pddlstream.algorithms.satisfaction import constraint_satisfaction, dump_assignment, \
     SatisfactionSolution, SatisfactionProblem
 from pddlstream.language.generator import from_test, from_gen_fn, from_fn

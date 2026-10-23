@@ -9,7 +9,7 @@ from examples.pybullet.utils.pybullet_tools.pr2_utils import get_arm_joints, ARM
     get_group_conf
 from examples.pybullet.utils.pybullet_tools.utils import connect, get_pose, is_placement, disconnect, \
     get_joint_positions, HideOutput, LockRenderer, wait_for_user
-from examples.pybullet.namo.stream import get_custom_limits
+from examples.pybullet.common import get_custom_limits
 
 from pddlstream.algorithms.meta import create_parser, solve
 from pddlstream.algorithms.common import SOLUTIONS

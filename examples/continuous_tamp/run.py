@@ -11,7 +11,7 @@ from pddlstream.algorithms.meta import solve, create_parser
 from examples.continuous_tamp.optimizer.optimizer import cfree_motion_fn, get_optimize_fn
 from examples.continuous_tamp.primitives import get_pose_gen, collision_test, distance_fn, inverse_kin_fn, \
     get_region_test, plan_motion, PROBLEMS, draw_state, get_random_seed, SUCTION_HEIGHT, MOVE_COST, GRASP, \
-    update_state, ENVIRONMENT_NAMES, STOVE_NAMES, duration_fn
+    update_state, ENVIRONMENT_NAMES, STOVE_NAMES, duration_fn, apply_action
 from pddlstream.algorithms.downward import get_cost_scale
 from pddlstream.algorithms.constraints import PlanConstraints, WILD
 #from pddlstream.algorithms.serialized import solve_serialized
@@ -121,6 +121,28 @@ def pddlstream_from_tamp(tamp_problem, use_stream=True, use_optimizer=False, col
     return PDDLProblem(domain_pddl, constant_map, external_pddl, stream_map, init, goal)
 
 ##################################################
+
+def step_plan(tamp_problem, plan):
+    """Shows a plan action by action, waiting for the user after each step."""
+    from examples.continuous_tamp.viewer import ContinuousTMPViewer
+    from examples.discrete_tamp.viewer import COLORS
+    if plan is None:
+        return
+    colors =dict(zip(sorted(tamp_problem.initial.block_poses.keys()), COLORS))
+    viewer = ContinuousTMPViewer(SUCTION_HEIGHT, tamp_problem.regions, title='Continuous TAMP')
+    state = tamp_problem.initial
+    print()
+    print(state)
+    draw_state(viewer, state, colors)
+    user_input('Start?')
+    for i, action in enumerate(plan):
+        name, args = action
+        print(i, name, args)
+        for state in apply_action(state, action):
+            print(state)
+            draw_state(viewer, state, colors)
+            user_input('Continue?')
+    user_input('Finish?')
 
 def display_plan(tamp_problem, plan, display=True, save=False, time_step=0.025, sec_per_step=1e-3):
     from examples.continuous_tamp.viewer import ContinuousTMPViewer

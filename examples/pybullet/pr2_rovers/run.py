@@ -16,7 +16,7 @@ from examples.pybullet.pr2_belief.primitives import Register, Scan
 
 from examples.pybullet.utils.pybullet_tools.pr2_primitives import apply_commands
 from examples.pybullet.utils.pybullet_tools.utils import draw_base_limits, WorldSaver
-from examples.pybullet.namo.stream import get_custom_limits as get_base_custom_limits
+from examples.pybullet.common import get_custom_limits as get_base_custom_limits
 
 from examples.pybullet.pr2_rovers.problems import PROBLEMS
 from examples.pybullet.pr2_rovers.streams import get_reachable_test, get_inv_vis_gen, get_inv_com_gen, get_above_gen, \

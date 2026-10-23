@@ -4,8 +4,7 @@ import argparse
 
 from examples.continuous_tamp.primitives import get_pose_gen, distance_fn, inverse_kin, \
     get_region_test, plan_motion, MOVE_COST, GRASP
-from examples.continuous_tamp.run import display_plan, initialize, create_problem, dump_pddlstream
-from examples.continuous_tamp.unfactored.run import step_plan
+from examples.continuous_tamp.run import display_plan, initialize, create_problem, dump_pddlstream, step_plan
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.language.constants import PDDLProblem, print_solution
 from pddlstream.language.function import FunctionInfo
