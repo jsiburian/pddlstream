@@ -98,7 +98,7 @@ def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport
 
     custom_limits = {}
     if base_limits is not None:
-        custom_limits.update(get_custom_limits(robot, problem.base_limits))
+        custom_limits.update(get_custom_limits(robot, base_limits))
 
     stream_map = {
         'sample-pose': from_gen_fn(get_stable_gen(problem, collisions=collisions)),
@@ -157,7 +157,8 @@ def main(verbose=True):
     #    handles.append(draw_link_name(problem.robot, link))
     #wait_for_user()
 
-    pddlstream_problem = pddlstream_from_problem(problem, collisions=not args.cfree, teleport=args.teleport)
+    pddlstream_problem = pddlstream_from_problem(problem, base_limits=problem.base_limits,
+                                                 collisions=not args.cfree, teleport=args.teleport)
     stream_info = {
         'inverse-kinematics': StreamInfo(),
         'plan-base-motion': StreamInfo(overhead=1e1),

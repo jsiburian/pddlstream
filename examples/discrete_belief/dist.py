@@ -370,9 +370,12 @@ class MixtureDist(DiscreteDist):
 
 
 def mixDDists(dists):
-    support = {key for dist in dists for key in dist.support()}
+    # dists: a {dist: weight} dict or a sequence of (dist, weight) pairs.
+    # Pairs keep equal components (e.g. two identical DeltaDists) from collapsing into one dict key.
+    pairs = list(dists.items()) if isinstance(dists, dict) else list(dists)
+    support = {key for dist, _ in pairs for key in dist.support()}
     assert support
-    return DDist({key: sum(weight*dist.prob(key) for dist, weight in dists.items())
+    return DDist({key: sum(weight*dist.prob(key) for dist, weight in pairs)
                   for key in support})
 
 
@@ -389,7 +392,7 @@ def MixtureDD(d1, d2, p):
     distributions.  Alternatively, we could assume that d1 and d2 are
     DDists and compute a new DDist.
     """
-    return mixDDists({d1: p, d2: 1 - p})
+    return mixDDists([(d1, p), (d2, 1 - p)])
 
 
 def triangleDist(peak, halfWidth, lo=None, hi=None):

@@ -179,6 +179,8 @@ def print_plan(plan):
 
 def print_solution(solution):
     plan, cost, evaluations = solution
+    if isinstance(evaluations, Certificate): # Solvers return a Certificate of (all_facts, preimage_facts)
+        evaluations = evaluations.all_facts
     solved = is_plan(plan)
     if plan is None:
         num_deferred = 0

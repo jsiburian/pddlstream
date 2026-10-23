@@ -352,7 +352,7 @@ def main(teleport=False):
                 solution = solve_incremental(pddlstream_problem,
                                              max_planner_time=max_planner_time,
                                              success_cost=success_cost, max_time=args.max_time,
-                                             start_complexity=INF,
+                                             initial_complexity=INF,
                                              verbose=True, debug=True)
             elif args.algorithm == 'focused':
                 solution = solve_focused(pddlstream_problem, stream_info=stream_info,

@@ -212,7 +212,7 @@ def main():
         'test-cfree-traj-pose': StreamInfo(p_success=1e-1),
         'compute-motion': StreamInfo(eager=True, p_success=0),
         'test-reachable': StreamInfo(eager=True),
-        'Distance': FunctionInfo(eager=True),
+        'Cost': FunctionInfo(eager=True),
     }
     _, _, _, stream_map, init, goal = pddlstream_problem
     print('Init:', init)

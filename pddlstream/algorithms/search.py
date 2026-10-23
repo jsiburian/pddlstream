@@ -131,10 +131,10 @@ def prune_hierarchy_pre_eff(sas_task, layers):
     for op in sas_task.operators:
         for k, pair in reversed(list(enumerate(op.prevail))):
             if pair in pruned:
-                op.prevail.pop(0)
+                op.prevail.pop(k)
     for k, pair in reversed(list(enumerate(sas_task.goal.pairs))):
         if pair in pruned:
-            sas_task.goal.pairs.pop(0)
+            sas_task.goal.pairs.pop(k)
     return pruned
 
 

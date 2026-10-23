@@ -148,17 +148,18 @@ def compose_gen_fns(*gen_fns):
     # TODO: specify info about what to compose
     # TODO: alternatively, make a new stream that composes several
     def gen_fn(*inputs):
-        queue = deque([Composed([], 0, gen_fns[0](*inputs))])
+        queue = deque([Composed(tuple(), 0, gen_fns[0](*inputs))])
         while queue:
             composed = queue.popleft()
             new_outputs_list, terminated = get_next(composed.generator)
             for new_outputs in new_outputs_list:
-                outputs = composed.outputs + new_outputs
+                outputs = composed.outputs + tuple(new_outputs)
                 if composed.step == (len(gen_fns) - 1):
                     yield outputs
                 else:
                     next_step = composed.step + 1
-                    generator = gen_fns[next_step](*(inputs + composed.output_values))
+                    # Each later stage receives the original inputs followed by all outputs so far
+                    generator = gen_fns[next_step](*(inputs + outputs))
                     queue.append(Composed(outputs, next_step, generator))
             if not new_outputs_list:
                 yield None
@@ -179,4 +180,4 @@ def gen_fn_from_wild_gen_fn(wild_gen_fn):
     def gen_fn(*args, **kwargs):
         for output_list, _ in wild_gen_fn(*args, **kwargs):
             yield output_list
-    return wild_gen_fn
+    return gen_fn

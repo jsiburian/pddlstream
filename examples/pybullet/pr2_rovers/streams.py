@@ -16,7 +16,7 @@ def get_fixed_bodies(problems):
 
 
 def get_reachable_test(problem):
-    def test(bq):
+    def test(v, bq):
         return True
     return test
 

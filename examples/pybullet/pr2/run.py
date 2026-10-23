@@ -141,7 +141,7 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
 
     goal = [AND]
     if problem.goal_conf is not None:
-        goal_conf = Pose(robot, problem.goal_conf)
+        goal_conf = Conf(robot, get_group_joints(robot, 'base'), problem.goal_conf)
         init += [('BConf', goal_conf)]
         goal += [('AtBConf', goal_conf)]
     goal += [('Holding', a, b) for a, b in problem.goal_holding] + \
@@ -184,7 +184,9 @@ def post_process(problem, plan, teleport=False):
         elif name == 'pick':
             a, b, p, g, _, c = args
             [t] = c.commands
-            close_gripper = GripperCommand(problem.robot, a, g.grasp_width, teleport=teleport)
+            # compute_grasp_width returns a gripper configuration, but GripperCommand takes one position for all joints
+            grasp_width = g.grasp_width[0] if isinstance(g.grasp_width, (tuple, list)) else g.grasp_width
+            close_gripper = GripperCommand(problem.robot, a, grasp_width, teleport=teleport)
             attach = Attach(problem.robot, a, g, b)
             new_commands = [t, close_gripper, attach, t.reverse()]
         elif name == 'place':

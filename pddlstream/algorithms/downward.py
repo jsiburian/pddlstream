@@ -558,7 +558,7 @@ def apply_action(state, action):
             state.add(effect)
 
 def apply_axiom(state, axiom):
-    assert(isinstance(state, pddl.PropositionalAxiom))
+    assert(isinstance(axiom, pddl.PropositionalAxiom))
     state.add(axiom.effect)
 
 def is_valid_plan(initial_state, plan): #, goal):

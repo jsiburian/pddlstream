@@ -172,7 +172,7 @@ def main():
 
     with Profiler(field='cumtime', num=25): # cumtime | tottime
         with LockRenderer(lock=not args.enable):
-            solution = solve(pddlstream_problem, stream_info=stream_info,
+            solution = solve(pddlstream_problem, algorithm=args.algorithm, stream_info=stream_info,
                                      planner=planner, max_planner_time=max_planner_time,
                                      unit_costs=args.unit, success_cost=success_cost,
                                      max_time=args.max_time, verbose=True, debug=False,

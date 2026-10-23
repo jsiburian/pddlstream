@@ -3,7 +3,7 @@
 import argparse
 
 from examples.continuous_tamp.primitives import get_pose_gen, distance_fn, inverse_kin, \
-    get_region_test, plan_motion, MOVE_COST
+    get_region_test, plan_motion, MOVE_COST, GRASP
 from examples.continuous_tamp.run import display_plan, initialize, create_problem, dump_pddlstream
 from examples.continuous_tamp.unfactored.run import step_plan
 from pddlstream.algorithms.incremental import solve_incremental
@@ -46,6 +46,7 @@ def pddlstream_from_tamp(tamp_problem):
         'dist': distance_fn,
     }
     init, goal = create_problem(tamp_problem)
+    init.extend(('Grasp', b, GRASP) for b in tamp_problem.initial.block_poses) # No grasp stream in this domain
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 

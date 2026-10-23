@@ -131,13 +131,13 @@ def main(success_cost=INF, use_costs=True): # 0 | INF
 
     with Profiler():
         if args.algorithm == 'focused':
-            solution = solve_pddlstream_satisfaction(satisfaction_problem, incremental=False, stream_info=stream_info,
+            solution = solve_pddlstream_satisfaction(satisfaction_problem, algorithm='adaptive', stream_info=stream_info,
                                                      #search_sample_ratio=1,
                                                      #max_skeletons=1,
                                                      success_cost=success_cost, max_time=args.max_time)
         elif args.algorithm == 'incremental':
             assert not args.gurobi
-            solution = solve_pddlstream_satisfaction(satisfaction_problem, incremental=True,
+            solution = solve_pddlstream_satisfaction(satisfaction_problem, algorithm='incremental',
                                                      success_cost=success_cost, max_time=args.max_time,
                                                      verbose=False, debug=False)
         else:

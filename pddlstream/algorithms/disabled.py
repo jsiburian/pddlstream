@@ -3,7 +3,7 @@ import time
 from pddlstream.algorithms.common import add_facts, add_certified, is_instance_ready, UNKNOWN_EVALUATION
 from pddlstream.algorithms.algorithm import remove_blocked
 from pddlstream.language.constants import OptPlan
-from pddlstream.language.function import FunctionResult
+from pddlstream.language.function import FunctionResult, PredicateResult
 from pddlstream.language.stream import StreamResult
 from pddlstream.language.conversion import is_plan, transform_action_args, replace_expression
 from pddlstream.utils import INF, safe_zip, apply_mapping, flatten, elapsed_time
@@ -65,8 +65,14 @@ def process_instance(store, domain, instance, disable=False):
         instance.disable(evaluations, domain)
     for result in new_results:
         #add_certified(evaluations, result)  # TODO: only add if the fact is actually new?
-        complexity = INF if (not disable or result.external.is_special) else \
-            result.compute_complexity(evaluations)
+        if isinstance(result, PredicateResult):
+            # External predicates have no separate blocked fact: the planner reads their value directly,
+            # so an INF complexity would hide known values and let it plan through them
+            complexity = result.compute_complexity(evaluations)
+        elif not disable or result.external.is_special:
+            complexity = INF
+        else:
+            complexity = result.compute_complexity(evaluations)
         add_facts(evaluations, result.get_certified(), result=result, complexity=complexity)
     if disable:
         remove_blocked(evaluations, domain, instance, new_results)

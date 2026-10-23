@@ -117,7 +117,7 @@ def main():
 
     np.set_printoptions(precision=2)
     if args.deterministic:
-        random.seed(seed=0)
+        random.seed(0)
         np.random.seed(seed=0)
     print('Random seed:', get_random_seed())
 

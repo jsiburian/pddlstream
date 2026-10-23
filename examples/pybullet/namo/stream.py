@@ -75,12 +75,6 @@ def get_test_cfree_traj_pose(problem):
             #    if pairwise_collision(b1, b2):
             #        return False
             if pairwise_collision(r, b2):
-                set_renderer(True)
-                color = get_visual_data(b2)[0].rgbaColor
-                handles = add_line(point_from_conf(t.path[0].values, z=0.02),
-                                   point_from_conf(t.path[-1].values, z=0.02), color=color)
-                wait_for_user()
-                set_renderer(False)
                 return False
         return True
     return test

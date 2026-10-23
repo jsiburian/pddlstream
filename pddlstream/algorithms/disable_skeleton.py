@@ -61,8 +61,7 @@ def compute_failed_indices(skeleton):
 def current_failed_cluster(binding):
     assert 1 <= binding.visits
     failed_result = binding.skeleton.stream_plan[binding.index]
-    successful_results = [result for i, result in enumerate(binding.skeleton.stream_plan)
-                          if i not in binding.stream_indices]
+    successful_results = binding.skeleton.stream_plan[:binding.index] # Results bound so far
     stream_plan = successful_results + [failed_result]
     partial_orders = get_partial_orders(stream_plan)
     # All connected components
@@ -84,8 +83,9 @@ def current_failure_contributors(binding):
             continue
         result = binding.skeleton.stream_plan[index]
         ancestors = grow_component([result], incoming)
-        if ancestors & failed_ancestors:
-            failed_ancestors.update(ancestors)
+        if set(ancestors) & set(failed_ancestors):
+            # grow_component returns ordered lists; merge without reordering
+            failed_ancestors.extend(r for r in ancestors if r not in failed_ancestors)
     return [failed_ancestors]
 
 

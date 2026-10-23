@@ -69,7 +69,7 @@ def get_future_p_successes(stream_plan):
     incoming_edges, outgoing_edges = neighbors_from_orders(orders)
     descendants_map = {}
     for s1 in reversed(stream_plan):
-        descendants_map[s1] = s1.instance.get_p_success()
+        descendants_map[s1] = s1.external.get_p_success()
         for s2 in outgoing_edges[s1]:
             descendants_map[s1] *= descendants_map[s2]
     return descendants_map
@@ -173,7 +173,7 @@ def greedy_reorder_stream_plan(stream_plan, **kwargs):
     if not stream_plan:
         return stream_plan
     return topological_sort(stream_plan, get_partial_orders(stream_plan),
-                            priority_fn=lambda s: s.get_statistics().overhead)
+                            priority_fn=lambda s: s.external.get_statistics().overhead)
 
 ##################################################
 

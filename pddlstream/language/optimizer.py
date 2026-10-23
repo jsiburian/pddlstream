@@ -177,7 +177,6 @@ class OptimizerInstance(StreamInstance):
     def __init__(self, stream, input_objects, fluent_facts):
         super(OptimizerInstance, self).__init__(stream, input_objects, fluent_facts)
         all_constraints = frozenset(range(len(self.external.certified)))
-        print(all_constraints)
         self.infeasible = {all_constraints}
         # TODO: might need to block separate clusters at once in order to ensure that it captures the true behavior
         # TODO: connected components on facts

@@ -326,9 +326,13 @@ class StreamInstance(Instance):
     #########################
 
     def get_representative_optimistic(self):
-        for opt_gn in self.opt_gens:
-            if (opt_gn is not None) and opt_gn.history and opt_gn.history[0]:
-                return opt_gn.history[0][0]
+        # Prefer the most abstract optimistic generator (a user-provided opt_gen_fn when there is one) so that
+        # refined objects keep its values, which downstream opt_gen_fns and function opt_fns expect.
+        # The unique level (index 0) only yields UniqueOptValue placeholders and serves as the fallback.
+        for opt_index in reversed(range(len(self.opt_gens))):
+            opt_gen = self._create_opt_generator(opt_index)
+            if opt_gen.history and opt_gen.history[0]:
+                return opt_gen.history[0][0]
         return None
 
     def wrap_optimistic(self, output_values, call_index):

@@ -181,7 +181,7 @@ def solve_immediate(problem, **kwargs):
         (or None), cost is the cost of the plan, and evaluations is init but expanded
         using stream applications
     """
-    return solve_incremental(problem, start_complexity=0, complexity_step=0, max_complexity=0, **kwargs)
+    return solve_incremental(problem, initial_complexity=0, complexity_step=0, max_complexity=0, **kwargs)
 
 def solve_exhaustive(problem, **kwargs):
     """
@@ -193,4 +193,4 @@ def solve_exhaustive(problem, **kwargs):
         (or None), cost is the cost of the plan, and evaluations is init but expanded
         using stream applications
     """
-    return solve_incremental(problem, start_complexity=INF, complexity_step=INF, max_complexity=INF, **kwargs)
+    return solve_incremental(problem, initial_complexity=INF, complexity_step=INF, max_complexity=INF, **kwargs)

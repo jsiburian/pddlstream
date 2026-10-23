@@ -55,7 +55,7 @@ def get_belief_problem(deterministic, observable):
         p_look_fp = p_look_fn = 0.1
 
     return BeliefProblem(initial, goal, locations,
-                         p_move_s, p_look_fn, p_look_fp)
+                         p_move_s, p_look_fp=p_look_fp, p_look_fn=p_look_fn)
 
 ##################################################
 

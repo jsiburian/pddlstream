@@ -301,5 +301,4 @@ def solve_hierarchical(problem, **kwargs):
         (or None), cost is the cost of the plan, and evaluations is init but expanded
         using stream applications
     """
-    return solve_adaptive(problem, max_skeletons=1, search_sample_ratio=INF, # TODO: rename to sample_search_ratio
-                          bind=None, max_failures=None, **kwargs)
+    return solve_adaptive(problem, max_skeletons=1, search_sample_ratio=INF, **kwargs) # TODO: rename to sample_search_ratio

@@ -114,6 +114,9 @@ def pddlstream_from_tamp(tamp_problem, use_stream=True, use_optimizer=False, col
     #stream_map = 'debug'
 
     init, goal = create_problem(tamp_problem)
+    if not use_stream:
+        # Grasps come from the s-grasp stream, which the optimizer-only configuration does not load
+        init += [('Grasp', b, GRASP) for b in tamp_problem.initial.block_poses]
 
     return PDDLProblem(domain_pddl, constant_map, external_pddl, stream_map, init, goal)
 
@@ -183,7 +186,7 @@ MUTEXES = [
 ##################################################
 
 def set_deterministic(seed=0):
-    random.seed(seed=seed)
+    random.seed(seed)
     np.random.seed(seed=seed)
 
 def initialize(parser):

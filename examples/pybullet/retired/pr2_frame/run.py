@@ -74,7 +74,7 @@ def pddlstream_from_problem(problem, teleport=False, movable_collisions=False):
 
     goal = ['and']
     if problem.goal_conf is not None:
-        goal_conf = Pose(robot, problem.goal_conf)
+        goal_conf = Conf(robot, get_group_joints(robot, 'base'), problem.goal_conf)
         init += [('BConf', goal_conf)]
         goal += [('AtBConf', goal_conf)]
     goal += [('Holding', a, b) for a, b in problem.goal_holding] + \
@@ -83,7 +83,7 @@ def pddlstream_from_problem(problem, teleport=False, movable_collisions=False):
                      [('Cooked', b)  for b in problem.goal_cooked]
 
     stream_map = {
-        'sample-pose': get_stable_gen(problem),
+        'sample-pose': from_gen_fn(get_stable_gen(problem)),
         'sample-grasp': from_list_fn(get_grasp_gen(problem)),
         'inverse-kinematics': from_gen_fn(get_ik_ir_gen(problem, teleport=teleport)),
 
