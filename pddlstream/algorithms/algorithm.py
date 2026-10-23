@@ -1,3 +1,4 @@
+import dataclasses
 import functools
 import inspect
 from collections import Counter
@@ -13,7 +14,16 @@ from pddlstream.algorithms.downward import (
     parse_sequential_domain,
     set_unit_costs,
 )
-from pddlstream.core.config import SEARCH_FIELDS, check_keywords
+from pddlstream.core.config import FIELD_NAMES, SEARCH_FIELDS, check_keywords
+from pddlstream.core.context import (
+    SolveContext,
+    WallClock,
+    WorkClock,
+    activate,
+    apply_legacy_flags,
+    get_config,
+    get_context,
+)
 from pddlstream.language.constants import get_args, get_prefix
 from pddlstream.language.conversion import obj_from_value_expression
 from pddlstream.language.exogenous import FutureValue, compile_to_exogenous
@@ -23,7 +33,7 @@ from pddlstream.language.object import DebugValue, Object, OptimisticObject
 from pddlstream.language.optimizer import parse_optimizer
 from pddlstream.language.rule import RULES, apply_rules_to_streams, parse_rule
 from pddlstream.language.stream import Stream, StreamInstance, parse_stream
-from pddlstream.utils import INF, WallClock, WorkClock, reset_creation_hashes, set_clock
+from pddlstream.utils import INF, reset_creation_hashes
 
 # TODO: rename file to parsing
 
@@ -87,41 +97,47 @@ def reset_globals():
     SOLUTIONS[:] = []
 
 
-_solve_depth = 0
-
-
 @contextmanager
-def solve_scope(deterministic=False):
-    """Wraps a top-level solve. With deterministic=True, decisions based on elapsed time use work units instead of
-    seconds (max_time is still wall-clock time). Afterwards, the object registries are cleared, so every solve starts
-    from the same state. Nested solves share the outer solve's scope."""
-    global _solve_depth
-    if _solve_depth:
-        yield
+def solve_scope(config=None):
+    """Makes config (by default the current one) the current solve's configuration while solving. With
+    config.deterministic, decisions based on elapsed time use work units instead of seconds (max_time is still
+    wall-clock time). Nested solves keep the outer solve's clock. After the outermost solve, the object registries
+    are cleared, so every solve starts from the same state."""
+    config = apply_legacy_flags(config or get_config())
+    outer = get_context()
+    if outer is not None:
+        with activate(SolveContext(config, outer.clock)):
+            yield
         return
-    _solve_depth += 1
-    previous_clock = set_clock(WorkClock() if deterministic else WallClock())
     try:
-        yield
+        with activate(SolveContext(config, WorkClock() if config.deterministic else WallClock())):
+            yield
     finally:
-        set_clock(previous_clock)
-        _solve_depth -= 1
         # Cleared afterwards rather than beforehand because callers may create objects before solving (satisfaction)
         reset_registries()
 
 
 def scoped_solve(solve_fn):
-    """Runs a solver inside solve_scope; the solver also receives deterministic, e.g. to skip loading statistics.
+    """Runs a solver inside solve_scope, with the current configuration updated by the solver's arguments.
     Keyword arguments that are neither the solver's parameters nor search options raise a TypeError up front, rather
     than deep inside the search."""
-    parameters = inspect.signature(solve_fn).parameters
-    valid = [name for name, p in parameters.items() if p.kind is not inspect.Parameter.VAR_KEYWORD] + SEARCH_FIELDS
+    signature = inspect.signature(solve_fn)
+    var_keyword = [name for name, p in signature.parameters.items() if p.kind is inspect.Parameter.VAR_KEYWORD]
+    valid = [name for name in signature.parameters if name not in var_keyword] + SEARCH_FIELDS
 
     @functools.wraps(solve_fn)
-    def wrapper(problem, *args, deterministic=False, **kwargs):
+    def wrapper(problem, *args, **kwargs):
         check_keywords(kwargs, valid, f'{solve_fn.__name__}()')
-        with solve_scope(deterministic):
-            return solve_fn(problem, *args, deterministic=deterministic, **kwargs)
+        bound = signature.bind(problem, *args, **kwargs)
+        bound.apply_defaults()
+        arguments = dict(bound.arguments)
+        for name in var_keyword:
+            arguments.update(arguments.pop(name))
+        config = dataclasses.replace(
+            get_config(), **{name: arguments[name] for name in FIELD_NAMES if name in arguments}
+        )
+        with solve_scope(config):
+            return solve_fn(problem, *args, **kwargs)
 
     return wrapper
 

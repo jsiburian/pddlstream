@@ -3,6 +3,7 @@ from itertools import count
 
 from pddlstream.algorithms.common import INTERNAL_EVALUATION, add_fact
 from pddlstream.algorithms.downward import add_predicate, get_fluents, make_action, make_axiom, make_predicate
+from pddlstream.core.context import get_config
 from pddlstream.fastdownward.translator import pddl
 from pddlstream.language.constants import Evaluation, Head, get_args, get_prefix
 from pddlstream.language.conversion import (
@@ -16,6 +17,7 @@ from pddlstream.language.external import get_domain_predicates
 from pddlstream.language.generator import from_fn
 from pddlstream.language.stream import Stream
 
+# Deprecated: pass exogenous_axioms=... or exogenous_future_values=... to solve() instead of assigning these
 EXOGENOUS_AXIOMS = True
 REPLACE_STREAM = True
 
@@ -40,7 +42,7 @@ class FutureValue:
 
 class FutureStream(Stream):
     def __init__(self, stream, static_domain, fluent_domain, static_certified):
-        prefix = 'future-' if REPLACE_STREAM else ''
+        prefix = 'future-' if get_config().exogenous_future_values else ''
         stream_name = f'{prefix}{stream.name}'
         self.original = stream
         self.fluent_domain = tuple(fluent_domain)
@@ -92,7 +94,7 @@ def create_static_stream(stream, evaluations, fluent_predicates, future_fn):
     stream_atom = (f'{stream.name}-result',) + tuple(stream.inputs + stream.outputs)
     new_certified = [stream_atom] + list(map(future_fn, stream.certified))
     static_stream = FutureStream(stream, new_domain, fluent_domain, new_certified)
-    if REPLACE_STREAM:
+    if get_config().exogenous_future_values:
         static_stream.gen_fn = from_fn(static_fn)
         static_stream.opt_gen_fn = static_opt_gen_fn
     return static_stream
@@ -145,7 +147,7 @@ def compile_to_exogenous_actions(evaluations, domain, streams):
             )
         )
         stream.certified = tuple(set(stream.certified) | set(map(future_fn, stream.certified)))
-    if REPLACE_STREAM:
+    if get_config().exogenous_future_values:
         streams.extend(new_streams)
     else:
         streams[:] = new_streams
@@ -226,7 +228,7 @@ def compile_to_exogenous_axioms(evaluations, domain, streams):
                 ]
             )
         stream.certified = tuple(set(stream.certified) | set(map(future_fn, stream.certified)))
-    if REPLACE_STREAM:
+    if get_config().exogenous_future_values:
         streams.extend(new_streams)
     else:
         streams[:] = new_streams
@@ -243,7 +245,7 @@ def compile_to_exogenous(evaluations, domain, streams):
         'Warning! The following predicates are mentioned in both action effects '
         f'and stream domain conditions: {exogenous_predicates}'
     )
-    if EXOGENOUS_AXIOMS:
+    if get_config().exogenous_axioms:
         compile_to_exogenous_axioms(evaluations, domain, streams)
     else:
         compile_to_exogenous_actions(evaluations, domain, streams)

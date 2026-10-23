@@ -5,8 +5,13 @@ import dataclasses
 import pytest
 
 from pddlstream.algorithms import meta
+from pddlstream.algorithms.algorithm import solve_scope
+from pddlstream.algorithms.common import evaluations_from_init
+from pddlstream.algorithms.downward import get_problem, parse_sequential_domain, task_from_domain_problem
 from pddlstream.algorithms.focused import solve_adaptive
 from pddlstream.core.config import SolverConfig
+from pddlstream.core.context import get_config
+from pddlstream.language.conversion import obj_from_value_expression
 
 
 @pytest.fixture
@@ -49,3 +54,39 @@ def test_config_is_frozen():
     with pytest.raises(dataclasses.FrozenInstanceError):
         config.max_time = 1
     assert dataclasses.replace(config, max_time=1).max_time == 1
+
+
+def test_legacy_module_flags(monkeypatch):
+    from pddlstream.language import statistics
+
+    monkeypatch.setattr(statistics, 'LOAD_STATISTICS', False)
+    with pytest.warns(FutureWarning, match='pass load_statistics=False'):
+        assert get_config().load_statistics is False
+    with pytest.warns(FutureWarning), solve_scope(SolverConfig(save_statistics=False)):
+        assert (get_config().load_statistics, get_config().save_statistics) == (False, False)
+
+
+def test_fd_instantiate(monkeypatch):
+    # Assigning instantiate_task.FD_INSTANTIATE used to have no effect, since it was bound as a default argument
+    from pddlstream.algorithms import instantiate_task as module
+
+    calls = []
+    instantiate_domain = module.instantiate_domain
+    monkeypatch.setattr(
+        module, 'instantiate_domain', lambda task, **kwargs: calls.append(task) or instantiate_domain(task)
+    )
+
+    def make_task():  # Instantiation normalizes the task in place
+        domain = parse_sequential_domain("""(define (domain t) (:requirements :strips) (:predicates (Adj ?a ?b) (At ?l))
+          (:action move :parameters (?a ?b) :precondition (and (Adj ?a ?b) (At ?a))
+                        :effect (and (At ?b) (not (At ?a)))))""")
+        evaluations = evaluations_from_init([('Adj', 'l1', 'l2'), ('At', 'l1')])
+        goal = obj_from_value_expression(('At', 'l2'))
+        return task_from_domain_problem(domain, get_problem(evaluations, goal, domain))
+
+    with solve_scope(SolverConfig(fd_instantiate=False)):
+        module.instantiate_task(make_task())
+    monkeypatch.setattr(module, 'FD_INSTANTIATE', False)
+    with pytest.warns(FutureWarning, match='pass fd_instantiate=False'):
+        module.instantiate_task(make_task())
+    assert len(calls) == 2

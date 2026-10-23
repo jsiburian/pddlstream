@@ -3,7 +3,7 @@ import inspect
 import time
 from collections import defaultdict
 
-from pddlstream.algorithms.algorithm import parse_problem
+from pddlstream.algorithms.algorithm import parse_problem, solve_scope
 from pddlstream.algorithms.common import evaluations_from_init
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.downward import (
@@ -149,13 +149,14 @@ def solve(
 
     options = {name: getattr(config, name) for name in ALGORITHM_OPTIONS[config.algorithm]}
     options.update(config.search_kwargs())
-    if config.algorithm == 'incremental':
-        return solve_incremental(problem, constraints=constraints, **options)
-    options.update(stream_info=stream_info, replan_actions=replan_actions)
-    if config.algorithm == 'adaptive':
-        return solve_adaptive(problem, constraints=constraints, **options)
-    solver = solve_focused_original if config.algorithm == 'focused' else solve_binding
-    return solver(problem, constraints=constraints, fail_fast=config.max_failures < INF, **options)
+    with solve_scope(config):  # The solver's options also reach the context, but not, e.g., load_statistics
+        if config.algorithm == 'incremental':
+            return solve_incremental(problem, constraints=constraints, **options)
+        options.update(stream_info=stream_info, replan_actions=replan_actions)
+        if config.algorithm == 'adaptive':
+            return solve_adaptive(problem, constraints=constraints, **options)
+        solver = solve_focused_original if config.algorithm == 'focused' else solve_binding
+        return solver(problem, constraints=constraints, fail_fast=config.max_failures < INF, **options)
 
 
 ##################################################

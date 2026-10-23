@@ -1,9 +1,11 @@
 import os
 from collections import namedtuple
 
+from pddlstream.core.context import get_config
 from pddlstream.language.constants import is_plan
 from pddlstream.utils import INF, CreationHash, ensure_dir, read_pickle, write_pickle
 
+# Deprecated: pass load_statistics=False or save_statistics=False to solve() instead of assigning these
 LOAD_STATISTICS = True
 SAVE_STATISTICS = True
 
@@ -60,7 +62,7 @@ def get_data_path(stream_name):
 
 
 def load_data(pddl_name):
-    if not LOAD_STATISTICS:
+    if not get_config().load_statistics:
         return {}
     for filename in [get_data_path(pddl_name), os.path.join(LEGACY_DATA_DIR, f'{pddl_name}.pkl')]:
         if os.path.exists(filename):
@@ -135,7 +137,7 @@ def write_stream_statistics(externals, verbose):
         previous_statistics = previous_data.get(external.name, {})
         data[external.name] = merge_data(external, previous_statistics)
 
-    if not SAVE_STATISTICS:
+    if not get_config().save_statistics:
         return
     filename = get_data_path(pddl_name)
     ensure_dir(filename)

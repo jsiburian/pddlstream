@@ -7,11 +7,12 @@ from pddlstream.algorithms.downward import get_problem, task_from_domain_problem
 from pddlstream.algorithms.instantiate_task import sas_from_pddl
 from pddlstream.algorithms.instantiation import Instantiator
 from pddlstream.algorithms.search import abstrips_solve_from_task
+from pddlstream.core.context import get_clock
 from pddlstream.language.constants import is_plan
 from pddlstream.language.conversion import obj_from_pddl_plan
 from pddlstream.language.statistics import load_stream_statistics, write_stream_statistics
 from pddlstream.language.stream import Stream
-from pddlstream.utils import INF, get_clock, str_from_object
+from pddlstream.utils import INF, str_from_object
 
 UPDATE_STATISTICS = False
 

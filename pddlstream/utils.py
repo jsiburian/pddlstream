@@ -119,52 +119,6 @@ def reset_creation_hashes():
     _creation_counter = count()
 
 
-class WallClock:
-    """Measures time in seconds."""
-
-    unit = 'seconds'
-
-    def now(self):
-        return time.time()
-
-    def charge(self, work):
-        pass
-
-
-class WorkClock:
-    """Measures time in work units that the solver charges for each stream call and search, so that decisions based
-    on elapsed time (sampling budgets, stream overhead estimates) are reproducible."""
-
-    unit = 'work units'
-
-    def __init__(self):
-        self.work = 0.0
-
-    def now(self):
-        return self.work
-
-    def charge(self, work):
-        self.work += work
-
-
-CALL_WORK = 1.0  # Work units charged per stream or function call
-SEARCH_WORK = 10.0  # Work units charged per FastDownward search
-BINDING_WORK = 0.1  # Work units charged per processed skeleton binding, so sampling loops always advance
-
-_clock = WallClock()
-
-
-def get_clock():
-    """The clock that the current solve's time-based decisions use."""
-    return _clock
-
-
-def set_clock(clock):
-    global _clock
-    previous, _clock = _clock, clock
-    return previous
-
-
 def safe_zip(sequence1, sequence2):
     assert len(sequence1) == len(sequence2)
     return zip(sequence1, sequence2)

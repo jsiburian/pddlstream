@@ -3,6 +3,7 @@ from collections.abc import Sequence
 
 from pddlstream.algorithms.common import INTERNAL_EVALUATION, add_fact
 from pddlstream.algorithms.downward import make_axiom
+from pddlstream.core.context import get_clock
 from pddlstream.language.constants import AND, Fact, StreamAction, concatenate, get_args, get_prefix, is_parameter
 from pddlstream.language.conversion import (
     evaluation_from_fact,
@@ -35,7 +36,7 @@ from pddlstream.language.object import (
     SharedOptValue,
     UniqueOptValue,
 )
-from pddlstream.utils import apply_mapping, get_clock, get_mapping, irange, str_from_object
+from pddlstream.utils import apply_mapping, get_mapping, irange, str_from_object
 
 VERBOSE_FAILURES = True
 VERBOSE_WILD = False

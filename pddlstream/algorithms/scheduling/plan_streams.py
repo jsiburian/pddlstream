@@ -15,7 +15,7 @@ from pddlstream.algorithms.downward import (
     plan_preimage,
     task_from_domain_problem,
 )
-from pddlstream.algorithms.instantiate_task import FD_INSTANTIATE, instantiate_task, sas_from_instantiated
+from pddlstream.algorithms.instantiate_task import instantiate_task, sas_from_instantiated
 from pddlstream.algorithms.scheduling.add_optimizers import (
     add_optimizer_effects,
     recover_simultaneous,
@@ -34,6 +34,7 @@ from pddlstream.algorithms.scheduling.recover_streams import (
 from pddlstream.algorithms.scheduling.stream_action import add_stream_actions
 from pddlstream.algorithms.scheduling.utils import add_unsatisfiable_to_goal, get_instance_facts, partition_results
 from pddlstream.algorithms.search import solve_from_task
+from pddlstream.core.context import get_config
 from pddlstream.fastdownward.translator import get_cost_scale, scale_cost
 from pddlstream.language.constants import EQ, FAILED, Not, OptPlan, get_prefix
 from pddlstream.language.conversion import (
@@ -115,7 +116,7 @@ def instantiate_optimizer_axioms(instantiated, domain, results):
     # TODO: UNSATISFIABLE might be in atoms making the goal always infeasible
     with Verbose():
         # TODO: the FastDownward instantiation prunes static preconditions
-        use_fd = False if using_optimizers(results) else FD_INSTANTIATE
+        use_fd = False if using_optimizers(results) else get_config().fd_instantiate
         new_instantiated = instantiate_task(
             task_from_domain_problem(temp_domain, temp_problem),
             use_fd=use_fd,

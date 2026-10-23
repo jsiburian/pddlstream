@@ -2,9 +2,11 @@
 
 from pddlstream.algorithms.algorithm import solve_scope
 from pddlstream.algorithms.meta import solve
+from pddlstream.core.config import INF, SolverConfig
+from pddlstream.core.context import WallClock, WorkClock, get_clock, get_config
 from pddlstream.fastdownward.translator import pddl
 from pddlstream.language.object import Object
-from pddlstream.utils import CreationHash, WallClock, WorkClock, get_clock
+from pddlstream.utils import CreationHash
 
 
 def test_creation_hash():
@@ -15,11 +17,12 @@ def test_creation_hash():
 
 def test_solve_scope():
     assert isinstance(get_clock(), WallClock)
-    with solve_scope(deterministic=True):
+    with solve_scope(SolverConfig(deterministic=True)):
         clock = get_clock()
         assert isinstance(clock, WorkClock)
-        with solve_scope(deterministic=False):  # Nested solves share the outer scope
-            assert get_clock() is clock
+        with solve_scope(SolverConfig(deterministic=False, max_time=5)):  # Nested solves keep the outer clock
+            assert (get_clock() is clock) and (get_config().max_time == 5)
+        assert get_config().max_time == INF
         Object.from_value('value')
         assert Object.has_value('value')
     assert isinstance(get_clock(), WallClock)

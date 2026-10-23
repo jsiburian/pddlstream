@@ -8,16 +8,15 @@ from pddlstream.algorithms.common import COMPLEXITY_OP, add_certified, stream_pl
 from pddlstream.algorithms.disabled import bind_action_plan, process_instance, update_bindings, update_cost
 from pddlstream.algorithms.reorder import get_output_objects, get_partial_orders
 from pddlstream.algorithms.visualization import visualize_stream_orders
+from pddlstream.core.context import BINDING_WORK, get_clock
 from pddlstream.language.constants import FAILED, INFEASIBLE, is_plan
 from pddlstream.language.conversion import evaluation_from_fact
 from pddlstream.language.function import FunctionResult
 from pddlstream.utils import (
-    BINDING_WORK,
     INF,
     CreationHash,
     HeapElement,
     elapsed_time,
-    get_clock,
     get_mapping,
     incoming_from_edges,
     outgoing_from_edges,

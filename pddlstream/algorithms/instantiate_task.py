@@ -15,6 +15,7 @@ from pddlstream.algorithms.downward import (
     task_from_domain_problem,
 )
 from pddlstream.algorithms.relation import Relation, compute_order, solve_satisfaction
+from pddlstream.core.context import get_config
 from pddlstream.fastdownward.planner import write_sas_task
 from pddlstream.fastdownward.translator import (
     axiom_rules,
@@ -38,6 +39,7 @@ from pddlstream.utils import (
     str_from_object,
 )
 
+# Deprecated: pass fd_instantiate=False to solve() instead of assigning this (it was previously ignored)
 FD_INSTANTIATE = True
 
 InstantiatedTask = namedtuple(
@@ -209,7 +211,10 @@ def dump_instantiated(instantiated):
     )
 
 
-def instantiate_task(task, check_infeasible=True, use_fd=FD_INSTANTIATE, **kwargs):
+def instantiate_task(task, check_infeasible=True, use_fd=None, **kwargs):
+    """use_fd selects FastDownward's instantiator rather than pddlstream's (by default config.fd_instantiate)."""
+    if use_fd is None:
+        use_fd = get_config().fd_instantiate
     start_time = time()
     print()
     normalize.normalize(task)

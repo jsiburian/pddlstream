@@ -28,6 +28,7 @@ from pddlstream.algorithms import focused, incremental, meta, satisfaction, sear
 from pddlstream.algorithms.algorithm import solve_scope
 from pddlstream.algorithms.common import SolutionStore
 from pddlstream.algorithms.validate import validate_solution
+from pddlstream.core.config import SolverConfig
 from pddlstream.language.constants import Action, is_plan
 from pddlstream.language.external import Instance
 from pddlstream.utils import INF
@@ -89,7 +90,8 @@ class Recorder:
                 if kind != PDDLSTREAM:
                     return self.record(solver, kind, problem, args, kwargs)
                 kwargs.setdefault('deterministic', self.deterministic)
-                with solve_scope(self.deterministic):  # Keeps the objects alive until the plan is validated
+                # Keeps the objects alive until the plan is validated
+                with solve_scope(SolverConfig(deterministic=self.deterministic)):
                     return self.record(solver, kind, problem, args, kwargs)
             finally:
                 self.depth -= 1

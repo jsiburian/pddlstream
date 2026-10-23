@@ -210,7 +210,7 @@ Decisions that otherwise depend on elapsed time, such as the adaptive algorithm'
 Seed your samplers (`random`, `numpy.random`) as usual.
 
 Without `deterministic=True`, the solvers load the stream statistics (success rates and overheads) saved by earlier runs, so runs also depend on what ran before.
-The statistics are saved per stream file in `~/.cache/pddlstream/statistics/` (`$XDG_CACHE_HOME/pddlstream/` if set, or `$PDDLSTREAM_CACHE_DIR`); delete them to start fresh.
+The statistics are saved per stream file in `~/.cache/pddlstream/statistics/` (`$XDG_CACHE_HOME/pddlstream/` if set, or `$PDDLSTREAM_CACHE_DIR`); delete them to start fresh, or pass `load_statistics=False` or `save_statistics=False` to `solve()`.
 Statistics that earlier versions saved in `./statistics/` are still read.
 
 ## Search Subroutines

@@ -2,16 +2,12 @@
 
 import numpy as np
 
-import pddlstream.language.exogenous as exogenous
 from pddlstream.algorithms.meta import create_parser, solve
 from pddlstream.language.constants import PDDLProblem, print_solution
 from pddlstream.language.external import defer_shared, never_defer
 from pddlstream.language.generator import from_fn
 from pddlstream.language.stream import StreamInfo
 from pddlstream.utils import Profiler, get_file_path, read
-
-exogenous.EXOGENOUS_AXIOMS = True
-exogenous.REPLACE_STREAM = False
 
 
 class Latent:
@@ -121,6 +117,7 @@ def main(planner='max-astar', defer=False):
             planner=planner,
             stream_info=stream_info,
             replan_actions=replan_actions,
+            exogenous_future_values=False,
         )
     print_solution(solution)
 
