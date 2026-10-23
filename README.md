@@ -39,44 +39,43 @@ Most notably, it adheres to PDDL conventions and syntax whenever possible and co
 
 ## Installation
 
-<!--$ git clone --recursive --branch main https://github.com/caelan/pddlstream.git-->
+Dependencies, including the compilers used to build FastDownward, are managed with [pixi](https://pixi.sh):
 ```
-$ git clone --recursive --branch main git@github.com:caelan/pddlstream.git
-$ cd pddlstream
-pddlstream$ git submodule update --init --recursive
-pddlstream$ ./downward/build.py
-```
-<!--```
 $ git clone --recursive https://github.com/caelan/pddlstream.git
-
-If building fails, install FastDownward's dependencies using your package manager:
-* APT (Linux): `$ sudo apt-get install cmake g++ g++-multilib make python`
-<!--* Homebrew (OS X): TBD
-* MacPorts (OS X): TBD
-* N/A (Windows): install each dependency manually-->
-
-If necessary, see FastDownward's [documentation](http://www.fast-downward.org/ObtainingAndRunningFastDownward) for more detailed installation instructions.
-
-<!--My FastDownward "fork" is several years old. If you have trouble compiling FastDownward on a newer machine, try installing the experimental [downward](https://github.com/caelan/pddlstream/tree/downward) PDDLStream branch.-->
-
-PDDLStream actively supports python2.7 as well as the most recent version of python3.
-<!--(many robotics applications still require python2.7)-->
-
-Make sure to recursively update **pddlstream**'s submodules when pulling new commits.
+$ cd pddlstream
+pddlstream$ pixi run setup
 ```
-pddlstream$ git pull --recurse-submodules
+`pixi run setup` fetches the FastDownward and pybullet-planning submodules and compiles FastDownward.
+pixi installs **pddlstream** in editable mode, so `import pddlstream` works from any directory inside the environment (`pixi shell`, or `pixi run python ...`).
+
+Environments:
+* `default`: the library, the FastDownward toolchain, and the dependencies of the Tkinter and PyBullet examples (Python 3.14, NumPy 2).
+* `full`: adds pygraphviz and matplotlib (`visualize=True`) and gurobipy for the optimizer examples. Use it with `pixi run -e full ...`; Gurobi requires a license for non-trivial models.
+
+Other tasks:
+* `pixi run build-fd`: rebuild FastDownward.
+* `pixi run clean-fd`: delete the FastDownward build (needed after switching compilers).
+* `pixi run build-ikfast`: optionally compile the PR2 IKFast solver; PyBullet IK is used otherwise.
+* `pixi run test`: run the example test suite.
+
+PDDLStream requires Python 3.12 or newer.
+A non-editable `pip install .` is not supported because FastDownward is located relative to the source checkout.
+Without pixi, install CMake and a C++ compiler, then run `CMAKE_POLICY_VERSION_MINIMUM=3.5 CXXFLAGS=-Wno-template-body ./downward/build.py` and `pip install -e .` (the `CXXFLAGS` setting is only needed for GCC 15 and newer).
+See FastDownward's [documentation](http://www.fast-downward.org/ObtainingAndRunningFastDownward) for more detailed build instructions.
+
+Make sure to recursively update **pddlstream**'s submodules when pulling new commits, then rebuild FastDownward:
+```
+pddlstream$ ./update.sh
 ```
 
 ## Examples
 
 This repository contains several robotic and non-robotic PDDLStream example domains.
+The commands below assume an activated environment (`pixi shell`); otherwise, prefix them with `pixi run`.
 
 ### PyBullet
 
-Install PyBullet on OS X or Linux using: 
-```
-$ pip install pybullet numpy scipy
-```
+PyBullet and the [pybullet-planning](https://github.com/caelan/pybullet-planning) submodule are included in the default environment.
 
 Examples:
 * PR2 TAMP: `pddlstream$ python -m examples.pybullet.tamp.run`
@@ -103,23 +102,19 @@ See https://github.com/caelan/pybullet-planning for more information about my Py
 
 ### Python TKinter
 
-Install numpy and Python TKinter on Linux using: 
-```
-$ sudo apt-get install python-tk
-$ pip install numpy
-```
+Tkinter is included in the default environment.
 
 Examples:
 * 1D Continuous TAMP: `pddlstream$ python -m examples.continuous_tamp.run`
 * 2D Motion Planning: `pddlstream$ python -m examples.motion.run`
 * Discrete TAMP: `pddlstream$ python -m examples.discrete_tamp.run`
-* Discrete TAMP with pushing: `pddlstream$ python -m examples.discrete_tamp.run`
+* Discrete TAMP with pushing: `pddlstream$ python -m examples.discrete_tamp.push.run`
 
 <img src="images/discrete_tamp.png" height="100">&emsp;<img src="images/continuous_tamp.png" height="100">&emsp;<img src="images/motion.png" height="100">
 
 ### Pure Python
 
-Simple examples that can be run without additional dependencies:
+Simple examples that only need the core library:
 * Blocksworld: `pddlstream$ python -m examples.blocksworld.run`
 * Blocksworld with Derived Predicates: `pddlstream$ python -m examples.blocksworld.run_derived`
 * Kitchen (debug streams): `pddlstream$ python -m examples.kitchen.run`
@@ -136,7 +131,8 @@ Test cases or advanced (and undocumented) functionality:
 * Exogenous streams (observations): `pddlstream$ python -m examples.advanced.exogenous.run`
 * Fluent streams (state constraints): `pddlstream$ python -m examples.advanced.fluent.run`
 * Constraint satisfaction: `pddlstream$ python -m examples.advanced.satisfy.run`
-* Wild streams (ad hoc certification): `pddlstream$ python -m examples.advanced.wild.run`
+* Wild streams (ad hoc certification with `WildOutput`): `pddlstream$ python -m examples.discrete_tamp.push.run` and `pddlstream$ python -m examples.continuous_tamp.ffrob.run`
+* Objects created by streams (cutting carrots): `pddlstream$ python -m examples.advanced.wild.run`
 
 ### International Planning Competition (IPC)
 
@@ -274,12 +270,10 @@ Diverse Planners:
 
 ### Drake
 
-Install Drake on OS X or Ubuntu by following the following instructions: http://drake.mit.edu/installation.html.
-
-Alternatively, install Drake through docker by following the following instructions: http://manipulation.csail.mit.edu/install_drake_docker.html. Use the appropriate docker_run_bash script with docker tag drake-20181128.
+The Drake example in `examples/retired/drake` no longer runs: it was written for Python 2 and the 2018 pydrake API (docker tag drake-20181128), and it is not part of the pixi environments.
 
 Examples:
-* Kuka IIWA task and motion planning: `~/pddlstream$ python -m examples.drake.run`
+* Kuka IIWA task and motion planning: `examples/retired/drake/run.py`
 <!--[![Kuka IIWA](https://img.youtube.com/vi/3HJrkgIGK7c/0.jpg)](https://www.youtube.com/watch?v=3HJrkgIGK7c)-->
 <img src="images/drake_kuka.png" height="150">
 
