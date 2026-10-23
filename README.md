@@ -74,6 +74,12 @@ Make sure to recursively update **pddlstream**'s submodules when pulling new com
 pddlstream$ ./update.sh
 ```
 
+## Documentation
+
+* [Writing streams](docs/writing-streams.md): problems, stream declarations and procedures, options and debugging.
+* [Architecture](docs/architecture.md): how the package is organized and what happens during a solve.
+* [Migrating from earlier versions](docs/migration.md): new options, results and import paths, and what was removed.
+
 ## Examples
 
 This repository contains several robotic and non-robotic PDDLStream example domains.
