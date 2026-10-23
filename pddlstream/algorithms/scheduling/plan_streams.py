@@ -156,6 +156,8 @@ def recover_stream_plan(
     negative,
     replan_step,
 ):
+    """Recovers the stream plan that supports an optimistic action plan, and schedules each of its results either
+    now (the returned eager plan) or deferred to the step of the action plan that needs it (in the OptPlan)."""
     # Universally quantified conditions are converted into negative axioms
     # Existentially quantified conditions are made additional preconditions
     # Universally quantified effects are instantiated by doing the cartesian produce of types (slow)
@@ -173,15 +175,46 @@ def recover_stream_plan(
     function_plan.update(negative_plan)
     # TODO: OrderedDict for these plans
 
+    steps_from_fact, last_from_fact = get_fact_steps(full_preimage, real_states[0], negative_preimage, function_plan)
+    stream_plan, last_from_stream = partition_current_plan(
+        current_plan, function_plan, negative, action_plan, replan_step
+    )
+    stream_plan, node_from_atom = extract_supporting_streams(
+        evaluations, domain, node_from_atom, stream_plan, function_plan, last_from_fact, last_from_stream
+    )
+    evaluate_bound_ancestors(stream_plan, node_from_atom, last_from_stream)
+
+    first_from_stream = get_first_steps(real_task.init, stream_plan, action_plan)
+    if first_from_stream:
+        replan_step = min(replan_step, *first_from_stream.values())
+    eager_plan, results_from_step = schedule_results(stream_plan, first_from_stream, last_from_stream, replan_step)
+
+    # TODO: some sort of obj side-effect bug that requires obj_from_pddl to be applied last
+    # (likely due to fluent streams)
+    eager_plan = convert_fluent_streams(eager_plan, real_states, action_plan, steps_from_fact, node_from_atom)
+    combined_plan = []
+    for step, action in enumerate(action_plan):
+        combined_plan.extend(result.get_action() for result in results_from_step[step])
+        combined_plan.append(transform_action_args(pddl_from_instance(action), obj_from_pddl))
+    preimage_facts = get_preimage_facts(full_preimage, negative_plan, eager_plan)
+    return eager_plan, OptPlan(combined_plan, preimage_facts)
+
+
+def get_fact_steps(full_preimage, initial_state, negative_preimage, function_plan):
+    """The steps at which the plan uses each positive preimage fact, and the earliest of them (last_from_fact)."""
     # TODO: this assumes that actions do not negate preimage goals
-    positive_preimage = {l for l in (set(full_preimage) - real_states[0] - negative_preimage) if not l.negated}
+    positive_preimage = {l for l in (set(full_preimage) - initial_state - negative_preimage) if not l.negated}
     steps_from_fact = {fact_from_fd(l): full_preimage[l] for l in positive_preimage}
     last_from_fact = {fact: min(steps) for fact, steps in steps_from_fact.items() if get_prefix(fact) != EQ}
-
     for result, step in function_plan.items():
         for fact in result.get_domain():
             last_from_fact[fact] = min(step, last_from_fact.get(fact, INF))
+    return steps_from_fact, last_from_fact
 
+
+def partition_current_plan(current_plan, function_plan, negative, action_plan, replan_step):
+    """Splits the results already in the plan into streams to schedule and functions and negated streams, which are
+    added to function_plan so that they are not pruned."""
     # TODO: get_steps_from_stream
     stream_plan = []
     last_from_stream = dict(function_plan)
@@ -191,11 +224,17 @@ def recover_stream_plan(
         if isinstance(result.external, Function) or (result.external in negative):
             if len(action_plan) > replan_step:
                 raise NotImplementedError()  # TODO: deferring negated optimizers
-            # Prevents these results from being pruned
             function_plan[result] = replan_step
         else:
             stream_plan.append(result)
+    return stream_plan, last_from_stream
 
+
+def extract_supporting_streams(
+    evaluations, domain, node_from_atom, stream_plan, function_plan, last_from_fact, last_from_stream
+):
+    """Adds the streams that achieve the facts the plan still needs, and computes the latest step at which each
+    result can be evaluated (updating last_from_fact and last_from_stream)."""
     curr_evaluations = evaluations_from_stream_plan(evaluations, stream_plan, max_effort=None)
     extraction_facts = set(last_from_fact) - set(map(fact_from_evaluation, curr_evaluations))
     extract_stream_plan(node_from_atom, extraction_facts, stream_plan)
@@ -214,7 +253,11 @@ def recover_stream_plan(
             for domain_fact in result.instance.get_domain():
                 last_from_fact[domain_fact] = min(last_from_stream[result], last_from_fact.get(domain_fact, INF))
     stream_plan.extend(function_plan)
+    return stream_plan, node_from_atom
 
+
+def evaluate_bound_ancestors(stream_plan, node_from_atom, last_from_stream):
+    """Results that cannot be deferred are evaluated now (step 0), and so are their ancestors."""
     partial_orders = recover_partial_orders(stream_plan, node_from_atom)
     bound_objects = set()
     for result in stream_plan:
@@ -225,12 +268,15 @@ def recover_stream_plan(
                 if isinstance(ancestor, StreamResult):
                     bound_objects.update(out for out in ancestor.output_objects if out.is_unique())
 
+
+def get_first_steps(initial_state, stream_plan, action_plan):
+    """The first step of the action plan at which each result's domain holds, for results not ready initially."""
     # Each stream has an earliest evaluation time
     # When computing the latest, use 0 if something isn't deferred
     # Evaluate each stream as soon as possible
     # Option to defer streams after a point in time?
     # TODO: action costs for streams that encode uncertainty
-    state = set(real_task.init)
+    state = set(initial_state)
     remaining_results = list(stream_plan)
     first_from_stream = {}
     for step, instance in enumerate(action_plan):
@@ -245,9 +291,11 @@ def recover_stream_plan(
                     first_from_stream[result] = step
         # TODO: assumes no fluent axiom domain conditions
         apply_action(state, instance)
-    if first_from_stream:
-        replan_step = min(replan_step, *first_from_stream.values())
+    return first_from_stream
 
+
+def schedule_results(stream_plan, first_from_stream, last_from_stream, replan_step):
+    """The results to evaluate now, and the deferred ones by the step before which they run."""
     eager_plan = []
     results_from_step = defaultdict(list)
     for result in stream_plan:
@@ -262,15 +310,11 @@ def recover_stream_plan(
         if future:
             future_step = latest_step if defer else earliest_step
             results_from_step[future_step].append(result)
+    return eager_plan, results_from_step
 
-    # TODO: some sort of obj side-effect bug that requires obj_from_pddl to be applied last
-    # (likely due to fluent streams)
-    eager_plan = convert_fluent_streams(eager_plan, real_states, action_plan, steps_from_fact, node_from_atom)
-    combined_plan = []
-    for step, action in enumerate(action_plan):
-        combined_plan.extend(result.get_action() for result in results_from_step[step])
-        combined_plan.append(transform_action_args(pddl_from_instance(action), obj_from_pddl))
 
+def get_preimage_facts(full_preimage, negative_plan, eager_plan):
+    """The facts that support the plan: its preimage, plus what the negated and eager results use and certify."""
     # TODO: the returned facts have the same side-effect bug as above
     # TODO: annotate when each preimage fact is used
     preimage_facts = {fact_from_fd(l) for l in full_preimage if (l.predicate != EQ) and not l.negated}
@@ -281,7 +325,7 @@ def recover_stream_plan(
         # Might not be able to regenerate facts involving the outputs of streams
         preimage_facts.update(result.get_certified())  # Some facts might not be in the preimage
     # TODO: record streams and axioms
-    return eager_plan, OptPlan(combined_plan, preimage_facts)
+    return preimage_facts
 
 
 ##################################################
