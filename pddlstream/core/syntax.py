@@ -1,6 +1,10 @@
 """PDDL expressions as tuples: operators, constructors such as And and Exists, and accessors."""
 
-from collections import namedtuple
+from collections.abc import Sequence
+from typing import Any, NamedTuple
+
+# A fact, i.e. a predicate and its arguments such as ('On', 'b1', 'table'), or an operator and its operands
+Formula = tuple[Any, ...]
 
 EQ = '='  # xnor
 AND = 'and'
@@ -23,55 +27,73 @@ OBJECTIVES = (MINIMIZE, MAXIMIZE, INCREASE)
 OPERATORS = CONNECTIVES + QUANTIFIERS + (WHEN,)  # + OBJECTIVES
 
 
-Head = namedtuple('Head', ['function', 'args'])
-Evaluation = namedtuple('Evaluation', ['head', 'value'])
+class Head(NamedTuple):
+    """A predicate or function applied to arguments."""
+
+    function: str
+    args: tuple
+
+
+class Evaluation(NamedTuple):
+    """A head and its value: True or False for predicates, a number for functions."""
+
+    head: Head
+    value: Any
+
+
 Atom = lambda head: Evaluation(head, True)
 NegatedAtom = lambda head: Evaluation(head, False)
 
 ##################################################
 
 
-def Output(*args):
+def Output(*args: Any) -> tuple:
+    """A stream's output tuple."""
     return tuple(args)
 
 
-def And(*expressions):
+def And(*expressions: Formula) -> Formula:
+    """The conjunction of the formulas (a single formula is returned as is)."""
     if len(expressions) == 1:
         return expressions[0]
     return (AND,) + tuple(expressions)
 
 
-def Or(*expressions):
+def Or(*expressions: Formula) -> Formula:
+    """The disjunction of the formulas (a single formula is returned as is)."""
     if len(expressions) == 1:
         return expressions[0]
     return (OR,) + tuple(expressions)
 
 
-def Not(expression):
+def Not(expression: Formula) -> Formula:
     return (NOT, expression)
 
 
-def Imply(expression1, expression2):
+def Imply(expression1: Formula, expression2: Formula) -> Formula:
     return (IMPLY, expression1, expression2)
 
 
-def Equal(expression1, expression2):
+def Equal(expression1: Any, expression2: Any) -> Formula:
+    """Equality, e.g. Equal(('Cost', q1, q2), 1) gives a function its value."""
     return (EQ, expression1, expression2)
 
 
-def Minimize(expression):
+def Minimize(expression: Formula) -> Formula:
     return (MINIMIZE, expression)
 
 
-def Type(param, ty):
+def Type(param: str, ty: str) -> tuple:
     return (param, TYPE, ty)
 
 
-def Exists(args, expression):
+def Exists(args: Sequence[str], expression: Formula) -> Formula:
+    """Existential quantification over parameters, e.g. Exists(['?b'], ('On', '?b', 'table'))."""
     return (EXISTS, args, expression)
 
 
-def ForAll(args, expression):
+def ForAll(args: Sequence[str], expression: Formula) -> Formula:
+    """Universal quantification over parameters."""
     return (FORALL, args, expression)
 
 

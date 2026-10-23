@@ -2,8 +2,9 @@
 
 import enum
 import os
-from collections import namedtuple
+from typing import Any, NamedTuple
 
+from pddlstream.core.syntax import Formula
 from pddlstream.core.utils import INF, read, str_from_object
 
 # TODO: OPTIMAL
@@ -12,10 +13,32 @@ FAILED = None
 INFEASIBLE = False
 NOT_PLAN = [FAILED, INFEASIBLE]
 
+
 # TODO: rename PDDLProblem
-PDDLProblem = namedtuple('PDDLProblem', ['domain_pddl', 'constant_map', 'stream_pddl', 'stream_map', 'init', 'goal'])
-Solution = namedtuple('Solution', ['plan', 'cost', 'certificate'])
-Certificate = namedtuple('Certificate', ['all_facts', 'preimage_facts'])
+class PDDLProblem(NamedTuple):
+    """A PDDLStream problem: what to plan in, which samplers to use, and where to start and end."""
+
+    domain_pddl: Any  # The PDDL domain, as a string (or already parsed)
+    constant_map: dict  # The value of each of the domain's constants
+    stream_pddl: Any  # The stream definitions, as a string or a list of strings; None without streams
+    stream_map: Any  # The procedure for each stream and function by name, or DEBUG or SHARED_DEBUG
+    init: list[Formula]  # The facts that hold initially, e.g. ('On', block, region)
+    goal: Formula  # The goal formula, e.g. And(('Holding', block))
+
+
+class Certificate(NamedTuple):
+    """The facts behind a solution: all those known at the end, and the ones the plan relies on."""
+
+    all_facts: list
+    preimage_facts: list | None
+
+
+class Solution(NamedTuple):
+    """A plan (a list of actions, or None), its cost (INF without a plan) and the certificate that supports it."""
+
+    plan: list | None
+    cost: float
+    certificate: Certificate | None
 
 
 class Status(enum.Enum):
@@ -28,8 +51,8 @@ class SolveResult(Solution):
     """What the solvers return: a Solution (plan, cost, certificate), which it unpacks and compares like, with the
     solver's status and statistics (the summary that it prints, including search_time, sample_time and run_time)."""
 
-    status = None
-    stats = None
+    status: Status | None = None
+    stats: dict | None = None
 
     def __new__(cls, plan, cost, certificate, status=None, stats=None):
         self = super().__new__(cls, plan, cost, certificate)
@@ -41,15 +64,52 @@ class SolveResult(Solution):
         return f'{super().__repr__()[:-1]}, status={self.status})'
 
 
-OptPlan = namedtuple('OptPlan', ['action_plan', 'preimage_facts'])
+class OptPlan(NamedTuple):
+    """An optimistic plan: its actions (with deferred stream and function steps) and the facts it relies on."""
+
+    action_plan: list
+    preimage_facts: Any
+
+
 # TODO: stream and axiom plans
 # TODO: annotate which step each fact is first used via layer
 
-Assignment = namedtuple('Assignment', ['args'])
-Action = namedtuple('Action', ['name', 'args'])
-DurativeAction = namedtuple('DurativeAction', ['name', 'args', 'start', 'duration'])
-StreamAction = namedtuple('StreamAction', ['name', 'inputs', 'outputs'])
-FunctionAction = namedtuple('FunctionAction', ['name', 'inputs'])
+
+class Assignment(NamedTuple):
+    """The step of a constraint-satisfaction plan that assigns values to free parameters."""
+
+    args: Any
+
+
+class Action(NamedTuple):
+    """A plan step: an action's name and its arguments."""
+
+    name: str
+    args: tuple
+
+
+class DurativeAction(NamedTuple):
+    """A plan step with a start time and duration."""
+
+    name: str
+    args: tuple
+    start: float
+    duration: float
+
+
+class StreamAction(NamedTuple):
+    """A deferred step that calls a stream once the plan reaches it."""
+
+    name: str
+    inputs: tuple
+    outputs: tuple
+
+
+class FunctionAction(NamedTuple):
+    """A deferred step that evaluates a function once the plan reaches it."""
+
+    name: str
+    inputs: tuple
 
 
 ##################################################
