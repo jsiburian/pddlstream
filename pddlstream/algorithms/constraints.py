@@ -62,11 +62,18 @@ def to_obj(value):
         return value
     return Object.from_value(value)
 
-def get_internal_prefix(internal):
-    return INTERNAL_PREFIX if internal else ''
+def get_internal_prefix(domain, internal):
+    # Lengthens the prefix until the constraint predicates don't collide with the domain's (or an outer layer's)
+    names = {predicate.name for predicate in domain.predicates}
+    prefix = INTERNAL_PREFIX if internal else ''
+    while any(template.format(prefix) in names for template in
+              [ASSIGNED_PREDICATE, BOUND_PREDICATE, GROUP_PREDICATE, ORDER_PREDICATE]):
+        prefix += INTERNAL_PREFIX
+    return prefix
 
 def is_constant(arg):
-    return not is_parameter(arg) and (arg != WILD)
+    # Only strings can be parameters or the wildcard; other values (e.g. numpy arrays) are always constants
+    return not (isinstance(arg, str) and (is_parameter(arg) or arg == WILD))
 
 ##################################################
 
@@ -76,7 +83,7 @@ def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=Fa
     import pddl
     # TODO: unify this with the constraint ordering
     # TODO: can constrain to use a plan prefix
-    prefix = get_internal_prefix(internal)
+    prefix = get_internal_prefix(domain, internal)
     assigned_predicate = ASSIGNED_PREDICATE.format(prefix)
     bound_predicate = BOUND_PREDICATE.format(prefix)
     group_predicate = GROUP_PREDICATE.format(prefix)

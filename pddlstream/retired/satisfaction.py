@@ -2,8 +2,7 @@ from collections import namedtuple
 
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.satisfaction import SatisfactionSolution
-from pddlstream.algorithms.constraints import to_constant, ORDER_PREDICATE, ASSIGNED_PREDICATE, \
-    get_internal_prefix
+from pddlstream.algorithms.constraints import to_constant, ORDER_PREDICATE, ASSIGNED_PREDICATE
 from pddlstream.algorithms.downward import make_action, make_domain, make_predicate
 from pddlstream.language.constants import is_parameter, Not, PDDLProblem, MINIMIZE, NOT, partition_facts, get_costs, \
     get_constraints
@@ -63,7 +62,7 @@ def cluster_constraints(terms):
 
 def planning_from_satisfaction(init, constraints):
     clusters = cluster_constraints(constraints)
-    prefix = get_internal_prefix(internal=False)
+    prefix = ''
     assigned_predicate = ASSIGNED_PREDICATE.format(prefix)
     order_predicate = ORDER_PREDICATE.format(prefix)
     #order_value_facts = make_order_facts(order_predicate, 0, len(clusters)+1)
