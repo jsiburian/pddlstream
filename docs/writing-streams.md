@@ -57,6 +57,7 @@ def sample_poses(b, r):
     while True:  # Each call yields one more pose
         yield (sample_pose(b, r),)
 
+
 stream_map = {
     'sample-pose': from_gen_fn(sample_poses),
     'test-cfree': from_test(lambda b1, p1, b2, p2: not collision(b1, p1, b2, p2)),
