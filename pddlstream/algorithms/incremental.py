@@ -109,9 +109,9 @@ def solve_incremental(
     :param deterministic: if True, make seeded runs repeatable by not loading saved stream statistics
     :param search_kwargs: keyword args for the search subroutine
 
-    :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
-        (or None), cost is the cost of the plan (INF if no plan), and evaluations is init expanded
-        using stream applications
+    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
+        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
+        attributes report how the solve ended
     """
     # max_complexity = 0 => current
     # complexity_step = INF => exhaustive
@@ -132,6 +132,7 @@ def solve_incremental(
         )
     num_iterations = num_calls = 0
     complexity_limit = initial_complexity
+    infeasible = False
     instantiator = Instantiator(externals, evaluations)
     num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
     while not store.is_terminated() and (num_iterations < max_iterations) and (complexity_limit <= max_complexity):
@@ -148,6 +149,7 @@ def solve_incremental(
         if is_plan(plan):
             store.add_plan(plan, cost)
         if not instantiator:
+            infeasible = not store.has_solution()
             break
         if complexity_step is None:
             # TODO: option to select the next k-smallest complexities
@@ -167,7 +169,7 @@ def solve_incremental(
 
     if UPDATE_STATISTICS:
         write_stream_statistics(externals, verbose)
-    return store.extract_solution()
+    return store.extract_solution(summary, infeasible)
 
 
 ##################################################
@@ -179,9 +181,9 @@ def solve_immediate(problem, **kwargs):
     INCOMPLETENESS WARNING: only use if no stream evaluations are necessarily (otherwise terminates early)
     :param problem: a PDDLStream problem
     :param kwargs: keyword args for solve_incremental
-    :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
-        (or None), cost is the cost of the plan, and evaluations is init but expanded
-        using stream applications
+    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
+        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
+        attributes report how the solve ended
     """
     return solve_incremental(problem, initial_complexity=0, complexity_step=0, max_complexity=0, **kwargs)
 
@@ -192,8 +194,8 @@ def solve_exhaustive(problem, **kwargs):
     INCOMPLETENESS WARNING: only use if a finite set of instantiable stream instances (otherwise infinite loop)
     :param problem: a PDDLStream problem
     :param kwargs: keyword args for solve_incremental
-    :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
-        (or None), cost is the cost of the plan, and evaluations is init but expanded
-        using stream applications
+    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
+        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
+        attributes report how the solve ended
     """
     return solve_incremental(problem, initial_complexity=INF, complexity_step=INF, max_complexity=INF, **kwargs)

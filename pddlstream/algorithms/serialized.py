@@ -14,7 +14,8 @@ from pddlstream.language.constants import (
     AND,
     And,
     PDDLProblem,
-    Solution,
+    SolveResult,
+    Status,
     get_args,
     get_function,
     get_prefix,
@@ -105,7 +106,7 @@ def solve_serialized(
         if local_plan is None:
             # TODO: replan upon failure
             global_certificate = Certificate(all_facts={}, preimage_facts=None)
-            return Solution(None, INF, global_certificate)
+            return SolveResult(None, INF, global_certificate, status=Status.FAILED)
 
         if retain_facts:
             state = local_certificate.all_facts
@@ -125,11 +126,4 @@ def solve_serialized(
         # TODO: constrain future plan skeletons
 
     global_certificate = Certificate(all_facts={}, preimage_facts=None)
-    return global_plan, global_cost, global_certificate
-
-
-##################################################
-
-#######################################################
-
-#######################################################
+    return SolveResult(global_plan, global_cost, global_certificate, status=Status.SUCCEEDED)

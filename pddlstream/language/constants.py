@@ -1,3 +1,4 @@
+import enum
 import os
 from collections import namedtuple
 
@@ -33,6 +34,30 @@ NOT_PLAN = [FAILED, INFEASIBLE]
 PDDLProblem = namedtuple('PDDLProblem', ['domain_pddl', 'constant_map', 'stream_pddl', 'stream_map', 'init', 'goal'])
 Solution = namedtuple('Solution', ['plan', 'cost', 'certificate'])
 Certificate = namedtuple('Certificate', ['all_facts', 'preimage_facts'])
+
+
+class Status(enum.Enum):
+    SUCCEEDED = 'succeeded'  # Found a plan
+    FAILED = 'failed'  # Found no plan before a limit was reached (stats['timeout'] says whether time or memory ran out)
+    INFEASIBLE = 'infeasible'  # Concluded that no plan exists, counting searches that hit max_planner_time as failed
+
+
+class SolveResult(Solution):
+    """What the solvers return: a Solution (plan, cost, certificate), which it unpacks and compares like, with the
+    solver's status and statistics (the summary that it prints, including search_time, sample_time and run_time)."""
+
+    status = None
+    stats = None
+
+    def __new__(cls, plan, cost, certificate, status=None, stats=None):
+        self = super().__new__(cls, plan, cost, certificate)
+        self.status = status
+        self.stats = {} if stats is None else stats
+        return self
+
+    def __repr__(self):
+        return f'{super().__repr__()[:-1]}, status={self.status})'
+
 
 OptPlan = namedtuple('OptPlan', ['action_plan', 'preimage_facts'])
 # TODO: stream and axiom plans

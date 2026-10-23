@@ -2,7 +2,7 @@ import time
 from collections import OrderedDict, namedtuple
 
 from pddlstream.core.context import get_clock
-from pddlstream.language.constants import FAILED, get_length, is_plan
+from pddlstream.language.constants import FAILED, SolveResult, Status, get_length, is_plan
 from pddlstream.language.conversion import evaluation_from_fact, obj_from_value_expression, revert_solution
 from pddlstream.utils import INF, check_memory, elapsed_time
 
@@ -72,9 +72,12 @@ class SolutionStore:
     def is_terminated(self):
         return self.is_solved() or self.is_timeout()
 
-    def extract_solution(self):
+    def extract_solution(self, stats=None, infeasible=False):
+        """The best plan as a SolveResult; infeasible says whether the solver concluded that no plan exists."""
         SOLUTIONS[:] = self.solutions
-        return revert_solution(self.best_plan, self.best_cost, self.evaluations)
+        plan, cost, certificate = revert_solution(self.best_plan, self.best_cost, self.evaluations)
+        status = Status.SUCCEEDED if is_plan(plan) else Status.INFEASIBLE if infeasible else Status.FAILED
+        return SolveResult(plan, cost, certificate, status, self.export_summary() if stats is None else stats)
 
     def export_summary(self):  # TODO: log, etc...
         # TODO: SOLUTIONS

@@ -101,9 +101,9 @@ def solve_abstract(
         work units instead of seconds, and saved stream statistics are not loaded. max_time is still wall-clock time
     :param search_kwargs: keyword args for the search subroutine
 
-    :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
-        (or None), cost is the cost of the plan (INF if no plan), and evaluations is init expanded
-        using stream applications
+    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
+        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
+        attributes report how the solve ended
     """
     # TODO: select whether to search or sample based on expected success rates
     # TODO: no optimizers during search with relaxed_stream_plan
@@ -141,6 +141,7 @@ def solve_abstract(
     store = SolutionStore(evaluations, max_time, success_cost, verbose, max_memory=max_memory)
     skeleton_queue = SkeletonQueue(store, domain, disable=not has_optimizers)
     disabled = set()  # Max skeletons after a solution
+    infeasible = False
     while (not store.is_terminated()) and (num_iterations < max_iterations) and (complexity_limit <= max_complexity):
         num_iterations += 1
         eager_instantiator = Instantiator(eager_externals, evaluations)  # Only update after an increase?
@@ -205,6 +206,7 @@ def solve_abstract(
         ################
 
         if (stream_plan is INFEASIBLE) and (not eager_instantiator) and (not skeleton_queue) and (not disabled):
+            infeasible = True
             break
         if not is_plan(stream_plan):
             print(f'No plan: increasing complexity from {complexity_limit} to {complexity_limit + complexity_step}')
@@ -235,6 +237,7 @@ def solve_abstract(
             else INF
         )
         if skeleton_queue.process(stream_plan, opt_plan, cost, complexity_limit, allocated_sample_time) is INFEASIBLE:
+            infeasible = True
             break
 
     ################
@@ -250,7 +253,7 @@ def solve_abstract(
     print(f'Summary: {str_from_object(summary, ndigits=3)}')  # TODO: return the summary
 
     write_stream_statistics(externals, verbose)
-    return store.extract_solution()
+    return store.extract_solution(summary, infeasible)
 
 
 solve_focused = solve_abstract  # TODO: deprecate solve_focused
@@ -264,9 +267,9 @@ def solve_focused_original(problem, fail_fast=False, **kwargs):
     :param problem: a PDDLStream problem
     :param fail_fast: whether to switch phases as soon as a stream fails
     :param kwargs: keyword args for solve_focused
-    :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
-        (or None), cost is the cost of the plan, and evaluations is init but expanded
-        using stream applications
+    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
+        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
+        attributes report how the solve ended
     """
     max_failures = 0 if fail_fast else INF
     return solve_abstract(
@@ -280,9 +283,9 @@ def solve_binding(problem, fail_fast=False, **kwargs):
     :param problem: a PDDLStream problem
     :param fail_fast: whether to switch phases as soon as a stream fails
     :param kwargs: keyword args for solve_focused
-    :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
-        (or None), cost is the cost of the plan, and evaluations is init but expanded
-        using stream applications
+    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
+        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
+        attributes report how the solve ended
     """
     max_failures = 0 if fail_fast else INF
     return solve_abstract(
@@ -297,9 +300,9 @@ def solve_adaptive(problem, max_skeletons=INF, search_sample_ratio=1, **kwargs):
     :param max_skeletons: the maximum number of plan skeletons to consider
     :param search_sample_ratio: the desired ratio of search time / sample time
     :param kwargs: keyword args for solve_focused
-    :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
-        (or None), cost is the cost of the plan, and evaluations is init but expanded
-        using stream applications
+    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
+        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
+        attributes report how the solve ended
     """
     max_skeletons = INF if max_skeletons is None else max_skeletons
     return solve_abstract(
@@ -318,9 +321,9 @@ def solve_hierarchical(problem, **kwargs):
     :param problem: a PDDLStream problem
     :param search_sample_ratio: the desired ratio of sample time / search time
     :param kwargs: keyword args for solve_focused
-    :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
-        (or None), cost is the cost of the plan, and evaluations is init but expanded
-        using stream applications
+    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
+        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
+        attributes report how the solve ended
     """
     return solve_adaptive(
         problem, max_skeletons=1, search_sample_ratio=INF, **kwargs

@@ -27,6 +27,8 @@ PUBLIC_NAMES = {
     'pddlstream.language.constants': [
         'PDDLProblem',
         'Solution',
+        'SolveResult',
+        'Status',
         'Certificate',
         'Action',
         'And',

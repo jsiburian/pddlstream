@@ -22,7 +22,7 @@ from pddlstream.algorithms.scheduling.recover_streams import evaluations_from_st
 from pddlstream.algorithms.scheduling.reinstantiate import reinstantiate_axiom
 from pddlstream.core.config import ALGORITHMS, DEFAULT_ALGORITHM, FIELD_NAMES, SolverConfig
 from pddlstream.core.config import FOCUSED_ALGORITHMS as FOCUSED_ALGORITHMS  # Re-exported (name as name)
-from pddlstream.language.constants import Certificate, PDDLProblem, Solution, get_prefix, is_plan
+from pddlstream.language.constants import Certificate, PDDLProblem, SolveResult, Status, get_prefix, is_plan
 from pddlstream.language.conversion import EQ, value_from_obj_expression
 from pddlstream.language.external import DEBUG, SHARED_DEBUG
 from pddlstream.utils import INF, SEPARATOR, Verbose, elapsed_time, irange
@@ -137,9 +137,9 @@ def solve(
         prints FastDownward's output and keeps its files in ./temp/ (temp_dir=... chooses another directory).
         Unknown names raise a TypeError before solving starts
 
-    :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
-        (or None), cost is the cost of the plan (INF if no plan), and evaluations is init expanded
-        using stream applications
+    :return: a SolveResult, which unpacks as (plan, cost, certificate): plan is a sequence of actions (or None),
+        cost is its cost (INF without a plan), and certificate holds the facts that support it. Its status and stats
+        attributes report how the solve ended
     """
     arguments = {name: value for name, value in locals().items() if name in FIELD_NAMES}
     defaults = {name: p.default for name, p in inspect.signature(solve).parameters.items() if name in FIELD_NAMES}
@@ -187,7 +187,7 @@ def solve_restart(problem, max_time=INF, max_restarts=0, iteration_time=INF, abo
             break  # TODO: return the cause of failure
 
     certificate = Certificate(all_facts=[], preimage_facts=[])  # TODO: aggregate
-    return Solution(None, INF, certificate)
+    return SolveResult(None, INF, certificate, status=Status.FAILED)
 
 
 ##################################################
