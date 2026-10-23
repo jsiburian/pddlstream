@@ -97,21 +97,26 @@ def is_constant(arg):
 
 
 def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=False):
+    """Compiles the plan skeletons in constraints into the domain: each skeleton step becomes a copy of its action
+    that binds the step's free parameters and follows the skeleton's order. Returns the new goal."""
     if (constraints is None) or (constraints.skeletons is None):
         return goal_exp
 
     # TODO: unify this with the constraint ordering
     # TODO: can constrain to use a plan prefix
     prefix = get_internal_prefix(domain, internal)
-    assigned_predicate = ASSIGNED_PREDICATE.format(prefix)
-    bound_predicate = BOUND_PREDICATE.format(prefix)
-    group_predicate = GROUP_PREDICATE.format(prefix)
-    order_predicate = ORDER_PREDICATE.format(prefix)
+    predicates = SkeletonPredicates(
+        assigned=ASSIGNED_PREDICATE.format(prefix),
+        bound=BOUND_PREDICATE.format(prefix),
+        group=GROUP_PREDICATE.format(prefix),
+        order=ORDER_PREDICATE.format(prefix),
+    )
+    order_predicate = predicates.order
     new_facts = []
     for group in constraints.groups:
         for value in constraints.groups[group]:
             # TODO: could make all constants groups (like an equality group)
-            fact = (group_predicate, to_obj(group), to_obj(value))
+            fact = (predicates.group, to_obj(group), to_obj(value))
             new_facts.append(fact)
     new_actions = []
     new_goals = []
@@ -119,61 +124,12 @@ def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=Fa
         actions, orders = skeleton
         incoming_orders, _ = neighbors_from_orders(orders)
         order_facts = [(order_predicate, to_obj(f'n{num}'), to_obj(f't{step}')) for step in range(len(actions))]
-        for step, (name, args) in enumerate(actions):
-            # TODO: could also just remove the free parameter from the action
-            new_action = deepcopy(find_unique(lambda a: a.name == name, domain.actions))
-            local_from_global = {a: p.name for a, p in safe_zip(args, new_action.parameters) if is_parameter(a)}
-
-            ancestors, descendants = get_ancestors(step, orders), get_descendants(step, orders)
-            parallel = set(range(len(actions))) - ancestors - descendants - {step}
-
-            parameters = set(filter(is_parameter, args))
-            ancestor_parameters = parameters & set(
-                filter(is_parameter, (p for idx in ancestors for p in actions[idx][1]))
+        for step in range(len(actions)):
+            new_actions.append(
+                constrain_step(
+                    domain, constraints.groups, predicates, actions, orders, incoming_orders, order_facts, step
+                )
             )
-            parallel_parameters = parameters & set(
-                filter(is_parameter, (p for idx in parallel for p in actions[idx][1]))
-            )
-
-            bound_condition = pddl.Conjunction(
-                [
-                    pddl.Disjunction(
-                        map(
-                            fd_from_fact,
-                            [
-                                Not((bound_predicate, to_constant(p))),
-                                (assigned_predicate, to_constant(p), local_from_global[p]),
-                            ],
-                        )
-                    )
-                    for p in parallel_parameters
-                ]
-            )
-            existing_preconditions = [
-                (assigned_predicate, to_constant(p), local_from_global[p]) for p in ancestor_parameters
-            ]
-
-            constant_pairs = [(a, p.name) for a, p in safe_zip(args, new_action.parameters) if is_constant(a)]
-            group_preconditions = [
-                (group_predicate if is_hashable(a) and (a in constraints.groups) else EQ, to_obj(a), p)
-                for a, p in constant_pairs
-            ]
-            order_preconditions = [order_facts[idx] for idx in incoming_orders[step]]
-            new_preconditions = (
-                existing_preconditions + group_preconditions + order_preconditions + [Not(order_facts[step])]
-            )
-            new_action.precondition = pddl.Conjunction(
-                [new_action.precondition, bound_condition, make_preconditions(new_preconditions)]
-            ).simplified()
-
-            new_parameters = parameters - ancestors
-            bound_facts = [(bound_predicate, to_constant(p)) for p in new_parameters]
-            assigned_facts = [(assigned_predicate, to_constant(p), local_from_global[p]) for p in new_parameters]
-            new_effects = bound_facts + assigned_facts + [order_facts[step]]
-            new_action.effects.extend(make_effects(new_effects))
-            # TODO: should also negate the effects of all other sequences here
-
-            new_actions.append(new_action)
         new_goals.append(And(*[order_facts[idx] for idx in incoming_orders[GOAL_INDEX]]))
 
     add_predicate(domain, make_predicate(order_predicate, ['?num', '?step']))
@@ -184,3 +140,58 @@ def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=Fa
     for fact in new_facts:
         add_fact(evaluations, fact, result=INTERNAL_EVALUATION)
     return new_goal_exp
+
+
+SkeletonPredicates = namedtuple('SkeletonPredicates', ['assigned', 'bound', 'group', 'order'])
+
+
+def constrain_step(domain, groups, predicates, actions, orders, incoming_orders, order_facts, step):
+    """A copy of the action at this skeleton step whose preconditions require the step's constants, the bindings of
+    parameters that earlier steps bound, and the skeleton's order, and whose effects record its own bindings."""
+    name, args = actions[step]
+    # TODO: could also just remove the free parameter from the action
+    new_action = deepcopy(find_unique(lambda a: a.name == name, domain.actions))
+    local_from_global = {a: p.name for a, p in safe_zip(args, new_action.parameters) if is_parameter(a)}
+
+    ancestors, descendants = get_ancestors(step, orders), get_descendants(step, orders)
+    parallel = set(range(len(actions))) - ancestors - descendants - {step}
+
+    parameters = set(filter(is_parameter, args))
+    ancestor_parameters = parameters & set(filter(is_parameter, (p for idx in ancestors for p in actions[idx][1])))
+    parallel_parameters = parameters & set(filter(is_parameter, (p for idx in parallel for p in actions[idx][1])))
+
+    bound_condition = pddl.Conjunction(
+        [
+            pddl.Disjunction(
+                map(
+                    fd_from_fact,
+                    [
+                        Not((predicates.bound, to_constant(p))),
+                        (predicates.assigned, to_constant(p), local_from_global[p]),
+                    ],
+                )
+            )
+            for p in parallel_parameters
+        ]
+    )
+    existing_preconditions = [(predicates.assigned, to_constant(p), local_from_global[p]) for p in ancestor_parameters]
+
+    constant_pairs = [(a, p.name) for a, p in safe_zip(args, new_action.parameters) if is_constant(a)]
+    group_preconditions = [
+        (predicates.group if is_hashable(a) and (a in groups) else EQ, to_obj(a), p) for a, p in constant_pairs
+    ]
+    order_preconditions = [order_facts[idx] for idx in incoming_orders[step]]
+    new_preconditions = existing_preconditions + group_preconditions + order_preconditions + [Not(order_facts[step])]
+    new_action.precondition = pddl.Conjunction(
+        [new_action.precondition, bound_condition, make_preconditions(new_preconditions)]
+    ).simplified()
+
+    # TODO: ancestors holds step indices, so this removes nothing (parameters - ancestor_parameters was probably
+    #  intended). It is harmless: re-asserting an earlier step's bindings changes nothing.
+    new_parameters = parameters - ancestors
+    bound_facts = [(predicates.bound, to_constant(p)) for p in new_parameters]
+    assigned_facts = [(predicates.assigned, to_constant(p), local_from_global[p]) for p in new_parameters]
+    new_effects = bound_facts + assigned_facts + [order_facts[step]]
+    new_action.effects.extend(make_effects(new_effects))
+    # TODO: should also negate the effects of all other sequences here
+    return new_action
