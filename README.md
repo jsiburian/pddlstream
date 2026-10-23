@@ -61,6 +61,7 @@ Other tasks:
 * `pixi run test-gui`: run the examples that open viewers (Tkinter and PyBullet) under `xvfb-run`.
 * `pixi run -e full test-gurobi`: run the optimizer examples. Add `-m slow` to any pytest run for the multi-minute examples.
 * `pixi run bench`: time the benchmark examples against a baseline saved with `pixi run bench --save`.
+* `pixi run lint`: check the code with ruff; `pixi run format` fixes what it can and formats the code. To skip the formatting commit in `git blame`, run `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 PDDLStream requires Python 3.11 or newer.
 A non-editable `pip install .` is not supported because FastDownward is located relative to the source checkout.

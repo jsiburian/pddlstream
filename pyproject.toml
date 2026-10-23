@@ -104,6 +104,10 @@ pytest = "*"
 [tool.pixi.feature.lint.dependencies]
 ruff = "0.17.*"
 
+[tool.pixi.feature.lint.tasks]
+lint = { cmd = "ruff check && ruff format --check", description = "Check lint rules and formatting" }
+format = { cmd = "ruff check --fix && ruff format", description = "Fix lint findings and format the code" }
+
 # Python versions: 3.14 by default; 3.11 to match Isaac Sim (RoboLab)
 [tool.pixi.feature.py314.dependencies]
 python = "3.14.*"
@@ -115,6 +119,8 @@ python = "3.11.*"
 default = { features = ["py314", "build", "examples", "pybullet", "test", "lint"], solve-group = "default" }
 full = { features = ["py314", "build", "examples", "pybullet", "test", "viz", "gurobi"], solve-group = "default" }
 py311 = { features = ["py311", "build", "examples", "pybullet", "test"], solve-group = "py311" }
+# Just ruff, for the CI lint job
+lint = { features = ["lint"], no-default-feature = true }
 
 [tool.pixi.tasks]
 submodules = { cmd = "git submodule update --init --recursive", description = "Fetch the FastDownward and pybullet-planning submodules" }
@@ -128,5 +134,3 @@ build-ikfast = { cmd = "python setup.py", cwd = "examples/pybullet/utils/pybulle
 test = { cmd = "pytest", description = "Run the fast test suite" }
 test-gui = { cmd = "pytest -m 'gui and not slow and not gurobi'", description = "Run the examples that open viewers, under xvfb-run" }
 bench = { cmd = "python tests/benchmark.py", description = "Time the benchmark cases against the saved baseline (--save to update it)" }
-lint = { cmd = "ruff check && ruff format --check", description = "Check lint rules and formatting" }
-format = { cmd = "ruff check --fix && ruff format", description = "Fix lint findings and format the code" }

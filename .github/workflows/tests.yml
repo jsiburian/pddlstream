@@ -7,6 +7,19 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          pixi-version: v0.81.0
+          environments: lint
+          cache: true
+      - name: Check lint and formatting
+        run: pixi run -e lint lint
+
   test:
     name: Tests (${{ matrix.environment }})
     runs-on: ubuntu-latest
