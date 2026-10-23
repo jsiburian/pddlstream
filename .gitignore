@@ -9,3 +9,5 @@ gurobi.log
 .pixi/
 *.egg-info/
 /build/
+# Machine-specific benchmark baselines (tests/benchmark.py)
+.benchmarks/

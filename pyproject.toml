@@ -103,3 +103,4 @@ setup = { depends-on = ["submodules", "build-fd"], description = "Fetch submodul
 build-ikfast = { cmd = "python setup.py", cwd = "examples/pybullet/utils/pybullet_tools/ikfast/pr2", description = "Optional: compile the PR2 IKFast solver (otherwise pybullet IK is used)" }
 test = { cmd = "pytest", description = "Run the fast test suite" }
 test-gui = { cmd = "pytest -m 'gui and not slow and not gurobi'", description = "Run the examples that open viewers, under xvfb-run" }
+bench = { cmd = "python tests/benchmark.py", description = "Time the benchmark cases against the saved baseline (--save to update it)" }

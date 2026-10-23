@@ -60,6 +60,7 @@ Other tasks:
 * `pixi run test`: run the fast test suite. Every headless example must solve, and the validator must accept its plan.
 * `pixi run test-gui`: run the examples that open viewers (Tkinter and PyBullet) under `xvfb-run`.
 * `pixi run -e full test-gurobi`: run the optimizer examples. Add `-m slow` to any pytest run for the multi-minute examples.
+* `pixi run bench`: time the benchmark examples against a baseline saved with `pixi run bench --save`.
 
 PDDLStream requires Python 3.11 or newer.
 A non-editable `pip install .` is not supported because FastDownward is located relative to the source checkout.
