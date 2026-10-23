@@ -16,5 +16,6 @@ def record(request):
 
 @pytest.fixture(autouse=True)
 def in_tmp_dir(tmp_path, monkeypatch):
-    # Solvers write temp/ and statistics/ into the working directory
+    # Keeps the files that solvers write (stream statistics, debugging output) out of the user's directories
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv('PDDLSTREAM_CACHE_DIR', str(tmp_path / 'cache'))

@@ -17,20 +17,22 @@ def has_xvfb():
     return shutil.which('xvfb-run') is not None
 
 
-def subprocess_env():
+def subprocess_env(cwd):
     python_path = os.pathsep.join(filter(None, [str(ROOT), os.environ.get('PYTHONPATH')]))
-    # A fixed hash seed makes FastDownward's translator (which iterates string-keyed sets) repeatable
-    return dict(os.environ, PYTHONPATH=python_path, PYTHONHASHSEED='0')
+    # A fixed hash seed makes FastDownward's translator (which iterates string-keyed sets) repeatable.
+    # Stream statistics go to cwd, so that earlier runs don't influence this one.
+    cache_dir = os.path.join(cwd, 'cache')
+    return dict(os.environ, PYTHONPATH=python_path, PYTHONHASHSEED='0', PDDLSTREAM_CACHE_DIR=cache_dir)
 
 
 def run_python(args, cwd, timeout=600, display=False):
-    """Runs `python <args>` in cwd, answering any prompts. Solvers write temp/ and statistics/ into the working
-    directory, so callers pass a fresh directory. display=True runs under a virtual X server."""
+    """Runs `python <args>` in cwd, answering any prompts. Examples can write files into the working directory and
+    save stream statistics, so callers pass a fresh directory. display=True runs under a virtual X server."""
     command = [sys.executable, *args]
     if display:
         command = XVFB_COMMAND + command
     return subprocess.run(
-        command, cwd=cwd, env=subprocess_env(), input='\n' * 100, capture_output=True, text=True, timeout=timeout
+        command, cwd=cwd, env=subprocess_env(cwd), input='\n' * 100, capture_output=True, text=True, timeout=timeout
     )
 
 

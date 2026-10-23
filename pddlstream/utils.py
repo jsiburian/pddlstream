@@ -2,6 +2,7 @@ import math
 import os
 import pickle
 import shutil
+import tempfile
 import sys
 import time
 import cProfile
@@ -27,10 +28,6 @@ def int_ceil(f):
     return int(math.ceil(f))
 
 
-def get_python_version():
-    return sys.version_info[0]
-
-
 def read(filename):
     with open(filename) as f:
         return f.read()
@@ -43,8 +40,10 @@ def write(filename, string):
 
 def write_pickle(filename, data):
     # Cannot pickle lambda or nested functions
-    with open(filename, 'wb') as f:
+    # Writes a temporary file and renames it, so that concurrent readers never see a partial file
+    with tempfile.NamedTemporaryFile('wb', dir=os.path.dirname(os.path.abspath(filename)), delete=False) as f:
         pickle.dump(data, f)
+    os.replace(f.name, filename)
 
 
 def read_pickle(filename):

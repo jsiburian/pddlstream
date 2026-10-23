@@ -3,12 +3,13 @@ import os
 from collections import namedtuple
 
 from pddlstream.language.constants import is_plan
-from pddlstream.utils import INF, read_pickle, ensure_dir, write_pickle, get_python_version, CreationHash
+from pddlstream.utils import INF, read_pickle, ensure_dir, write_pickle, CreationHash
 
 LOAD_STATISTICS = True
 SAVE_STATISTICS = True
 
-DATA_DIR = 'statistics/py{:d}/'
+CACHE_DIR_VARIABLE = 'PDDLSTREAM_CACHE_DIR'
+LEGACY_DATA_DIR = 'statistics/py3/'  # Where earlier versions saved statistics, relative to the working directory
 DEFAULT_SEARCH_OVERHEAD = 1e2  # TODO: update this over time
 EPSILON = 1e-6
 # Can also include the overhead to process skeletons
@@ -45,23 +46,27 @@ def compute_plan_effort(stream_plan, **kwargs):
 
 ##################################################
 
-# TODO: write to a "local" folder containing temp, data2, data3, visualizations
+
+def get_cache_dir():
+    """$PDDLSTREAM_CACHE_DIR, or pddlstream/ in the user's cache directory ($XDG_CACHE_HOME, by default ~/.cache)."""
+    if os.environ.get(CACHE_DIR_VARIABLE):
+        return os.environ[CACHE_DIR_VARIABLE]
+    user_cache_dir = os.environ.get('XDG_CACHE_HOME') or os.path.join(os.path.expanduser('~'), '.cache')
+    return os.path.join(user_cache_dir, 'pddlstream')
 
 
 def get_data_path(stream_name):
-    data_dir = DATA_DIR.format(get_python_version())
-    file_name = f'{stream_name}.pkl'
-    return os.path.join(data_dir, file_name)
+    """Statistics are saved per stream file, named by its (define (stream <name>) ...)."""
+    return os.path.join(get_cache_dir(), 'statistics', f'{stream_name}.pkl')
 
 
 def load_data(pddl_name):
     if not LOAD_STATISTICS:
         return {}
-    filename = get_data_path(pddl_name)
-    if not os.path.exists(filename):
-        return {}
-    data = read_pickle(filename)  # TODO: try/except
-    return data
+    for filename in [get_data_path(pddl_name), os.path.join(LEGACY_DATA_DIR, f'{pddl_name}.pkl')]:
+        if os.path.exists(filename):
+            return read_pickle(filename)  # TODO: try/except
+    return {}
 
 
 def load_stream_statistics(externals):

@@ -207,6 +207,10 @@ Decisions that otherwise depend on elapsed time, such as the adaptive algorithm'
 `max_time` is still measured in seconds, so a run that stops because of it may not repeat.
 Seed your samplers (`random`, `numpy.random`) as usual.
 
+Without `deterministic=True`, the solvers load the stream statistics (success rates and overheads) saved by earlier runs, so runs also depend on what ran before.
+The statistics are saved per stream file in `~/.cache/pddlstream/statistics/` (`$XDG_CACHE_HOME/pddlstream/` if set, or `$PDDLSTREAM_CACHE_DIR`); delete them to start fresh.
+Statistics that earlier versions saved in `./statistics/` are still read.
+
 ## Search Subroutines
 
 Many (but not all) **pddlstream** algorithms have a discrete planning phase that can be implemented using any finite state-space search algorithm, such as Breadth-First Search (BFS) and Uniform-Cost Search (UCS).
