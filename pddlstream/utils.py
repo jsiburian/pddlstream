@@ -104,6 +104,28 @@ def open_pdf(filename):
 def elapsed_time(start_time):
     return time.time() - start_time
 
+##################################################
+
+# Reproducibility: with PYTHONHASHSEED fixed and seeded samplers, a deterministic solve repeats exactly
+
+_creation_counter = count()
+
+
+class CreationHash(object):
+    """Hashes objects by creation order instead of memory address, so iterating over a set of them visits them in
+    the same order on every run. Equality is still identity."""
+    def __new__(cls, *args, **kwargs):
+        self = super(CreationHash, cls).__new__(cls)
+        self._hash = next(_creation_counter)
+        return self
+    def __hash__(self):
+        return self._hash
+
+
+def reset_creation_hashes():
+    global _creation_counter
+    _creation_counter = count()
+
 
 def safe_zip(sequence1, sequence2):
     assert len(sequence1) == len(sequence2)

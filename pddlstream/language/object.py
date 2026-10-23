@@ -2,7 +2,7 @@ from collections import namedtuple, defaultdict
 from itertools import count
 from pddlstream.language.constants import get_parameter_name
 #from pddlstream.language.conversion import values_from_objects
-from pddlstream.utils import str_from_object, is_hashable
+from pddlstream.utils import str_from_object, is_hashable, CreationHash
 
 USE_HASH = True
 USE_OBJ_STR = True
@@ -10,7 +10,7 @@ USE_OPT_STR = True
 OPT_PREFIX = '#'
 PREFIX_LEN = 1
 
-class Object(object):
+class Object(CreationHash):
     _prefix = 'v'
     _obj_from_id = {}
     _obj_from_value = {}
@@ -112,7 +112,7 @@ class SharedDebugValue(namedtuple('SharedDebugValue', ['stream', 'output_paramet
 # TODO: just one object class or have Optimistic extend Object
 # TODO: make a parameter class that has access to some underlying value
 
-class OptimisticObject(object):
+class OptimisticObject(CreationHash):
     _prefix = '{}o'.format(OPT_PREFIX) # $ % #
     _obj_from_inputs = {}
     _obj_from_name = {}

@@ -4,7 +4,7 @@ import pickle
 from collections import Counter, namedtuple
 
 from pddlstream.language.constants import is_plan
-from pddlstream.utils import INF, read_pickle, ensure_dir, write_pickle, get_python_version
+from pddlstream.utils import INF, read_pickle, ensure_dir, write_pickle, get_python_version, CreationHash
 
 LOAD_STATISTICS = True
 SAVE_STATISTICS = True
@@ -179,7 +179,7 @@ class PerformanceInfo(object):
     def __repr__(self):
         return '{}{}'.format(self.__class__.__name__, repr(self.__dict__))
 
-class Performance(object):
+class Performance(CreationHash):
     def __init__(self, name, info):
         self.name = name.lower()
         self.info = info

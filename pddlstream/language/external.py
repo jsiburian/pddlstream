@@ -5,7 +5,7 @@ from pddlstream.language.constants import get_args, is_parameter, get_prefix, Fa
 from pddlstream.language.conversion import values_from_objects, substitute_fact, obj_from_value_expression
 from pddlstream.language.object import Object, OptimisticObject
 from pddlstream.language.statistics import Performance, PerformanceInfo, DEFAULT_SEARCH_OVERHEAD, Stats
-from pddlstream.utils import elapsed_time, get_mapping, flatten, INF, safe_apply_mapping, Score, INF
+from pddlstream.utils import elapsed_time, get_mapping, flatten, INF, safe_apply_mapping, Score, CreationHash
 
 DEBUG = 'debug'
 SHARED_DEBUG = 'shared_debug'
@@ -63,7 +63,7 @@ class ExternalInfo(PerformanceInfo):
 
 ##################################################
 
-class Result(object):
+class Result(CreationHash):
     def __init__(self, instance, opt_index, call_index, optimistic):
         self.instance = instance
         self.opt_index = opt_index
@@ -129,7 +129,7 @@ class Result(object):
 
 ##################################################
 
-class Instance(object):
+class Instance(CreationHash):
     _Result = None
     def __init__(self, external, input_objects):
         self.external = external

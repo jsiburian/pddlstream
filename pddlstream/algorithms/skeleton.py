@@ -13,7 +13,7 @@ from pddlstream.language.constants import is_plan, INFEASIBLE, FAILED, SUCCEEDED
 from pddlstream.language.function import FunctionResult
 from pddlstream.algorithms.visualization import visualize_stream_orders
 from pddlstream.utils import elapsed_time, HeapElement, apply_mapping, INF, get_mapping, adjacent_from_edges, \
-    incoming_from_edges, outgoing_from_edges
+    incoming_from_edges, outgoing_from_edges, CreationHash
 
 # TODO: the bias away from solved things is actually due to USE_PRIORITIES+timed_process not REQUIRE_DOWNSTREAM
 USE_PRIORITIES = True
@@ -46,7 +46,7 @@ def compute_affected_component(stream_plan, index):
 
 ##################################################
 
-class Skeleton(object):
+class Skeleton(CreationHash):
     def __init__(self, queue, stream_plan, action_plan, cost):
         # TODO: estimate statistics per stream_instance online and use to reorder the skeleton
         self.queue = queue
@@ -106,7 +106,7 @@ class Skeleton(object):
 
 ##################################################
 
-class Binding(object):
+class Binding(CreationHash):
     counter = count()
     def __init__(self, skeleton, cost, history, mapping, index, parent, parent_result):
     #def __init__(self, skeleton, cost=0., history=[], mapping={}, index=0, parent=None):
