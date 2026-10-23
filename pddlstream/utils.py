@@ -31,7 +31,7 @@ def get_python_version():
 
 
 def read(filename):
-    with open(filename, 'r') as f:
+    with open(filename) as f:
         return f.read()
 
 
@@ -100,11 +100,11 @@ def elapsed_time(start_time):
 _creation_counter = count()
 
 
-class CreationHash(object):
+class CreationHash:
     """Hashes objects by creation order instead of memory address, so iterating over a set of them visits them in
     the same order on every run. Equality is still identity."""
     def __new__(cls, *args, **kwargs):
-        self = super(CreationHash, cls).__new__(cls)
+        self = super().__new__(cls)
         self._hash = next(_creation_counter)
         return self
     def __hash__(self):
@@ -116,7 +116,7 @@ def reset_creation_hashes():
     _creation_counter = count()
 
 
-class WallClock(object):
+class WallClock:
     """Measures time in seconds."""
     unit = 'seconds'
     def now(self):
@@ -125,7 +125,7 @@ class WallClock(object):
         pass
 
 
-class WorkClock(object):
+class WorkClock:
     """Measures time in work units that the solver charges for each stream call and search, so that decisions based
     on elapsed time (sampling budgets, stream overhead estimates) are reproducible."""
     unit = 'work units'
@@ -186,7 +186,7 @@ def find_unique(test, sequence):
     for item in sequence:
         if test(item):
             if found:
-                raise RuntimeError('Both elements {} and {} satisfy the test'.format(value, item))
+                raise RuntimeError(f'Both elements {value} and {item} satisfy the test')
             found, value = True, item
     if not found:
         raise RuntimeError('Unable to find an element satisfying the test')
@@ -243,13 +243,12 @@ def check_memory(max_memory):
     peak_memory = get_peak_memory_in_kb()
     if peak_memory <= max_memory:
         return True
-    print('Peak memory of {} KB exceeds memory limit of {} KB'.format(
-        int(peak_memory), int(max_memory)))
+    print(f'Peak memory of {int(peak_memory)} KB exceeds memory limit of {int(max_memory)} KB')
     return False
 
 ##################################################
 
-class Saver(object):
+class Saver:
     # TODO: contextlib
     def save(self):
         raise NotImplementedError()
@@ -301,7 +300,7 @@ class Verbose(Saver): # TODO: use DisableOutput
 
 ##################################################
 
-class Comparable(object):
+class Comparable:
     def __lt__(self, other):
         raise NotImplementedError()
     def __eq__(self, other):
@@ -315,7 +314,7 @@ class Comparable(object):
     def __le__(self, other):
         return not other < self
 
-class MockSet(object):
+class MockSet:
     def __init__(self, test=lambda item: True):
         self.test = test
     def __contains__(self, item):
@@ -337,7 +336,7 @@ class Score(Comparable): # tuple
     def __add__(self, other):
         return self.__class__(*(self.values + other.values))
     def __repr__(self):
-        return '{}{}'.format(self.__class__.__name__, self.values)
+        return f'{self.__class__.__name__}{self.values}'
 
 class HeapElement(Comparable):
     def __init__(self, key, value):
@@ -348,7 +347,7 @@ class HeapElement(Comparable):
     def __iter__(self):
         return iter([self.key, self.value])
     def __repr__(self):
-        return '{}({}, {})'.format(self.__class__.__name__, self.key, self.value)
+        return f'{self.__class__.__name__}({self.key}, {self.value})'
 
 ##################################################
 
@@ -361,7 +360,7 @@ def str_from_object(obj, ndigits=None):  # str_object
     if type(obj) == tuple:
         return '({})'.format(', '.join(str_from_object(item, ndigits) for item in obj))
     if type(obj) in [dict, defaultdict, Counter]:
-        return '{{{}}}'.format(', '.join('{}: {}'.format(str_from_object(key, ndigits), str_from_object(obj[key], ndigits)) \
+        return '{{{}}}'.format(', '.join(f'{str_from_object(key, ndigits)}: {str_from_object(obj[key], ndigits)}' \
                                   for key in sorted(obj.keys(), key=lambda k: str_from_object(k, ndigits))))
     if type(obj) in [set, frozenset]:
         return '{{{}}}'.format(', '.join(sorted(str_from_object(item, ndigits) for item in obj)))

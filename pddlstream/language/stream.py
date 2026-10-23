@@ -23,7 +23,7 @@ NEGATIVE_SUFFIX = '-negative'
 
 ##################################################
 
-class PartialInputs(object):
+class PartialInputs:
     def __init__(self, inputs='', unique=DEFAULT_UNIQUE, test=universe_test):
         self.inputs = tuple(inputs.split())
         self.unique = unique # TODO: refactor this
@@ -61,7 +61,7 @@ def get_debug_gen_fn(stream, shared=True):
 
 ##################################################
 
-class WildOutput(object):
+class WildOutput:
     def __init__(self, values=[], facts=[], actions=[], enumerated=False, replan=False):
         self.values = values
         self.facts = facts
@@ -78,7 +78,7 @@ class StreamInfo(ExternalInfo):
                  verbose=True, **kwargs): # TODO: set negate to None to express no user preference
         # TODO: could change frequency/priority for the incremental algorithm
         # TODO: maximum number of evaluations per iteration of adaptive
-        super(StreamInfo, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # TODO: call this an abstraction instead
         self.opt_gen_fn = PartialInputs() if opt_gen_fn is None else opt_gen_fn
         self.negate = negate
@@ -91,7 +91,7 @@ class StreamInfo(ExternalInfo):
 class StreamResult(Result):
     def __init__(self, instance, output_objects, opt_index=None,
                  call_index=None, list_index=None, optimistic=True):
-        super(StreamResult, self).__init__(instance, opt_index, call_index, optimistic)
+        super().__init__(instance, opt_index, call_index, optimistic)
         self.output_objects = tuple(output_objects)
         assert len(self.output_objects) == len(self.external.outputs)
         self.list_index = list_index
@@ -129,16 +129,15 @@ class StreamResult(Result):
     def is_successful(self):
         return True
     def __repr__(self):
-        return '{}:{}->{}'.format(self.external.name,
-                                  str_from_object(self.instance.input_objects),
-                                  str_from_object(self.output_objects))
+        inputs, outputs = str_from_object(self.instance.input_objects), str_from_object(self.output_objects)
+        return f'{self.external.name}:{inputs}->{outputs}'
 
 ##################################################
 
 class StreamInstance(Instance):
     _Result = StreamResult
     def __init__(self, stream, input_objects, fluent_facts):
-        super(StreamInstance, self).__init__(stream, input_objects)
+        super().__init__(stream, input_objects)
         self._generator = None
         self.fluent_facts = frozenset(fluent_facts)
         self.opt_gen_fns = [opt_gen_fn.get_opt_gen_fn(self) if isinstance(opt_gen_fn, PartialInputs) else opt_gen_fn
@@ -150,22 +149,21 @@ class StreamInstance(Instance):
 
     def _check_output_values(self, new_values):
         if not isinstance(new_values, Sequence):
-            raise ValueError('An output list for stream [{}] is not a sequence: {}'.format(self.external.name, new_values))
+            raise ValueError(f'An output list for stream [{self.external.name}] is not a sequence: {new_values}')
         for output_values in new_values:
             if not isinstance(output_values, Sequence):
-                raise ValueError('An output tuple for stream [{}] is not a sequence: {}'.format(
-                    self.external.name, output_values))
+                raise ValueError(
+                    f'An output tuple for stream [{self.external.name}] is not a sequence: {output_values}')
             if len(output_values) != len(self.external.outputs):
-                raise ValueError('An output tuple for stream [{}] has length {} instead of {}: {}'.format(
-                    self.external.name, len(output_values), len(self.external.outputs), output_values))
+                raise ValueError(f'An output tuple for stream [{self.external.name}] has length {len(output_values)} '
+                                 f'instead of {len(self.external.outputs)}: {output_values}')
 
     def _check_wild_facts(self, new_facts):
         if not isinstance(new_facts, Sequence):
-            raise ValueError('Output wild facts for wild stream [{}] is not a sequence: {}'.format(
-                self.external.name, new_facts))
+            raise ValueError(f'Output wild facts for wild stream [{self.external.name}] is not a sequence: {new_facts}')
 
     def reset(self):
-        super(StreamInstance, self).reset()
+        super().reset()
         self.previous_outputs = set()
         self.num_optimistic = 1
 
@@ -211,16 +209,14 @@ class StreamInstance(Instance):
     def dump_new_values(self, new_values=[]):
         if (not new_values and VERBOSE_FAILURES) or \
                 (new_values and self.info.verbose):
-            print('iter={}, outs={}) {}:{}->{}'.format(
-                self.get_iteration(), len(new_values), self.external.name,
-                str_from_object(self.get_input_values()), str_from_object(new_values)))
+            print(f'iter={self.get_iteration()}, outs={len(new_values)}) {self.external.name}:'
+                  f'{str_from_object(self.get_input_values())}->{str_from_object(new_values)}')
 
     def dump_new_facts(self, new_facts=[]):
         if VERBOSE_WILD and new_facts:
             # TODO: format all_new_facts
-            print('iter={}, facts={}) {}:{}->{}'.format(
-                self.get_iteration(), self.external.name, str_from_object(self.get_input_values()),
-                new_facts, len(new_facts)))
+            print(f'iter={self.get_iteration()}, facts={self.external.name}) '
+                  f'{str_from_object(self.get_input_values())}:{new_facts}->{len(new_facts)}')
 
     def next_results(self, verbose=False):
         assert not self.enumerated
@@ -312,7 +308,7 @@ class StreamInstance(Instance):
         self.disabled = True
         index = len(self.external.disabled_instances)
         self.external.disabled_instances.append(self)
-        self._axiom_predicate = '_ax{}-{}'.format(self.external.blocked_predicate, index)
+        self._axiom_predicate = f'_ax{self.external.blocked_predicate}-{index}'
         add_fact(evaluations, self.get_blocked_fact(), result=INTERNAL_EVALUATION,
                  complexity=self.compute_complexity(evaluations))
         # TODO: allow reporting back minimum unsatisfiable subset
@@ -356,14 +352,14 @@ class StreamInstance(Instance):
         return new_instance
 
     def __repr__(self):
-        return '{}:{}->{}'.format(self.external.name, self.input_objects, self.external.outputs)
+        return f'{self.external.name}:{self.input_objects}->{self.external.outputs}'
 
 ##################################################
 
 class Stream(External):
     _Instance = StreamInstance
     def __init__(self, name, gen_fn, inputs, domain, outputs, certified, info=StreamInfo(), fluents=[]):
-        super(Stream, self).__init__(name, info, inputs, domain)
+        super().__init__(name, info, inputs, domain)
         self.outputs = tuple(outputs)
         self.certified = tuple(map(convert_constants, certified))
         self.constants.update(a for i in certified for a in get_args(i) if not is_parameter(a))
@@ -371,16 +367,16 @@ class Stream(External):
 
         for p, c in Counter(self.outputs).items():
             if not is_parameter(p):
-                raise ValueError('Output [{}] for stream [{}] is not a parameter'.format(p, name))
+                raise ValueError(f'Output [{p}] for stream [{name}] is not a parameter')
             if c != 1:
-                raise ValueError('Output [{}] for stream [{}] is not unique'.format(p, name))
+                raise ValueError(f'Output [{p}] for stream [{name}] is not unique')
         for p in set(self.inputs) & set(self.outputs):
-            raise ValueError('Parameter [{}] for stream [{}] is both an input and output'.format(p, name))
+            raise ValueError(f'Parameter [{p}] for stream [{name}] is both an input and output')
         certified_parameters = {a for i in certified for a in get_args(i) if is_parameter(a)}
         for p in (certified_parameters - set(self.inputs + self.outputs)):
-            raise ValueError('Parameter [{}] for stream [{}] is not included within outputs'.format(p, name))
+            raise ValueError(f'Parameter [{p}] for stream [{name}] is not included within outputs')
         for p in (set(self.outputs) - certified_parameters):
-            print('Warning! Output [{}] for stream [{}] is not covered by a certified condition'.format(p, name))
+            print(f'Warning! Output [{p}] for stream [{name}] is not covered by a certified condition')
 
         # TODO: automatically switch to unique if only used once
         self.gen_fn = gen_fn # DEBUG_MODES
@@ -396,15 +392,15 @@ class Stream(External):
             self.opt_gen_fns.append(self.info.opt_gen_fn)
 
         if NEGATIVE_BLOCKED:
-            self.blocked_predicate = '~{}{}'.format(self.name, NEGATIVE_SUFFIX) # Args are self.inputs
+            self.blocked_predicate = f'~{self.name}{NEGATIVE_SUFFIX}' # Args are self.inputs
         else:
-            self.blocked_predicate = '~{}'.format(self.name)
+            self.blocked_predicate = f'~{self.name}'
         self.disabled_instances = [] # For tracking disabled axioms
-        self.stream_fact = Fact('_{}'.format(name), concatenate(inputs, outputs)) # TODO: just add to certified?
+        self.stream_fact = Fact(f'_{name}', concatenate(inputs, outputs)) # TODO: just add to certified?
 
         if self.is_negated:
             if self.outputs:
-                raise ValueError('Negated streams cannot have outputs: {}'.format(self.outputs))
+                raise ValueError(f'Negated streams cannot have outputs: {self.outputs}')
             for certified in self.certified:
                 if not (set(self.inputs) <= set(get_args(certified))):
                     raise ValueError('Negated streams must have certified facts including all input parameters')
@@ -438,7 +434,7 @@ class Stream(External):
         # TODO: method that converts a stream into a test stream (possibly from ss)
         raise NotImplementedError()
     def __repr__(self):
-        return '{}:{}->{}'.format(self.name, self.inputs, self.outputs)
+        return f'{self.name}:{self.inputs}->{self.outputs}'
 
 ##################################################
 
@@ -450,10 +446,10 @@ def parse_stream(lisp_list, stream_map, stream_info):
     # TODO: dnf_from_positive_formula(value_from_attribute.get(':domain', []))
     if not (get_formula_operators(domain) <= {AND}):
         # TODO: allow positive DNF
-        raise ValueError('Stream [{}] domain must be a conjunction'.format(name))
+        raise ValueError(f'Stream [{name}] domain must be a conjunction')
     certified = value_from_attribute.get(':certified', None)
     if not (get_formula_operators(certified) <= {AND}):
-        raise ValueError('Stream [{}] certified must be a conjunction'.format(name))
+        raise ValueError(f'Stream [{name}] certified must be a conjunction')
     return Stream(name, get_procedure_fn(stream_map, name),
                   value_from_attribute.get(':inputs', []),
                   list_from_conjunction(domain),

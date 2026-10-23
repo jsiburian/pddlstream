@@ -52,8 +52,8 @@ def create_problem(max_t=20., n_foods=3, n_stoves=2):
         'Difference': lambda t2, t1: t2 - t1,
     }
 
-    foods = ['f{}'.format(i) for i in range(n_foods)]
-    stoves = ['s{}'.format(i) for i in range(n_stoves)]
+    foods = [f'f{i}' for i in range(n_foods)]
+    stoves = [f's{i}' for i in range(n_stoves)]
 
     t0 = 0.
     goal_t = 5

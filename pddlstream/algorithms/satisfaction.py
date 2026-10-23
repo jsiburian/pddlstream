@@ -34,7 +34,7 @@ def create_domain(goal_facts):
     domain = make_domain()
     for fact in goal_facts: # TODO: consider removing this annoying check
         name = get_prefix(fact)
-        parameters = ['?x{}'.format(i) for i in range(len(get_args(fact)))]
+        parameters = [f'?x{i}' for i in range(len(get_args(fact)))]
         add_predicate(domain, make_predicate(name, parameters))
     return domain
 
@@ -46,7 +46,7 @@ def plan_functions(functions, externals):
     function_plan = set()
     for term in functions:
         if get_prefix(term) not in external_from_function:
-            raise ValueError('{} is not implemented'.format(get_prefix(term)))
+            raise ValueError(f'{get_prefix(term)} is not implemented')
         external = external_from_function[get_prefix(term)]
         instance = external.get_instance(get_args(term))
         [result] = instance.next_optimistic()
@@ -85,15 +85,15 @@ def bindings_from_plan(plan_skeleton, action_plan):
 def dump_assignment(solution):
     bindings, cost, evaluations = solution
     print()
-    print('Solved: {}'.format(bindings is not None))
-    print('Cost: {:.3f}'.format(cost))
-    print('Total facts: {}'.format(len(evaluations)))
-    print('Fact counts: {}'.format(str_from_object(Counter(map(get_prefix, evaluations.all_facts))))) # preimage_facts
+    print(f'Solved: {bindings is not None}')
+    print(f'Cost: {cost:.3f}')
+    print(f'Total facts: {len(evaluations)}')
+    print(f'Fact counts: {str_from_object(Counter(map(get_prefix, evaluations.all_facts)))}') # preimage_facts
     if bindings is None:
         return
     print('Assignments:')
     for param in sorted(bindings):
-        print('{} = {}'.format(param, str_from_object(bindings[param])))
+        print(f'{param} = {str_from_object(bindings[param])}')
 
 ##################################################
 
@@ -145,10 +145,9 @@ def constraint_satisfaction(problem, stream_info={},
     while not store.is_terminated():
         num_iterations += 1
         start_time = time.time()
-        print('\nIteration: {} | Skeletons: {} | Skeleton Queue: {} | Evaluations: {} | '
-              'Cost: {:.3f} | Search Time: {:.3f} | Sample Time: {:.3f} | Total Time: {:.3f}'.format(
-            num_iterations, len(queue.skeletons), len(queue),
-            len(evaluations), store.best_cost, search_time, sample_time, store.elapsed_time()))
+        print(f'\nIteration: {num_iterations} | Skeletons: {len(queue.skeletons)} | Skeleton Queue: {len(queue)} | '
+              f'Evaluations: {len(evaluations)} | Cost: {store.best_cost:.3f} | Search Time: {search_time:.3f} | '
+              f'Sample Time: {sample_time:.3f} | Total Time: {store.elapsed_time():.3f}')
 
         external_plan = None
         if len(queue.skeletons) < max_skeletons:
@@ -160,8 +159,7 @@ def constraint_satisfaction(problem, stream_info={},
                 external_plan = reorder_stream_plan(store, combine_optimizers(
                     init_evaluations, stream_plan + list(function_plan)))
 
-        print('Stream plan ({}, {:.3f}): {}'.format(
-            get_length(external_plan), compute_plan_effort(external_plan), external_plan))
+        print(f'Stream plan ({get_length(external_plan)}, {compute_plan_effort(external_plan):.3f}): {external_plan}')
         last_success = (external_plan is not None)
         search_time += elapsed_time(start_time)
 

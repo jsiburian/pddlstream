@@ -24,9 +24,9 @@ def parse_constants(domain, constant_map):
     obj_from_constant = {}
     for constant in domain.constants:
         if constant.name.startswith(Object._prefix): # TODO: check other prefixes
-            raise NotImplementedError('Constants are not currently allowed to begin with {}'.format(Object._prefix))
+            raise NotImplementedError(f'Constants are not currently allowed to begin with {Object._prefix}')
         if constant.name not in constant_map:
-            raise ValueError('Undefined constant {}'.format(constant.name))
+            raise ValueError(f'Undefined constant {constant.name}')
         value = constant_map.get(constant.name, constant.name)
         obj_from_constant[constant.name] = Object(value, name=constant.name) # TODO: remap names
         # TODO: add object predicate
@@ -36,7 +36,7 @@ def parse_constants(domain, constant_map):
             if constant.name == name:
                 break
         else:
-            raise ValueError('Constant map value {} not mentioned in domain :constants'.format(name))
+            raise ValueError(f'Constant map value {name} not mentioned in domain :constants')
     del domain.constants[:] # So not set twice
     return obj_from_constant
 
@@ -44,7 +44,7 @@ def check_problem(domain, streams, obj_from_constant):
     for action in (domain.actions + domain.axioms):
         for p, c in Counter(action.parameters).items():
             if c != 1:
-                raise ValueError('Parameter [{}] for action [{}] is not unique'.format(p.name, action.name))
+                raise ValueError(f'Parameter [{p.name}] for action [{action.name}] is not unique')
         # TODO: check that no undeclared parameters & constants
 
     undeclared_predicates = set()
@@ -58,10 +58,9 @@ def check_problem(domain, streams, obj_from_constant):
             if name not in domain.predicate_dict:
                 undeclared_predicates.add(name)
             elif len(get_args(fact)) != domain.predicate_dict[name].get_arity(): # predicate used with wrong arity: {}
-                print('Warning! predicate used with wrong arity in stream [{}]: {}'.format(stream.name, fact))
+                print(f'Warning! predicate used with wrong arity in stream [{stream.name}]: {fact}')
     if undeclared_predicates:
-        print('Warning! Undeclared predicates: {}'.format(
-            sorted(undeclared_predicates))) # Undeclared predicate: {}
+        print(f'Warning! Undeclared predicates: {sorted(undeclared_predicates)}') # Undeclared predicate: {}
 
 def reset_registries():
     # TODO: maintain these dictionaries in an object
@@ -158,7 +157,7 @@ def parse_streams(streams, rules, stream_pddl, procedure_map, procedure_info, us
             raise ValueError(name)
         for external in externals:
             if any(e.name == external.name for e in streams):
-                raise ValueError('Stream [{}] is not unique'.format(external.name))
+                raise ValueError(f'Stream [{external.name}] is not unique')
             if name == ':rule':
                 rules.append(external)
             external.pddl_name = pddl_name # TODO: move within constructors

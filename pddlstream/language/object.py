@@ -18,7 +18,7 @@ class Object(CreationHash):
         self.value = value
         self.index = len(Object._obj_from_name)
         if name is None:
-            name = '{}{}'.format(self._prefix, self.index)
+            name = f'{self._prefix}{self.index}'
         self.pddl = name
         self.stream_instance = stream_instance # TODO: store first created stream instance
         Object._obj_from_id[id(self.value)] = self
@@ -75,7 +75,7 @@ class SharedOptValue(namedtuple('SharedOptTuple', ['stream', 'inputs', 'input_ob
 
 ##################################################
 
-class DebugValue(object): # TODO: could just do an object
+class DebugValue: # TODO: could just do an object
     _output_counts = defaultdict(count)
     _prefix = '@' # $ | @
     def __init__(self, stream, input_values, output_parameter):
@@ -85,13 +85,13 @@ class DebugValue(object): # TODO: could just do an object
         self.index = next(self._output_counts[output_parameter])
     def __repr__(self):
         # Can also just return first letter of the prefix
-        return '{}{}{}'.format(self._prefix, get_parameter_name(self.output_parameter), self.index)
+        return f'{self._prefix}{get_parameter_name(self.output_parameter)}{self.index}'
 
 class SharedDebugValue(namedtuple('SharedDebugValue', ['stream', 'output_parameter'])):
     # TODO: this alone doesn't refining at the shared object level
     _prefix = '&' # $ | @ | &
     def __repr__(self):
-        return '{}{}'.format(self._prefix, get_parameter_name(self.output_parameter))
+        return f'{self._prefix}{get_parameter_name(self.output_parameter)}'
 
 ##################################################
 
@@ -99,7 +99,7 @@ class SharedDebugValue(namedtuple('SharedDebugValue', ['stream', 'output_paramet
 # TODO: make a parameter class that has access to some underlying value
 
 class OptimisticObject(CreationHash):
-    _prefix = '{}o'.format(OPT_PREFIX) # $ % #
+    _prefix = f'{OPT_PREFIX}o' # $ % #
     _obj_from_inputs = {}
     _obj_from_name = {}
     _count_from_prefix = {}
@@ -113,10 +113,10 @@ class OptimisticObject(CreationHash):
             parameter = self.param.output
             prefix = get_parameter_name(parameter)[:PREFIX_LEN]
             var_index = next(self._count_from_prefix.setdefault(prefix, count()))
-            self.repr_name = '{}{}{}'.format(OPT_PREFIX, prefix, var_index)
+            self.repr_name = f'{OPT_PREFIX}{prefix}{var_index}'
             self.pddl = self.repr_name
         else:
-            self.pddl = '{}{}'.format(self._prefix, self.index)
+            self.pddl = f'{self._prefix}{self.index}'
             self.repr_name = self.pddl
         OptimisticObject._obj_from_inputs[(value, param)] = self
         OptimisticObject._obj_from_name[self.pddl] = self

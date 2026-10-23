@@ -44,7 +44,7 @@ def compute_plan_effort(stream_plan, **kwargs):
 
 def get_data_path(stream_name):
     data_dir = DATA_DIR.format(get_python_version())
-    file_name = '{}.pkl'.format(stream_name)
+    file_name = f'{stream_name}.pkl'
     return os.path.join(data_dir, file_name)
 
 def load_data(pddl_name):
@@ -128,7 +128,7 @@ def write_stream_statistics(externals, verbose):
 
 ##################################################
 
-class PerformanceInfo(object):
+class PerformanceInfo:
     def __init__(self, p_success=1-EPSILON, overhead=EPSILON, effort=None, estimate=False):
         # TODO: make info just a dict
         self.estimate = estimate
@@ -142,7 +142,7 @@ class PerformanceInfo(object):
         self.overhead = overhead
         self.effort = effort
     def __repr__(self):
-        return '{}{}'.format(self.__class__.__name__, repr(self.__dict__))
+        return f'{self.__class__.__name__}{repr(self.__dict__)}'
 
 class Performance(CreationHash):
     def __init__(self, name, info):
@@ -207,16 +207,15 @@ class Performance(CreationHash):
         sign = -1 if negate else +1
         return Stats(p_success=self.get_p_success(), overhead=sign * self.get_overhead())
     def dump_total(self):
-        print('External: {} | n: {:d} | p_success: {:.3f} | overhead: {:.3f}'.format(
-            self.name, self.total_calls, self._estimate_p_success(), self._estimate_overhead()))
+        print(f'External: {self.name} | n: {self.total_calls:d} | p_success: {self._estimate_p_success():.3f} | '
+              f'overhead: {self._estimate_overhead():.3f}')
     def dump_online(self):
         if not self.online_calls:
             return
-        print('External: {} | n: {:d} | p_success: {:.3f} | mean overhead: {:.3f} | overhead: {:.3f}'.format(
-            self.name, self.online_calls,
-            safe_ratio(self.online_successes, self.online_calls),
-            safe_ratio(self.online_overhead, self.online_calls),
-            self.online_overhead))
+        print(f'External: {self.name} | n: {self.online_calls:d} | '
+              f'p_success: {safe_ratio(self.online_successes, self.online_calls):.3f} | '
+              f'mean overhead: {safe_ratio(self.online_overhead, self.online_calls):.3f} | '
+              f'overhead: {self.online_overhead:.3f}')
 
 ##################################################
 

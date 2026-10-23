@@ -229,11 +229,11 @@ def get_optimize_fn(regions, collisions=True, max_time=5., hard=False,
         linear_variables = sorted(linear_variables, key=lambda v: v.VarName)
         dimension = len(linear_variables)
 
-        print('{} variables (dim={}): {}'.format(len(variable_indices), dimension,
-                                                 [facts[index] for index in sorted(variable_indices)]))
+        print(f'{len(variable_indices)} variables (dim={dimension}): '
+              f'{[facts[index] for index in sorted(variable_indices)]}')
         nontrivial_indices = set(constraint_indices) - set(variable_indices) # TODO: rename
-        print('{} constraints: (codim={}): {}'.format(len(nontrivial_indices), codimension,
-                                                      [facts[index] for index in sorted(nontrivial_indices)]))
+        print(f'{len(nontrivial_indices)} constraints: (codim={codimension}): '
+              f'{[facts[index] for index in sorted(nontrivial_indices)]}')
 
 
 
@@ -274,8 +274,8 @@ def get_optimize_fn(regions, collisions=True, max_time=5., hard=False,
 
         ##########
 
-        print('Solved: {} | Objective: {:.3f} | Solutions: {} | Status: {} | Runtime: {:.3f}'.format(
-            True, model.ObjVal, model.SolCount, model.status, model.runtime))
+        print(f'Solved: {True} | Objective: {model.ObjVal:.3f} | Solutions: {model.SolCount} | '
+              f'Status: {model.status} | Runtime: {model.runtime:.3f}')
 
         if costs and diagnose_cost:
             infeasible = deletion_filter(model, constraint_indices, max_objective=model.ObjVal - 1e-6)

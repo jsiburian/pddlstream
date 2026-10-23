@@ -54,8 +54,7 @@ def dump_statistics(name='continuous-tamp'):
             continue
         p_success = float(statistics['successes']) / attempts
         overhead = float(statistics['overhead']) / attempts
-        print('External: {} | n: {:d} | p_success: {:.3f} | overhead: {:.3f}'.format(
-            name, attempts, p_success, overhead))
+        print(f'External: {name} | n: {attempts:d} | p_success: {p_success:.3f} | overhead: {overhead:.3f}')
         stats_from_stream[name] = Stats(p_success, overhead)
     print(stats_from_stream)
     return stats_from_stream
@@ -159,11 +158,11 @@ def main():
         intersection = set.intersection(*stream_plans)
         p = p_disjunction(stream_plans, STATS_PER_STREAM)
         assert 0 <= p <= 1
-        print('Problems: {} | Intersection: {} | p={:.3f}'.format(problems, len(intersection), p))
+        print(f'Problems: {problems} | Intersection: {len(intersection)} | p={p:.3f}')
         if p > best_p:
             best_problems, best_p = problems, p
 
-    print('\nBest: {} (p={:.3f})'.format(best_problems, best_p))
+    print(f'\nBest: {best_problems} (p={best_p:.3f})')
 
 
 if __name__ == '__main__':

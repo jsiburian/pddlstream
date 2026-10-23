@@ -34,7 +34,7 @@ def create_disable_axiom(external_plan, use_parameters=True):
     optimistic_objects = {o for f in constraints for o in get_args(f)
                           if isinstance(o, OptimisticObject)} # TODO: consider case when variables are free
     free_objects = optimistic_objects
-    parameters = ['?p{}'.format(i) for i in range(len(free_objects))]
+    parameters = [f'?p{i}' for i in range(len(free_objects))]
     param_from_obj = get_mapping(free_objects, parameters)
     preconditions = substitute_expression(constraints, param_from_obj)
     effect = (UNSATISFIABLE,)

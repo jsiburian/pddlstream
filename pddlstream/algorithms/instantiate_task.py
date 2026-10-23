@@ -40,8 +40,8 @@ def instantiate_condition(action, is_static, args_from_predicate):
     static_conditions = list(filter(is_static, get_literals(get_precondition(action))))
     static_parameters = set(filter(is_parameter, flatten(atom.args for atom in static_conditions)))
     if not (parameters <= static_parameters):
-        raise NotImplementedError('Could not instantiate action {} due to parameters: {}'.format(
-            action.name, str_from_object(parameters - static_parameters)))
+        raise NotImplementedError(f'Could not instantiate action {action.name} due to parameters: '
+                                  f'{str_from_object(parameters - static_parameters)}')
     atoms_from_cond = {condition: args_from_predicate[condition.predicate, get_constants(condition)]
                        for condition in static_conditions}
     conditions, atoms = zip(*atoms_from_cond.items())
@@ -159,12 +159,9 @@ def instantiate_domain(task, prune_static=True):
 
 def dump_instantiated(instantiated):
     print('Instantiated frequencies:\n'
-          'Atoms: {}\n'
-          'Actions: {}\n'
-          'Axioms: {}'.format(
-        str_from_object(Counter(atom.predicate for atom in instantiated.atoms)),
-        str_from_object(Counter(action.action.name for action in instantiated.actions)),
-        str_from_object(Counter(axiom.axiom.name for axiom in instantiated.axioms))))
+          f'Atoms: {str_from_object(Counter(atom.predicate for atom in instantiated.atoms))}\n'
+          f'Actions: {str_from_object(Counter(action.action.name for action in instantiated.actions))}\n'
+          f'Axioms: {str_from_object(Counter(axiom.axiom.name for axiom in instantiated.axioms))}')
 
 def instantiate_task(task, check_infeasible=True, use_fd=FD_INSTANTIATE, **kwargs):
     start_time = time()
@@ -177,7 +174,7 @@ def instantiate_task(task, check_infeasible=True, use_fd=FD_INSTANTIATE, **kwarg
         relaxed_reachable, atoms, actions, axioms = instantiate_domain(task, **kwargs)
         reachable_action_params = get_reachable_action_params(actions)
     print('Infeasible:', not relaxed_reachable)
-    print('Instantiation time: {:.3f}s'.format(elapsed_time(start_time)))
+    print(f'Instantiation time: {elapsed_time(start_time):.3f}s')
     if check_infeasible and not relaxed_reachable:
         return None
     goal_list = instantiate_goal(task.goal)
@@ -248,7 +245,7 @@ def sas_from_instantiated(instantiated_task):
                 options.filter_unimportant_vars)
 
     translate.dump_statistics(sas_task)
-    print('Translation time: {:.3f}s'.format(elapsed_time(start_time)))
+    print(f'Translation time: {elapsed_time(start_time):.3f}s')
     return sas_task
 
 ##################################################

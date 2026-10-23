@@ -190,13 +190,11 @@ class Binding(CreationHash):
         return Priority(not self.is_greedy(), priority, self.visits, remaining, self.cost)
     def post_order(self):
         for child in self.children:
-            for binding in child.post_order():
-                yield binding
+            yield from child.post_order()
         yield self
     def get_ancestors(self):
         if self.parent is not None:
-            for ancestor in self.parent.get_ancestors():
-                yield ancestor
+            yield from self.parent.get_ancestors()
         yield self
     def get_connections(self):
         # TODO: easier to just iterate over all bindings and extract the parent
@@ -226,7 +224,7 @@ class Binding(CreationHash):
         self.complexity = None # Forces re-computation
         return new_bindings
     def __repr__(self):
-        return '{}(skeleton={}, {})'.format(self.__class__.__name__, self.skeleton.index, self.result)
+        return f'{self.__class__.__name__}(skeleton={self.skeleton.index}, {self.result})'
 
 ##################################################
 
@@ -344,8 +342,7 @@ class SkeletonQueue(Sized):
                 self.standby.append(binding) # TODO: test for deciding whether to standby
             num_new += is_new
             if print_frequency <= elapsed_time(last_time):
-                print('Queue: {} | Iterations: {} | Time: {:.3f}'.format(
-                    len(self.queue), iterations, elapsed_time(last_time)))
+                print(f'Queue: {len(self.queue)} | Iterations: {iterations} | Time: {elapsed_time(last_time):.3f}')
                 last_time = time.time()
         self.readd_standby()
         return num_new + self.greedily_process()
@@ -355,7 +352,7 @@ class SkeletonQueue(Sized):
         num_new = 0
         if not self.is_active():
             return num_new
-        print('Sampling while complexity <= {}'.format(complexity_limit))
+        print(f'Sampling while complexity <= {complexity_limit}')
         while self.is_active():
             _, binding = self.pop_binding()
             if binding.check_complexity(complexity_limit): # not binding.up_to_date() or
@@ -375,7 +372,7 @@ class SkeletonQueue(Sized):
         iterations = num_new = 0
         if not self.is_active():
             return num_new
-        print('Sampling for up to {:.3f} {}'.format(max_time, get_clock().unit))
+        print(f'Sampling for up to {max_time:.3f} {get_clock().unit}')
         start_time = get_clock().now()
         while self.is_active() and (get_clock().now() - start_time < max_time) and (iterations < max_iterations):
             iterations += 1

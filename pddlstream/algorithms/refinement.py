@@ -123,8 +123,8 @@ def iterative_plan_streams(all_evaluations, externals, optimistic_solve_fn, comp
         results, exhausted = optimistic_process_streams(complexity_evals, externals, complexity_limit, **effort_args)
         opt_solution, final_depth = hierarchical_plan_streams(complexity_evals, results, optimistic_solve_fn)
         stream_plan, action_plan, cost = opt_solution
-        print('Attempt: {} | Results: {} | Depth: {} | Success: {} | Time: {:.3f}'.format(
-            num_iterations, len(results), final_depth, is_plan(action_plan), elapsed_time(start_time)))
+        print(f'Attempt: {num_iterations} | Results: {len(results)} | Depth: {final_depth} | '
+              f'Success: {is_plan(action_plan)} | Time: {elapsed_time(start_time):.3f}')
         if is_plan(action_plan):
             return OptSolution(stream_plan, action_plan, cost)
         if final_depth == 0:

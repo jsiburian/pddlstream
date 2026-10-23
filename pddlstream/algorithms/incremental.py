@@ -57,9 +57,9 @@ def process_stream_queue(instantiator, store, complexity_limit=INF, verbose=Fals
         results.extend(new_results)
         num_successes += bool(new_results) # TODO: max_results?
     if verbose:
-        print('Eager Calls: {} | Successes: {} | Results: {} | Counts: {}'.format(
-            len(instances), num_successes, len(results),
-            str_from_object(Counter(instance.external.name for instance in instances))))
+        counts = Counter(instance.external.name for instance in instances)
+        print(f'Eager Calls: {len(instances)} | Successes: {num_successes} | Results: {len(results)} | '
+              f'Counts: {str_from_object(counts)}')
     return len(instances)
 
 
@@ -113,10 +113,10 @@ def solve_incremental(problem, constraints=PlanConstraints(),
     num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
     while not store.is_terminated() and (num_iterations < max_iterations) and (complexity_limit <= max_complexity):
         num_iterations += 1
-        print('Iteration: {} | Complexity: {} | Calls: {} | Evaluations: {} | Solved: {} | Cost: {:.3f} | '
-              'Search Time: {:.3f} | Sample Time: {:.3f} | Time: {:.3f}'.format(
-            num_iterations, complexity_limit, num_calls, len(evaluations),
-            store.has_solution(), store.best_cost, store.search_time, store.sample_time, store.elapsed_time()))
+        print(f'Iteration: {num_iterations} | Complexity: {complexity_limit} | Calls: {num_calls} | '
+              f'Evaluations: {len(evaluations)} | Solved: {store.has_solution()} | Cost: {store.best_cost:.3f} | '
+              f'Search Time: {store.search_time:.3f} | Sample Time: {store.sample_time:.3f} | '
+              f'Time: {store.elapsed_time():.3f}')
         plan, cost = solve_finite(evaluations, goal_expression, domain,
                                   max_cost=min(store.best_cost, constraints.max_cost), **search_kwargs)
         if is_plan(plan):
@@ -135,7 +135,7 @@ def solve_incremental(problem, constraints=PlanConstraints(),
         'iterations': num_iterations,
         'complexity': complexity_limit,
     })
-    print('Summary: {}'.format(str_from_object(summary, ndigits=3))) # TODO: return the summary
+    print(f'Summary: {str_from_object(summary, ndigits=3)}') # TODO: return the summary
 
     if UPDATE_STATISTICS:
         write_stream_statistics(externals, verbose)

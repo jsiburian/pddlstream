@@ -125,8 +125,8 @@ def get_interacting_externals(externals):
                 # TODO: count intersection when arity of zero
                 external_pairs.add((external1, external2))
                 if external1.is_negated:
-                    raise ValueError('Stream [{}] can certify [{}] and thus cannot be negated'.format(
-                        external1.name, external2.name))
+                    raise ValueError(
+                        f'Stream [{external1.name}] can certify [{external2.name}] and thus cannot be negated')
     return external_pairs
 
 
@@ -169,4 +169,4 @@ def automatically_negate_externals(domain, externals):
                         for predicate in get_certified_predicates(external)):
             # TODO: could instead only negate if in a negative axiom
             external.info.negate = True
-            print('Setting negate={} for stream [{}]'.format(external.is_negated, external.name))
+            print(f'Setting negate={external.is_negated} for stream [{external.name}]')

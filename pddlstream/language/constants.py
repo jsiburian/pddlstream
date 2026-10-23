@@ -141,7 +141,7 @@ def get_length(plan):
 
 def str_from_action(action):
     name, args = action[:2]
-    return '{}{}'.format(name, str_from_object(tuple(args)))
+    return f'{name}{str_from_object(tuple(args))}'
 
 
 def str_from_plan(plan):
@@ -185,11 +185,11 @@ def print_solution(solution):
         num_deferred = len([action for action in plan if isinstance(action, StreamAction)
                             or isinstance(action, FunctionAction)])
     print()
-    print('Solved: {}'.format(solved))
-    print('Cost: {:.3f}'.format(cost))
-    print('Length: {}'.format(get_length(plan) - num_deferred))
-    print('Deferred: {}'.format(num_deferred))
-    print('Evaluations: {}'.format(len(evaluations)))
+    print(f'Solved: {solved}')
+    print(f'Cost: {cost:.3f}')
+    print(f'Length: {get_length(plan) - num_deferred}')
+    print(f'Deferred: {num_deferred}')
+    print(f'Evaluations: {len(evaluations)}')
     print_plan(plan)
 
 

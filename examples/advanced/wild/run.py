@@ -96,7 +96,7 @@ def get_problem(num=3):
         'SplitCost': compute_cost,
     }
 
-    locations = ['loc{}'.format(i) for i in range(num)]
+    locations = [f'loc{i}' for i in range(num)]
     init_carrot = (0., 1.)
     init = [
         ('Carrot', init_carrot),

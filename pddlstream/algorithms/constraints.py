@@ -27,7 +27,7 @@ def linear_order(actions):
     return {(i, i+1) for i in range(len(actions)-1)} \
            | {(len(actions)-1, GOAL_INDEX)}
 
-class PlanConstraints(object):
+class PlanConstraints:
     def __init__(self, skeletons=None, groups={}, exact=True, hint=False, max_cost=INF):
         # TODO: constraint that the skeleton is the tail of the plan
         if skeletons is not None:
@@ -38,19 +38,19 @@ class PlanConstraints(object):
         self.exact = exact
         self.max_cost = max_cost
     def dump(self):
-        print('{}(exact={}, max_cost={})'.format(self.__class__.__name__, self.exact, self.max_cost))
+        print(f'{self.__class__.__name__}(exact={self.exact}, max_cost={self.max_cost})')
         if self.skeletons is None:
             return
         for i, skeleton in enumerate(self.skeletons):
             print(i, str_from_plan(skeleton))
     def __repr__(self):
-        return '{}{}'.format(self.__class__.__name__, str_from_object(self.__dict__))
+        return f'{self.__class__.__name__}{str_from_object(self.__dict__)}'
 
 # TODO: rename other costs to be terminate_cost (or decision cost)
 
 def to_constant(parameter):
     name = parameter[1:]
-    return to_obj('@{}'.format(name))
+    return to_obj(f'@{name}')
 
 def to_obj(value):
     # Allows both raw values as well as objects to be specified
@@ -95,7 +95,7 @@ def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=Fa
     for num, skeleton in enumerate(constraints.skeletons):
         actions, orders = skeleton
         incoming_orders, _ = neighbors_from_orders(orders)
-        order_facts = [(order_predicate, to_obj('n{}'.format(num)), to_obj('t{}'.format(step)))
+        order_facts = [(order_predicate, to_obj(f'n{num}'), to_obj(f't{step}'))
                        for step in range(len(actions))]
         for step, (name, args) in enumerate(actions):
             # TODO: could also just remove the free parameter from the action

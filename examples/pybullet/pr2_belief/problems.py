@@ -9,7 +9,7 @@ USE_DRAKE_PR2 = True
 OTHER = 'other'
 LOCALIZED_PROB = 0.99
 
-class BeliefTask(object):
+class BeliefTask:
     def __init__(self, robot, arms=tuple(), grasp_types=tuple(),
                  class_from_body={}, movable=tuple(), surfaces=tuple(), rooms=tuple(),
                  goal_localized=tuple(), goal_registered=tuple(),
@@ -51,7 +51,7 @@ class BeliefTask(object):
 # TODO: operate on histories to do open-world
 class BeliefState(State):
     def __init__(self, task, b_on={}, registered=tuple(), **kwargs):
-        super(BeliefState, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.task = task
         self.b_on = b_on
         self.registered = set(registered)
@@ -75,7 +75,7 @@ class BeliefState(State):
         items = []
         for b in sorted(self.b_on.keys()):
             d = self.b_on[b]
-            support_items = ['{}: {:.2f}'.format(s, d.prob(s)) for s in sorted(d.support(), key=str)]
+            support_items = [f'{s}: {d.prob(s):.2f}' for s in sorted(d.support(), key=str)]
             items.append('{}: {{{}}}'.format(b, ', '.join(support_items)))
         return '{}({},{})'.format(self.__class__.__name__,
                                   '{{{}}}'.format(', '.join(items)),
@@ -99,7 +99,7 @@ def set_delta_belief(task, b_on, body):
         if is_center_stable(body, bottom):
             b_on[body] = DeltaDist(bottom)
             return
-    raise RuntimeError('No support for body {}'.format(body))
+    raise RuntimeError(f'No support for body {body}')
 
 #######################################################
 

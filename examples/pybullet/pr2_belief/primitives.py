@@ -136,7 +136,7 @@ class AttachCone(Command): # TODO: make extend Attach?
         for _ in attach.apply(state, **kwargs):
             yield
     def __repr__(self):
-        return '{}()'.format(self.__class__.__name__)
+        return f'{self.__class__.__name__}()'
 
 class DetachCone(Command): # TODO: make extend Detach?
     def __init__(self, attach):
@@ -150,7 +150,7 @@ class DetachCone(Command): # TODO: make extend Detach?
         remove_body(cone)
         wait_for_duration(1e-2)
     def __repr__(self):
-        return '{}()'.format(self.__class__.__name__)
+        return f'{self.__class__.__name__}()'
 
 def get_cone_commands(robot):
     attach = AttachCone(robot)
@@ -208,7 +208,7 @@ class Scan(Command):
         yield
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, get_body_name(self.surface))
+        return f'{self.__class__.__name__}({get_body_name(self.surface)})'
 
 
 class ScanRoom(Command):
@@ -227,7 +227,7 @@ class ScanRoom(Command):
         yield
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, get_body_name(self.surface))
+        return f'{self.__class__.__name__}({get_body_name(self.surface)})'
 
 #######################################################
 
@@ -241,7 +241,7 @@ class Detect(Command):
         yield
 
     def __repr__(self):
-        return '{}({},{})'.format(self.__class__.__name__, get_name(self.surface), get_name(self.body))
+        return f'{self.__class__.__name__}({get_name(self.surface)},{get_name(self.body)})'
 
 
 class Register(Command):
@@ -275,5 +275,4 @@ class Register(Command):
         yield
 
     def __repr__(self):
-        return '{}({},{})'.format(self.__class__.__name__, get_body_name(self.robot),
-                                  get_name(self.body))
+        return f'{self.__class__.__name__}({get_body_name(self.robot)},{get_name(self.body)})'

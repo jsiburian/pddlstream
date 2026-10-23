@@ -73,7 +73,7 @@ def create_optimizer(min_take=0, max_take=INF, max_wallet=INF, max_time=5, integ
         objective = 0
         if objective_terms:
             objective = INF if model.status == GRB.INFEASIBLE else model.objVal
-        print('Objective: {:.3f} | Solutions: {} | Status: {}'.format(objective, model.solCount, model.status))
+        print(f'Objective: {objective:.3f} | Solutions: {model.solCount} | Status: {model.status}')
 
         # https://www.gurobi.com/documentation/9.0/refman/optimization_status_codes.html
         if not model.solCount: # GRB.INFEASIBLE | GRB.INF_OR_UNBD | OPTIMAL | SUBOPTIMAL | UNBOUNDED

@@ -143,7 +143,7 @@ def display_plan(tamp_problem, plan, display=True, save=False, time_step=0.025, 
 
     if save:
         example_name = 'continuous_tamp'
-        directory = os.path.join(VISUALIZATIONS_DIR, '{}/'.format(example_name))
+        directory = os.path.join(VISUALIZATIONS_DIR, f'{example_name}/')
         safe_rm_dir(directory)
         ensure_dir(directory)
 
@@ -154,7 +154,7 @@ def display_plan(tamp_problem, plan, display=True, save=False, time_step=0.025, 
     print(state)
     duration = compute_duration(plan)
     real_time = None if sec_per_step is None else (duration * sec_per_step / time_step)
-    print('Duration: {} | Step size: {} | Real time: {}'.format(duration, time_step, real_time))
+    print(f'Duration: {duration} | Step size: {time_step} | Real time: {real_time}')
 
     draw_state(viewer, state, colors)
     if display:
@@ -164,10 +164,10 @@ def display_plan(tamp_problem, plan, display=True, save=False, time_step=0.025, 
             for action in plan:
                 if action.start <= t <= get_end(action):
                     update_state(state, action, t - action.start)
-            print('t={} | {}'.format(t, state))
+            print(f't={t} | {state}')
             draw_state(viewer, state, colors)
             if save:
-                viewer.save(os.path.join(directory, 't={}'.format(t)))
+                viewer.save(os.path.join(directory, f't={t}'))
             if display:
                 if sec_per_step is None:
                     user_input('Continue?')

@@ -22,7 +22,7 @@ Solution = namedtuple('Solution', ['plan', 'cost', 'time'])
 
 SOLUTIONS = [] # TODO: remove global variable
 
-class SolutionStore(object):
+class SolutionStore:
     def __init__(self, evaluations, max_time, success_cost, verbose, max_memory=INF):
         # TODO: store a map from head to value?
         # TODO: include other problem information here?

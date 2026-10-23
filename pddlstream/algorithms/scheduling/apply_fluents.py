@@ -43,7 +43,7 @@ def convert_fluent_streams(stream_plan, real_states, action_plan, step_from_fact
             continue
         if outgoing_edges[result]:
             # No way of taking into account the binding of fluent inputs when preventing cycles
-            raise NotImplementedError('Fluent stream is required for another stream: {}'.format(result))
+            raise NotImplementedError(f'Fluent stream is required for another stream: {result}')
         for state_index in steps_from_stream[result]:
             new_output_objects = [
                 OptimisticObject.from_opt(out.value, UniqueOptValue(result.instance, object(), name))

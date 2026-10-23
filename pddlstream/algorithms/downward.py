@@ -19,12 +19,12 @@ if ' ' in filepath:
 
 def find_build(fd_path):
     for release in ['release', 'release64', 'release32']:  # TODO: list the directory
-        path = os.path.join(fd_path, 'builds/{}/'.format(release))
+        path = os.path.join(fd_path, f'builds/{release}/')
         if os.path.exists(path):
             return path
     # TODO: could also just automatically compile
-    raise RuntimeError('FastDownward is not compiled in {}. Run [.../pddlstream$ pixi run setup] '
-                       '(pddlstream must be installed in editable mode)'.format(fd_path))
+    raise RuntimeError(f'FastDownward is not compiled in {fd_path}. Run [.../pddlstream$ pixi run setup] '
+                       '(pddlstream must be installed in editable mode)')
 
 # TODO: check at runtime so users can use utils without FD
 FD_PATH = get_file_path(__file__, '../../downward/')
@@ -154,22 +154,22 @@ SEARCH_OPTIONS = {
 for w in range(1, 1+5):
     SEARCH_OPTIONS.update({
         # TODO: specify whether lazy or eager
-        'ff-wastar{w}'.format(w=w): '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-                  '--search "lazy_wastar([h],preferred=[h],reopen_closed=true,boost=100,w={w},'
+        f'ff-wastar{w}': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
+                  f'--search "lazy_wastar([h],preferred=[h],reopen_closed=true,boost=100,w={w},'
                   'randomize_successors=false,preferred_successors_first=true,random_seed=-1,'
-                  'cost_type=PLUSONE,max_time=%s,bound=%s)"'.format(w=w),
+                  'cost_type=PLUSONE,max_time=%s,bound=%s)"',
 
-        'cea-wastar{w}'.format(w=w): '--heuristic "h=cea(transform=adapt_costs(cost_type=PLUSONE))" '
-                   '--search "lazy_wastar([h],preferred=[h],reopen_closed=false,boost=1000,w={w},'
+        f'cea-wastar{w}': '--heuristic "h=cea(transform=adapt_costs(cost_type=PLUSONE))" '
+                   f'--search "lazy_wastar([h],preferred=[h],reopen_closed=false,boost=1000,w={w},'
                    'randomize_successors=false,preferred_successors_first=true,random_seed=-1,'
-                   'cost_type=PLUSONE,max_time=%s,bound=%s)"'.format(w=w),
+                   'cost_type=PLUSONE,max_time=%s,bound=%s)"',
 
         # TODO: eager_wastar
         # http://www.fast-downward.org/Doc/SearchEngine#Eager_weighted_A.2A_search
-        'ff-astar{w}'.format(w=w): '--evaluator "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-                                   '--search "eager(alt([single(sum([g(), weight(h,{w})])),'
-                                   'single(sum([g(),weight(h,{w})]),pref_only=true)]),'
-                                   'preferred=[h],cost_type=PLUSONE,max_time=%s,bound=%s)"'.format(w=w),
+        f'ff-astar{w}': '--evaluator "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
+                                   f'--search "eager(alt([single(sum([g(), weight(h,{w})])),'
+                                   f'single(sum([g(),weight(h,{w})]),pref_only=true)]),'
+                                   'preferred=[h],cost_type=PLUSONE,max_time=%s,bound=%s)"',
     })
 
 # TODO: throw a warning if max_planner_time is met
@@ -399,7 +399,7 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
 
     if debug:
         print(output.decode(encoding='UTF-8')[:-1])
-        print('Search runtime: {:.3f}'.format(elapsed_time(start_time)))
+        print(f'Search runtime: {elapsed_time(start_time):.3f}')
     plan_files = sorted(f for f in os.listdir(temp_path) if f.startswith(SEARCH_OUTPUT))
     print('Plans:', plan_files)
     return parse_solutions(temp_path, plan_files)

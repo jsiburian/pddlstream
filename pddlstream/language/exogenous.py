@@ -16,7 +16,7 @@ REPLACE_STREAM = True
 # TODO: timed initial literals
 # TODO: can do this whole story within the focused algorithm as well
 
-class FutureValue(object):
+class FutureValue:
     # TODO: use this instead of debug value?
     _output_counts = defaultdict(count)
     def __init__(self, stream, input_values, output_parameter):
@@ -26,15 +26,15 @@ class FutureValue(object):
         self.index = next(self._output_counts[output_parameter])
         # TODO: hash this?
     def __repr__(self):
-        return '@{}{}'.format(self.output_parameter[1:], self.index)
+        return f'@{self.output_parameter[1:]}{self.index}'
 
 class FutureStream(Stream):
     def __init__(self, stream, static_domain, fluent_domain, static_certified):
         prefix = 'future-' if REPLACE_STREAM else ''
-        stream_name = '{}{}'.format(prefix, stream.name)
+        stream_name = f'{prefix}{stream.name}'
         self.original = stream
         self.fluent_domain = tuple(fluent_domain)
-        super(FutureStream, self).__init__(stream_name, stream.gen_fn, stream.inputs, static_domain,
+        super().__init__(stream_name, stream.gen_fn, stream.inputs, static_domain,
                                            stream.outputs, static_certified, stream.info, stream.fluents)
     @property
     def pddl_name(self):
@@ -59,8 +59,7 @@ def create_static_stream(stream, evaluations, fluent_predicates, future_fn):
         instance = stream.get_instance(objects_from_values(input_values))
         if all(evaluation_from_fact(f) in evaluations for f in instance.get_domain()):
             return
-        for output_values in stream.opt_gen_fn(*input_values):
-            yield output_values
+        yield from stream.opt_gen_fn(*input_values)
         # TODO: need to replace regular opt_gen_fn to update opt_evaluations
         # if I want to prevent switch from normal to static in opt
 
@@ -68,7 +67,7 @@ def create_static_stream(stream, evaluations, fluent_predicates, future_fn):
     fluent_domain = list(filter(lambda a: get_prefix(a) in fluent_predicates, stream.domain))
     static_domain = list(filter(lambda a: a not in fluent_domain, stream.domain))
     new_domain = list(map(future_fn, static_domain))
-    stream_atom = ('{}-result'.format(stream.name),) + tuple(stream.inputs + stream.outputs)
+    stream_atom = (f'{stream.name}-result',) + tuple(stream.inputs + stream.outputs)
     new_certified = [stream_atom] + list(map(future_fn, stream.certified))
     static_stream = FutureStream(stream, new_domain, fluent_domain, new_certified)
     if REPLACE_STREAM:
@@ -99,7 +98,7 @@ def compile_to_exogenous_actions(evaluations, domain, streams):
     # TODO: better instantiation when have full parameters
     fluent_predicates = get_fluents(domain)
     certified_predicates = {get_prefix(a) for s in streams for a in s.certified}
-    future_map = {p: 'f-{}'.format(p) for p in certified_predicates}
+    future_map = {p: f'f-{p}' for p in certified_predicates}
     augment_evaluations(evaluations, future_map)
     future_fn = lambda a: rename_atom(a, future_map)
     new_streams = []
@@ -113,7 +112,7 @@ def compile_to_exogenous_actions(evaluations, domain, streams):
         preconditions = [stream_atom] + list(stream.domain)
         effort = 1 # TODO: use stream info
         domain.actions.append(make_action(
-            name='call-{}'.format(stream.name),
+            name=f'call-{stream.name}',
             parameters=get_args(stream_atom),
             preconditions=preconditions,
             effects=stream.certified,
@@ -158,10 +157,10 @@ def compile_to_exogenous_axioms(evaluations, domain, streams):
     import pddl
     fluent_predicates = get_fluents(domain)
     certified_predicates = {get_prefix(a) for s in streams for a in s.certified}
-    future_map = {p: 'f-{}'.format(p) for p in certified_predicates}
+    future_map = {p: f'f-{p}' for p in certified_predicates}
     augment_evaluations(evaluations, future_map)
     future_fn = lambda a: rename_atom(a, future_map)
-    derived_map = {p: 'd-{}'.format(p) for p in certified_predicates}
+    derived_map = {p: f'd-{p}' for p in certified_predicates}
     derived_fn = lambda a: rename_atom(a, derived_map)
     # TODO: could prune streams that don't need this treatment
 
@@ -210,7 +209,7 @@ def compile_to_exogenous(evaluations, domain, streams):
     if not exogenous_predicates:
         return False
     print('Warning! The following predicates are mentioned in both action effects '
-          'and stream domain conditions: {}'.format(exogenous_predicates))
+          f'and stream domain conditions: {exogenous_predicates}')
     if EXOGENOUS_AXIOMS:
         compile_to_exogenous_axioms(evaluations, domain, streams)
     else:

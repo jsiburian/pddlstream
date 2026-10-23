@@ -25,7 +25,7 @@ def test_blocksworld_entry_points(solver):
 def test_print_solution_counts_facts(capsys):
     solution = solve(get_blocksworld(), unit_costs=True)
     print_solution(solution)
-    assert 'Evaluations: {}'.format(len(solution.certificate.all_facts)) in capsys.readouterr().out
+    assert f'Evaluations: {len(solution.certificate.all_facts)}' in capsys.readouterr().out
 
 
 def test_compose_gen_fns():

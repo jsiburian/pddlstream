@@ -30,7 +30,7 @@ def compute_order(domain, atoms):
 # https://en.wikipedia.org/wiki/Local_consistency
 # Cluster into components and then order?
 
-class Relation(object):
+class Relation:
     def __init__(self, heading, body):
         self.heading = tuple(heading)
         self.body = list(body)

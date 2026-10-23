@@ -5,9 +5,9 @@ from pddlstream.language.constants import get_length, read_pddl_pair
 
 def dump_plan(plan, cost):
     solved = plan is not None
-    print('Solved: {}'.format(solved))
-    print('Cost: {}'.format(cost))
-    print('Length: {}'.format(get_length(plan)))
+    print(f'Solved: {solved}')
+    print(f'Cost: {cost}')
+    print(f'Length: {get_length(plan)}')
     if not solved:
         return
     for i, action in enumerate(plan):

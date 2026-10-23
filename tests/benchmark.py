@@ -64,7 +64,7 @@ def main():
         results[case.example] = measure(case, args.repeat, args.wall_clock or not case.deterministic)
         status, message = compare(results[case.example], baseline.get(case.example))
         failed |= (status == 'FAIL')
-        print('{:5} {:45} {}'.format(status, case.example, message), flush=True)
+        print(f'{status:5} {case.example:45} {message}', flush=True)
 
     if args.save:
         args.baseline.parent.mkdir(exist_ok=True)

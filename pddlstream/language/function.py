@@ -20,13 +20,13 @@ def add_opt_function(name, base_fn, stream_map, stream_info, constant=0., coeffi
 class FunctionInfo(ExternalInfo):
     _default_eager = True
     def __init__(self, opt_fn=None, eager=_default_eager, verbose=True, **kwargs): # Setting eager=True as a heuristic
-        super(FunctionInfo, self).__init__(eager=eager, **kwargs)
+        super().__init__(eager=eager, **kwargs)
         self.opt_fn = opt_fn
         self.verbose = verbose # TODO: move to ExternalInfo
 
 class FunctionResult(Result):
     def __init__(self, instance, value, optimistic=True):
-        super(FunctionResult, self).__init__(instance, opt_index=0, call_index=0, optimistic=optimistic)
+        super().__init__(instance, opt_index=0, call_index=0, optimistic=optimistic)
         self.instance = instance
         self.value = value
         self._certified = None
@@ -47,12 +47,12 @@ class FunctionResult(Result):
     def is_successful(self):
         return True
     def __repr__(self):
-        return '{}={:.3f}'.format(str_from_head(self.instance.head), self.value)
+        return f'{str_from_head(self.instance.head)}={self.value:.3f}'
 
 class FunctionInstance(Instance):
     _Result = FunctionResult
     def __init__(self, external, input_objects):
-        super(FunctionInstance, self).__init__(external, input_objects)
+        super().__init__(external, input_objects)
         self._head = None
     @property
     def head(self):
@@ -74,7 +74,7 @@ class FunctionInstance(Instance):
         # if not (type(self.value) is self.external._codomain):
         # if not isinstance(self.value, self.external.codomain):
         if value < 0:
-            raise ValueError('Function [{}] produced a negative value [{}]'.format(self.external.name, value))
+            raise ValueError(f'Function [{self.external.name}] produced a negative value [{value}]')
         self.history.append(self.external.codomain(value))
         return self.value
     def next_results(self, verbose=False):
@@ -87,9 +87,8 @@ class FunctionInstance(Instance):
 
         if (value is not False) and verbose:
             # TODO: str(new_results[-1])
-            print('iter={}, outs={}) {}{}={:.3f}'.format(
-                self.get_iteration(), len(new_results), get_prefix(self.external.head),
-                str_from_object(self.get_input_values()), value))
+            print(f'iter={self.get_iteration()}, outs={len(new_results)}) {get_prefix(self.external.head)}'
+                  f'{str_from_object(self.get_input_values())}={value:.3f}')
         if start_history <= len(self.history) - 1:
             self.update_statistics(start_time, new_results)
         self.successful |= any(r.is_successful() for r in new_results)
@@ -102,7 +101,7 @@ class FunctionInstance(Instance):
         self.opt_results = [self._Result(self, opt_value, optimistic=True)]
         return self.opt_results
     def __repr__(self):
-        return '{}=?{}'.format(str_from_head(self.head), self.external.codomain.__name__)
+        return f'{str_from_head(self.head)}=?{self.external.codomain.__name__}'
 
 class Function(External):
     """
@@ -116,7 +115,7 @@ class Function(External):
         if info is None:
             # TODO: move the defaults to FunctionInfo in the event that an optimistic fn is specified
             info = FunctionInfo()
-        super(Function, self).__init__(get_prefix(head), info, get_args(head), domain)
+        super().__init__(get_prefix(head), info, get_args(head), domain)
         self.head = head
         opt_fn = lambda *args: self.codomain()
         self.fn = opt_fn if (fn in DEBUG_MODES) else fn
@@ -141,7 +140,7 @@ class Function(External):
     def is_cost(self):
         return True
     def __repr__(self):
-        return '{}=?{}'.format(str_from_head(self.head), self.codomain.__name__)
+        return f'{str_from_head(self.head)}=?{self.codomain.__name__}'
 
 ##################################################
 
@@ -170,7 +169,7 @@ class Predicate(Function):
     def __init__(self, head, fn, domain, info):
         if info is None:
             info = PredicateInfo()
-        super(Predicate, self).__init__(head, fn, domain, info)
+        super().__init__(head, fn, domain, info)
         assert(self.info.opt_fn is None)
         self.blocked_predicate = self.name
     @property

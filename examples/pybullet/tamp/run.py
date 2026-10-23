@@ -184,7 +184,7 @@ def main(verbose=True):
 
     cost_over_time = [(s.cost, s.time) for s in SOLUTIONS]
     for i, (cost, runtime) in enumerate(cost_over_time):
-        print('Plan: {} | Cost: {:.3f} | Time: {:.3f}'.format(i, cost, runtime))
+        print(f'Plan: {i} | Cost: {cost:.3f} | Time: {runtime:.3f}')
     print_solution(solution)
     plan, cost, evaluations = solution
     if (plan is None) or not has_gui():

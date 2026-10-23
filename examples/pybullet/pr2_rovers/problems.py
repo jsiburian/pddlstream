@@ -35,7 +35,7 @@ def problem1(n_rovers=1, n_objectives=1, n_rocks=2, n_soil=2, n_stores=1):
     assert n_rovers <= len(rover_confs)
 
     landers = [lander]
-    stores = ['store{}'.format(i) for i in range(n_stores)]
+    stores = [f'store{i}' for i in range(n_stores)]
 
     rovers = []
     for i in range(n_rovers):

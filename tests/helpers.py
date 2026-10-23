@@ -43,5 +43,4 @@ def run_case(example, cwd, timeout=600, display=False, wall_clock=False):
     for line in reversed(result.stdout.splitlines()):
         if line.startswith(RESULT_PREFIX):
             return json.loads(line[len(RESULT_PREFIX):])
-    raise RuntimeError('{} produced no result (exit code {}):\n{}'.format(
-        example, result.returncode, output_tail(result)))
+    raise RuntimeError(f'{example} produced no result (exit code {result.returncode}):\n{output_tail(result)}')

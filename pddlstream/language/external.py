@@ -53,7 +53,7 @@ def convert_constants(fact):
 
 class ExternalInfo(PerformanceInfo):
     def __init__(self, eager=False, eager_skeleton=False, defer_fn=never_defer, **kwargs):
-        super(ExternalInfo, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # TODO: enable eager=True for inexpensive test streams by default
         # TODO: change p_success and overhead if it's a function or test stream
         self.eager = eager
@@ -230,20 +230,20 @@ class Instance(CreationHash):
 class External(Performance):
     _Instance = None
     def __init__(self, name, info, inputs, domain):
-        super(External, self).__init__(name, info)
+        super().__init__(name, info)
         self.inputs = tuple(inputs)
         self.domain = tuple(map(convert_constants, domain))
         for p, c in Counter(self.inputs).items():
             if not is_parameter(p):
                 # AssertionError: Expected item to be a variable: q2 in (?q1 q2)
-                raise ValueError('Input [{}] for stream [{}] is not a parameter'.format(p, name))
+                raise ValueError(f'Input [{p}] for stream [{name}] is not a parameter')
             if c != 1:
-                raise ValueError('Input [{}] for stream [{}] is not unique'.format(p, name))
+                raise ValueError(f'Input [{p}] for stream [{name}] is not unique')
         parameters = {a for i in self.domain for a in get_args(i) if is_parameter(a)}
         for p in (parameters - set(self.inputs)):
-            raise ValueError('Parameter [{}] for stream [{}] is not included within inputs'.format(p, name))
+            raise ValueError(f'Parameter [{p}] for stream [{name}] is not included within inputs')
         for p in (set(self.inputs) - parameters):
-            print('Warning! Input [{}] for stream [{}] is not covered by a domain condition'.format(p, name))
+            print(f'Warning! Input [{p}] for stream [{name}] is not covered by a domain condition')
         self.constants = {a for i in self.domain for a in get_args(i) if not is_parameter(a)}
         self.instances = {}
     def reset(self, *args, **kwargs):
@@ -292,7 +292,7 @@ def get_procedure_fn(stream_map, name):
     if not isinstance(stream_map, dict): # DEBUG_MODES
         return stream_map
     if name not in stream_map:
-        raise ValueError('Undefined external procedure: {}'.format(name))
+        raise ValueError(f'Undefined external procedure: {name}')
     return stream_map[name]
 
 def is_attribute(attribute):
@@ -302,8 +302,8 @@ def parse_lisp_list(lisp_list):
     attributes = [lisp_list[i] for i in range(0, len(lisp_list), 2)]
     for attribute in attributes:
         if not is_attribute(attribute):
-            raise ValueError('Expected an attribute but got: {}'.format(attribute))
+            raise ValueError(f'Expected an attribute but got: {attribute}')
     values = [lisp_list[i] for i in range(1, len(lisp_list), 2)]
     if len(lisp_list) % 2 != 0:
-        raise ValueError('No value specified for attribute [{}]'.format(lisp_list[-1]))
+        raise ValueError(f'No value specified for attribute [{lisp_list[-1]}]')
     return get_mapping(attributes, values)

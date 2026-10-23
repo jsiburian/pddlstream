@@ -3,7 +3,7 @@ from tkinter import Tk, Canvas, Toplevel, LAST
 import numpy as np
 
 
-class PRMViewer(object):
+class PRMViewer:
     def __init__(self, width=500, height=500, title='PRM', background='tan'):
         tk = Tk()
         tk.withdraw()

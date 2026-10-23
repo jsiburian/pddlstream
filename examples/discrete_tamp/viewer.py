@@ -11,7 +11,7 @@ MAX_COLS = 9
 COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'violet', 'white', 'black']
 
 
-class DiscreteTAMPViewer(object):
+class DiscreteTAMPViewer:
     def __init__(self, rows, cols, width=500, height=250, side=25,
                  block_buffer=10, title='Grid', background='tan', draw_fingers=False):
         assert (rows <= MAX_ROWS)

@@ -67,7 +67,7 @@ def planning_from_satisfaction(init, constraints):
     prefix = ''
     assigned_predicate = ASSIGNED_PREDICATE.format(prefix)
     order_predicate = ORDER_PREDICATE.format(prefix)
-    order_value_facts = [(order_predicate, '_t{}'.format(i)) for i in range(len(clusters)+1)]
+    order_value_facts = [(order_predicate, f'_t{i}') for i in range(len(clusters)+1)]
     init.append(order_value_facts[0])
     goal_expression = order_value_facts[-1]
     order_facts = list(map(obj_from_value_expression, order_value_facts))
@@ -81,7 +81,7 @@ def planning_from_satisfaction(init, constraints):
         existing_parameters = cluster.parameters & bound_parameters
         # TODO: confirm that negated predicates work as intended
 
-        name = 'cluster-{}'.format(i)
+        name = f'cluster-{i}'
         parameters = list(sorted(cluster.parameters))
         preconditions = [(assigned_predicate, to_constant(p), p) for p in sorted(existing_parameters)] + \
                         constraints + [order_facts[i]]

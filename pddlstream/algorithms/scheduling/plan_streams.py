@@ -61,8 +61,8 @@ def rename_instantiated_actions(instantiated, rename):
     action_from_name = {}
     for i, action in enumerate(actions):
         renamed_actions.append(copy.copy(action))
-        renamed_name = 'a{}'.format(i) if rename else action.name
-        renamed_actions[-1].name = '({})'.format(renamed_name)
+        renamed_name = f'a{i}' if rename else action.name
+        renamed_actions[-1].name = f'({renamed_name})'
         action_from_name[renamed_name] = action # Change reachable_action_params?
     instantiated.actions[:] = renamed_actions
     return action_from_name

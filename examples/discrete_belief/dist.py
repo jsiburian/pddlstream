@@ -6,7 +6,7 @@ import copy
 
 # Think of this as a mixture of a distribution and something like a uniform,
 # but it doesn't really work unless the universe is finite
-class Distribution(object):
+class Distribution:
 
     def prob(self, x):
         raise NotImplementedError()

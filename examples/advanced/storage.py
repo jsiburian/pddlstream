@@ -86,9 +86,9 @@ def get_problem1(n_regions=0, n_cylinders=3, n_boxes=3):
     shelfB = 'shelfB'
 
     regions = [initial, shelfA, prepushA, shelfB] + \
-              ['region{}'.format(i) for i in range(n_regions)]
-    cylinders = ['cylinder{}'.format(i) for i in range(n_cylinders)]
-    boxes = ['box{}'.format(i) for i in range(n_boxes)]
+              [f'region{i}' for i in range(n_regions)]
+    cylinders = [f'cylinder{i}' for i in range(n_cylinders)]
+    boxes = [f'box{i}' for i in range(n_boxes)]
 
     init = [
         ('HandEmpty',),

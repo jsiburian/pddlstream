@@ -58,12 +58,10 @@ def log_plans(stream_plan, action_plan, iteration):
     # TODO: do this within the focused algorithm itself?
     decomposed_plan = decompose_stream_plan(stream_plan)
     with open(PLAN_LOG_FILE, 'a+') as f:
-        f.write('Iteration: {}\n'
-                'Component plan: {}\n'
-                'Stream plan: {}\n'
-                'Action plan: {}\n\n'.format(
-                iteration, decomposed_plan,
-                stream_plan, str_from_plan(action_plan)))
+        f.write(f'Iteration: {iteration}\n'
+                f'Component plan: {decomposed_plan}\n'
+                f'Stream plan: {stream_plan}\n'
+                f'Action plan: {str_from_plan(action_plan)}\n\n')
 
 def create_optimizer_visualizations(result, iteration):
     stream_plan = decompose_result(result)

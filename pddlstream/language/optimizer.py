@@ -18,11 +18,11 @@ DEFAULT_UNIQUE = True # TODO: would it ever even make sense to do shared here?
 
 VARIABLES = ':variables'
 CONSTRAINT = ':constraint'
-UNSATISFIABLE = 'unsatisfiable{}'.format(NEGATIVE_SUFFIX)
+UNSATISFIABLE = f'unsatisfiable{NEGATIVE_SUFFIX}'
 
 ##################################################
 
-class OptimizerOutput(object):
+class OptimizerOutput:
     def __init__(self, assignments=[], facts=[], infeasible=[]): # infeasible=None
         self.assignments = list(assignments)
         self.facts = list(facts)
@@ -34,7 +34,7 @@ class OptimizerOutput(object):
     def __repr__(self):
         return str_from_object(self.__dict__)
 
-class Optimizer(object):
+class Optimizer:
     def __init__(self, name, procedure, info):
         self.name = name
         self.procedure = procedure
@@ -46,12 +46,12 @@ class Optimizer(object):
     def get_streams(self):
         return self.variables + self.constraints
     def __repr__(self):
-        return '{}'.format(self.name)
+        return f'{self.name}'
 
 class ComponentStream(Stream):
     def __init__(self, optimizer, *args):
         self.optimizer = optimizer
-        super(ComponentStream, self).__init__(*args)
+        super().__init__(*args)
 
 ##################################################
 
@@ -80,7 +80,7 @@ def prune_dominated(collections):
 
 class OptimizerInfo(StreamInfo):
     def __init__(self, planable=False, p_success=None, overhead=None):
-        super(OptimizerInfo, self).__init__(p_success=p_success, overhead=overhead)
+        super().__init__(p_success=p_success, overhead=overhead)
         self.planable = planable # TODO: this isn't currently used
         # TODO: post-processing
 
@@ -94,7 +94,7 @@ class VariableStream(ComponentStream):
         if info is None:
             info = StreamInfo(opt_gen_fn=PartialInputs(unique=DEFAULT_UNIQUE),
                               simultaneous=DEFAULT_SIMULTANEOUS)
-        super(VariableStream, self).__init__(optimizer, name, gen_fn, inputs, domain,
+        super().__init__(optimizer, name, gen_fn, inputs, domain,
                                              variables, certified, info)
 
 class ConstraintStream(ComponentStream):
@@ -103,13 +103,13 @@ class ConstraintStream(ComponentStream):
         inputs = get_args(constraint)
         outputs = []
         certified = [constraint]
-        name = '{}-{}'.format(optimizer.name, get_prefix(constraint))
+        name = f'{optimizer.name}-{get_prefix(constraint)}'
         gen_fn = get_list_gen_fn(optimizer.procedure, inputs, outputs, certified)
         info = infos.get(name, None)
         if info is None:
             info = StreamInfo(effort=get_effort_fn(optimizer.name),
                               simultaneous=DEFAULT_SIMULTANEOUS)
-        super(ConstraintStream, self).__init__(optimizer, name, gen_fn, inputs, domain,
+        super().__init__(optimizer, name, gen_fn, inputs, domain,
                                                outputs, certified, info)
 
 ##################################################
@@ -165,7 +165,7 @@ class OptimizerResult(StreamResult):
 class OptimizerInstance(StreamInstance):
     _Result = OptimizerResult
     def __init__(self, stream, input_objects, fluent_facts):
-        super(OptimizerInstance, self).__init__(stream, input_objects, fluent_facts)
+        super().__init__(stream, input_objects, fluent_facts)
         all_constraints = frozenset(range(len(self.external.certified)))
         self.infeasible = {all_constraints}
         # TODO: might need to block separate clusters at once in order to ensure that it captures the true behavior
@@ -205,7 +205,7 @@ class OptimizerStream(Stream):
         hint = self.create_hint()
         self.objectives = certified + functions
         gen_fn = get_list_gen_fn(optimizer.procedure, inputs, outputs, self.objectives, hint=hint)
-        super(OptimizerStream, self).__init__(optimizer.name, gen_fn, inputs, domain, outputs,
+        super().__init__(optimizer.name, gen_fn, inputs, domain, outputs,
                                               certified, optimizer.info)
     def create_hint(self):
         hint = {}
@@ -232,7 +232,7 @@ def add_result_inputs(result, param_from_obj, local_mapping, inputs, input_objec
     for param, obj in zip(result.instance.external.inputs, result.instance.input_objects):
         # TODO: only do optimistic parameters?
         if obj not in param_from_obj:
-            param_from_obj[obj] = '?i{}'.format(len(inputs)) # '?_i{}'
+            param_from_obj[obj] = f'?i{len(inputs)}' # '?_i{}'
             inputs.append(param_from_obj[obj])
             input_objects.append(obj)
         local_mapping[param] = param_from_obj[obj]
@@ -241,7 +241,7 @@ def add_result_inputs(result, param_from_obj, local_mapping, inputs, input_objec
 def add_result_outputs(result, param_from_obj, local_mapping, outputs, output_objects):
     for param, obj in zip(result.instance.external.outputs, result.output_objects):
         if obj not in param_from_obj:
-            param_from_obj[obj] = '?o{}'.format(len(outputs))
+            param_from_obj[obj] = f'?o{len(outputs)}'
             outputs.append(param_from_obj[obj])
             output_objects.append(obj)
         local_mapping[param] = param_from_obj[obj]

@@ -24,7 +24,7 @@ def solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=False, hiera
         solution = run_search(temp_dir, debug=True, **search_args)
         if clean:
             safe_rm_dir(temp_dir)
-        print('Total runtime: {:.3f}'.format(elapsed_time(start_time)))
+        print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return solution
 
 def solve_from_pddl(domain_pddl, problem_pddl, temp_dir=TEMP_DIR, clean=False, debug=False, **search_kwargs):
@@ -36,7 +36,7 @@ def solve_from_pddl(domain_pddl, problem_pddl, temp_dir=TEMP_DIR, clean=False, d
         solution = run_search(temp_dir, debug=debug, **search_kwargs)
         if clean:
             safe_rm_dir(temp_dir)
-        print('Total runtime: {:.3f}'.format(elapsed_time(start_time)))
+        print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return solution
 
 ##################################################
@@ -89,12 +89,12 @@ def serialized_solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=F
         plan, cost = plan_subgoals(sas_task, subgoal_plan, temp_dir, **kwargs)
         if clean:
             safe_rm_dir(temp_dir)
-        print('Total runtime: {:.3f}'.format(elapsed_time(start_time)))
+        print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return plan, cost
 
 ##################################################
 
-class ABSTRIPSLayer(object):
+class ABSTRIPSLayer:
     def __init__(self, pos_pre=[], neg_pre=[], pos_eff=[], neg_eff=[], horizon=INF):
         self.pos_pre = pos_pre
         self.neg_pre = neg_pre
@@ -139,7 +139,7 @@ def add_subgoals(sas_task, subgoal_plan):
     sas_task.variables.ranges.append(subgoal_range)
     sas_task.variables.axiom_layers.append(-1)
     sas_task.variables.value_names.append(
-        ['subgoal{}'.format(i) for i in range(subgoal_range)])
+        [f'subgoal{i}' for i in range(subgoal_range)])
     sas_task.init.values.append(0)
     sas_task.goal.pairs.append((subgoal_var, subgoal_range - 1))
 
@@ -180,7 +180,7 @@ def abstrips_solve_from_task(sas_task, temp_dir=TEMP_DIR, clean=False, debug=Fal
             last_plan = [name_from_action(action, args) for action, args in plan]
         if clean:
             safe_rm_dir(temp_dir)
-        print('Total runtime: {:.3f}'.format(elapsed_time(start_time)))
+        print(f'Total runtime: {elapsed_time(start_time):.3f}')
     return plan, cost
 
 ##################################################

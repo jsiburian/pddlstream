@@ -42,7 +42,7 @@ def combine_optimizers(evaluations, external_plan):
     if len(optimizers - {None}) == 0:
         return external_plan
 
-    print('Constraint plan: {}'.format(external_plan))
+    print(f'Constraint plan: {external_plan}')
     combined_results = []
     for optimizer in optimizers:
         relevant_results = [r for r in stream_plan if get_optimizer(r) == optimizer]

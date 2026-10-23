@@ -13,7 +13,7 @@ from pddlstream.utils import read, get_file_path, Profiler
 from pddlstream.language.constants import print_solution, PDDLProblem
 from pddlstream.language.external import defer_shared, never_defer
 
-class Latent(object):
+class Latent:
     pass
 
 class Uncertain(Latent):
@@ -22,7 +22,7 @@ class Uncertain(Latent):
         self.mode = mode
         self.confidence = confidence
     def __repr__(self):
-        return 'L({})'.format(self.mode)
+        return f'L({self.mode})'
 
 class Derived(Latent):
     def __init__(self, fn, inputs):

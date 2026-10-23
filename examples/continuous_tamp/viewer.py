@@ -25,7 +25,7 @@ def get_width(interval):
 
 ##################################################
 
-class ContinuousTMPViewer(object):
+class ContinuousTMPViewer:
     def __init__(self, suction_height, regions, tl_x=0, tl_y=0, width=400, height=200,
                  title='Grid', background=BACKGROUND_COLOR):
         self.tk = Tk()
@@ -59,15 +59,15 @@ class ContinuousTMPViewer(object):
         self.top.update_idletasks()
         w = self.top.winfo_screenwidth()
         h = self.top.winfo_screenheight()
-        size = tuple(int(_) for _ in self.top.geometry().split('+')[0].split('x'))
-        x = w / 2 - size[0] / 2
-        y = h / 2 - size[1] / 2
-        self.top.geometry("%dx%d+%d+%d" % (size + (x, y)))
+        width, height = (int(_) for _ in self.top.geometry().split('+')[0].split('x'))
+        x = w / 2 - width / 2
+        y = h / 2 - height / 2
+        self.top.geometry(f'{width}x{height}+{int(x)}+{int(y)}')
 
     def move_frame(self, x, y):
         self.top.update_idletasks()
-        size = tuple(int(_) for _ in self.top.geometry().split('+')[0].split('x'))
-        self.top.geometry("%dx%d+%d+%d" % (size + (x, y)))
+        width, height = (int(_) for _ in self.top.geometry().split('+')[0].split('x'))
+        self.top.geometry(f'{width}x{height}+{int(x)}+{int(y)}')
 
     def scale_x(self, x):  # x \in [-self.dist_width/2, self.dist_width/2]
         return self.width / 2. + self.dist_to_pixel * x

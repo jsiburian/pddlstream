@@ -201,7 +201,7 @@ def make_blocks(num):
 
 def mirror(n_blocks=1, n_robots=2):
     confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
-    robots = ['r{}'.format(x) for x in range(n_robots)]
+    robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
     n_goals = n_blocks
@@ -217,7 +217,7 @@ def mirror(n_blocks=1, n_robots=2):
 
 def tight(n_blocks=2, n_goals=2, n_robots=1):
     confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
-    robots = ['r{}'.format(x) for x in range(n_robots)]
+    robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
     poses = [np.array([-(BLOCK_WIDTH + 1) * x, 0]) for x in range(n_blocks)]
@@ -231,7 +231,7 @@ def tight(n_blocks=2, n_goals=2, n_robots=1):
 
 def blocked(n_blocks=3, n_robots=1, deterministic=True):
     confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
-    robots = ['r{}'.format(x) for x in range(n_robots)]
+    robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
     blocks = make_blocks(n_blocks)
@@ -255,7 +255,7 @@ def blocked(n_blocks=3, n_robots=1, deterministic=True):
 
 def blocked_cost(n_blocks=2, n_robots=1):
     confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
-    robots = ['r{}'.format(x) for x in range(n_robots)]
+    robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
     goal_region = (2, 10)
@@ -286,7 +286,7 @@ def dual(n_blocks=2, n_goals=2, n_robots=1, goal_regions=['red', 'green']):
     # TODO: geometric reachability
 
     confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
-    robots = ['r{}'.format(x) for x in range(n_robots)]
+    robots = [f'r{x}' for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
     poses = [np.array([-(BLOCK_WIDTH + 1) * x, 0]) for x in range(n_blocks)]
@@ -306,7 +306,7 @@ def cook(n_blocks=2, n_goals=1, n_robots=1):
         STOVE_NAME: (5, 10),
     }
 
-    robots = ['r{}'.format(x) for x in range(n_robots)]
+    robots = [f'r{x}' for x in range(n_robots)]
     confs = [INITIAL_CONF, np.array([-1, 1])*INITIAL_CONF]
 
     blocks = make_blocks(n_blocks)

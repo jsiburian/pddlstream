@@ -58,7 +58,7 @@ def get_problem(optimize=True):
     ] # + [('cash', amount) for amount in amounts]
 
     for num in range(num_atms):
-        name = 'atm{}'.format(num+1)
+        name = f'atm{num+1}'
         init.extend([
             ('machine', name),
             ('mcash', initial_atm),

@@ -154,7 +154,7 @@ def main():
         runpy.run_module('examples.' + module, run_name='__main__', alter_sys=True)
     except SystemExit as exception:
         if exception.code not in (None, 0):
-            error = 'SystemExit({})'.format(exception.code)
+            error = f'SystemExit({exception.code})'
     except Exception:
         error = traceback.format_exc()
     result = {'example': ' '.join(args.example), 'error': error, 'calls': recorder.calls}

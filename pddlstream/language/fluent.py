@@ -12,7 +12,7 @@ def get_predicate_map(state_streams):
             predicate = get_prefix(fact)
             if predicate in predicate_map:
                 # TODO: could make a disjunctive condition instead
-                raise NotImplementedError('Only one fluent stream can certify a predicate: {}'.format(predicate))
+                raise NotImplementedError(f'Only one fluent stream can certify a predicate: {predicate}')
             predicate_map[predicate] = state_stream
     return predicate_map
 
@@ -49,11 +49,10 @@ def compile_fluent_streams(domain, externals):
         if isinstance(action, pddl.Action): # TODO: unified Action/Axiom effects
             for effect in action.effects:
                 if isinstance(effect, pddl.Effect) and (output_args & set(effect.literal.args)):
-                    raise RuntimeError('Fluent stream outputs cannot be in action effects: {}'.format(
-                        effect.literal.predicate))
+                    raise RuntimeError(f'Fluent stream outputs cannot be in action effects: {effect.literal.predicate}')
         elif not stream.is_negated:
             axiom = action
-            raise RuntimeError('Fluent stream outputs cannot be in an axiom: {}'.format(axiom.name))
+            raise RuntimeError(f'Fluent stream outputs cannot be in an axiom: {axiom.name}')
 
         blocked_args = safe_apply_mapping(stream.inputs, mapping)
         blocked_literal = literal.__class__(stream.blocked_predicate, blocked_args).negate()

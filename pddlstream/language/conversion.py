@@ -73,7 +73,7 @@ def list_from_conjunction(parent):
     if not clauses:
         return clauses
     if len(clauses) >= 2:
-        raise ValueError('Formula {} has more than one conjunctive clauses'.format(parent))
+        raise ValueError(f'Formula {parent} has more than one conjunctive clauses')
     return clauses[0]
 
 def substitute_expression(parent, mapping):
@@ -204,13 +204,13 @@ def revert_solution(plan, cost, evaluations):
 
 
 def str_from_head(head):
-    return '{}{}'.format(get_prefix(head), str_from_object(get_args(head)))
+    return f'{get_prefix(head)}{str_from_object(get_args(head))}'
 
 def str_from_fact(fact):
     prefix = get_prefix(fact)
     if prefix == NOT:
-        return '~{}'.format(str_from_fact(fact[1]))
+        return f'~{str_from_fact(fact[1])}'
     if prefix == EQ: # TODO: predicate = vs function =
         _, head, value = fact
-        return '{}={}'.format(str_from_fact(head), value)
+        return f'{str_from_fact(head)}={value}'
     return str_from_head(fact)

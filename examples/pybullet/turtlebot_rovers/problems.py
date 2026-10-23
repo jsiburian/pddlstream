@@ -19,7 +19,7 @@ KINECT_FRAME = 'camera_rgb_optical_frame' # eyes
 
 #######################################################
 
-class RoversProblem(object):
+class RoversProblem:
     def __init__(self, rovers=[], landers=[], objectives=[], rocks=[], soils=[], stores=[], limits=[], body_types=[]):
         self.rovers = rovers
         self.landers = landers
@@ -85,7 +85,7 @@ def rovers1(n_rovers=2, n_objectives=4, n_rocks=3, n_soil=3, n_stores=1, n_obsta
     assert n_rovers <= len(rover_confs)
 
     landers = [lander]
-    stores = ['store{}'.format(i) for i in range(n_stores)]
+    stores = [f'store{i}' for i in range(n_stores)]
 
     rovers = []
     for i in range(n_rovers):

@@ -34,8 +34,7 @@ def partition_externals(externals, verbose=False):
     optimizers = list(filter(lambda s: isinstance(s, ComponentStream) and (s not in negative), externals))
     streams = list(filter(lambda s: s not in (functions + negative + optimizers), externals))
     if verbose:
-        print('Streams: {}\nFunctions: {}\nNegated: {}\nOptimizers: {}'.format(
-            streams, functions, negative, optimizers))
+        print(f'Streams: {streams}\nFunctions: {functions}\nNegated: {negative}\nOptimizers: {optimizers}')
     return streams, functions, negative, optimizers
 
 ##################################################
@@ -133,10 +132,11 @@ def solve_abstract(problem, constraints=PlanConstraints(), stream_info={}, repla
 
         ################
 
-        print('\nIteration: {} | Complexity: {} | Skeletons: {} | Skeleton Queue: {} | Disabled: {} | Evaluations: {} | '
-              'Eager Calls: {} | Cost: {:.3f} | Search Time: {:.3f} | Sample Time: {:.3f} | Total Time: {:.3f}'.format(
-            num_iterations, complexity_limit, len(skeleton_queue.skeletons), len(skeleton_queue), len(disabled),
-            len(evaluations), eager_calls, store.best_cost, store.search_time, store.sample_time, store.elapsed_time()))
+        print(f'\nIteration: {num_iterations} | Complexity: {complexity_limit} | '
+              f'Skeletons: {len(skeleton_queue.skeletons)} | Skeleton Queue: {len(skeleton_queue)} | '
+              f'Disabled: {len(disabled)} | Evaluations: {len(evaluations)} | Eager Calls: {eager_calls} | '
+              f'Cost: {store.best_cost:.3f} | Search Time: {store.search_time:.3f} | '
+              f'Sample Time: {store.sample_time:.3f} | Total Time: {store.elapsed_time():.3f}')
         optimistic_solve_fn = get_optimistic_solve_fn(goal_exp, domain, negative,
                                                       replan_actions=replan_actions, reachieve=use_skeletons,
                                                       max_cost=min(store.best_cost, constraints.max_cost),
@@ -162,9 +162,9 @@ def solve_abstract(problem, constraints=PlanConstraints(), stream_info={}, repla
 
         num_optimistic = sum(r.optimistic for r in stream_plan) if stream_plan else 0
         action_plan = opt_plan.action_plan if is_plan(opt_plan) else opt_plan
-        print('Stream plan ({}, {}, {:.3f}): {}\nAction plan ({}, {:.3f}): {}'.format(
-            get_length(stream_plan), num_optimistic, compute_plan_effort(stream_plan), stream_plan,
-            get_length(action_plan), cost, str_from_plan(action_plan)))
+        print(f'Stream plan ({get_length(stream_plan)}, {num_optimistic}, '
+              f'{compute_plan_effort(stream_plan):.3f}): {stream_plan}\n'
+              f'Action plan ({get_length(action_plan)}, {cost:.3f}): {str_from_plan(action_plan)}')
         if is_plan(stream_plan) and visualize:
             log_plans(stream_plan, action_plan, num_iterations)
             create_visualizations(evaluations, stream_plan, num_iterations)
@@ -174,7 +174,7 @@ def solve_abstract(problem, constraints=PlanConstraints(), stream_info={}, repla
         if (stream_plan is INFEASIBLE) and (not eager_instantiator) and (not skeleton_queue) and (not disabled):
             break
         if not is_plan(stream_plan):
-            print('No plan: increasing complexity from {} to {}'.format(complexity_limit, complexity_limit+complexity_step))
+            print(f'No plan: increasing complexity from {complexity_limit} to {complexity_limit+complexity_step}')
             complexity_limit += complexity_step
             if not eager_disabled:
                 reenable_disabled(evaluations, domain, disabled)
@@ -188,8 +188,8 @@ def solve_abstract(problem, constraints=PlanConstraints(), stream_info={}, repla
         optimizer_plan = None
         if optimizer_plan is not None:
             # TODO: post process a bound plan
-            print('Optimizer plan ({}, {:.3f}): {}'.format(
-                get_length(optimizer_plan), compute_plan_effort(optimizer_plan), optimizer_plan))
+            print(f'Optimizer plan ({get_length(optimizer_plan)}, '
+                  f'{compute_plan_effort(optimizer_plan):.3f}): {optimizer_plan}')
             skeleton_queue.new_skeleton(optimizer_plan, opt_plan, cost)
 
         allocated_sample_time = (search_sample_ratio * store.search_time) - store.sample_time \
@@ -205,7 +205,7 @@ def solve_abstract(problem, constraints=PlanConstraints(), stream_info={}, repla
         'complexity': complexity_limit,
         'skeletons': len(skeleton_queue.skeletons),
     })
-    print('Summary: {}'.format(str_from_object(summary, ndigits=3))) # TODO: return the summary
+    print(f'Summary: {str_from_object(summary, ndigits=3)}') # TODO: return the summary
 
     write_stream_statistics(externals, verbose)
     return store.extract_solution()

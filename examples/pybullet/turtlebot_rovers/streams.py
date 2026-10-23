@@ -35,7 +35,7 @@ class Ray(Command):
         # TODO: set to transparent before removing
         yield
     def __repr__(self):
-        return '{}->{}'.format(self.start, self.end)
+        return f'{self.start}->{self.end}'
 
 
 def get_reachable_test(problem, iterations=10, **kwargs):
