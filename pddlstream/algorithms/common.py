@@ -3,7 +3,7 @@ from collections import namedtuple, OrderedDict
 
 from pddlstream.language.constants import is_plan, get_length, FAILED #, INFEASIBLE, SUCCEEDED
 from pddlstream.language.conversion import evaluation_from_fact, obj_from_value_expression, revert_solution
-from pddlstream.utils import INF, elapsed_time, check_memory
+from pddlstream.utils import INF, elapsed_time, check_memory, get_clock
 
 # Complexity is a way to characterize the number of external evaluations required for a solution
 # Most algorithms regularize to prefer lower complexity solutions
@@ -30,6 +30,7 @@ class SolutionStore(object):
         self.evaluations = evaluations
         #self.initial_evaluations = copy.copy(evaluations)
         self.start_time = time.time()
+        self.clock_start = get_clock().now() # Search and sample times are measured with the solve's clock
         self.max_time = max_time
         self.max_memory = max_memory
         self.success_cost = success_cost # Inclusive
@@ -39,7 +40,7 @@ class SolutionStore(object):
         self.sample_time = 0.
     @property
     def search_time(self):
-        return self.elapsed_time() - self.sample_time
+        return (get_clock().now() - self.clock_start) - self.sample_time
     @property
     def best_plan(self):
         # TODO: return INFEASIBLE if can prove no solution

@@ -1,8 +1,6 @@
 from collections import Counter
 
-import time
-
-from pddlstream.algorithms.algorithm import parse_problem
+from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
 from pddlstream.algorithms.common import add_facts, add_certified, SolutionStore, UNKNOWN_EVALUATION
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.downward import get_problem, task_from_domain_problem
@@ -15,7 +13,7 @@ from pddlstream.language.attachments import has_attachments, compile_fluents_as_
 from pddlstream.language.statistics import load_stream_statistics, write_stream_statistics
 from pddlstream.language.temporal import solve_tfd, SimplifiedDomain
 from pddlstream.language.write_pddl import get_problem_pddl
-from pddlstream.utils import INF, Verbose, str_from_object, elapsed_time
+from pddlstream.utils import INF, Verbose, str_from_object, get_clock
 
 UPDATE_STATISTICS = False
 
@@ -47,9 +45,9 @@ def solve_finite(evaluations, goal_exp, domain, **kwargs):
 def process_instance(instantiator, store, instance, verbose=False): #, **complexity_args):
     if instance.enumerated:
         return []
-    start_time = time.time()
+    start_time = get_clock().now()
     new_results, new_facts = instance.next_results(verbose=verbose)
-    store.sample_time += elapsed_time(start_time)
+    store.sample_time += get_clock().now() - start_time
 
     evaluations = store.evaluations
     #remove_blocked(evaluations, instance, new_results)
@@ -95,11 +93,12 @@ def process_stream_queue(instantiator, store, complexity_limit=INF, verbose=Fals
 
 ##################################################
 
+@scoped_solve
 def solve_incremental(problem, constraints=PlanConstraints(),
                       unit_costs=False, success_cost=INF,
                       max_iterations=INF, max_time=INF, max_memory=INF,
                       initial_complexity=0, complexity_step=1, max_complexity=INF,
-                      verbose=False, **search_kwargs):
+                      verbose=False, deterministic=False, **search_kwargs):
     """
     Solves a PDDLStream problem by alternating between applying all possible streams and searching
     :param problem: a PDDLStream problem
@@ -117,6 +116,7 @@ def solve_incremental(problem, constraints=PlanConstraints(),
     :param max_complexity: the maximum stream complexity limit
 
     :param verbose: if True, print the result of each stream application
+    :param deterministic: if True, make seeded runs repeatable by not loading saved stream statistics
     :param search_kwargs: keyword args for the search subroutine
 
     :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
@@ -130,7 +130,7 @@ def solve_incremental(problem, constraints=PlanConstraints(),
     evaluations, goal_expression, domain, externals = parse_problem(
         problem, constraints=constraints, unit_costs=unit_costs)
     store = SolutionStore(evaluations, max_time, success_cost, verbose, max_memory=max_memory) # TODO: include other info here?
-    if UPDATE_STATISTICS:
+    if UPDATE_STATISTICS and not deterministic:
         load_stream_statistics(externals)
     static_externals = compile_fluents_as_attachments(domain, externals)
     num_iterations = num_calls = 0

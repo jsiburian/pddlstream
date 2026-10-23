@@ -1,5 +1,3 @@
-import time
-
 from collections import Counter
 from collections.abc import Sequence
 
@@ -13,7 +11,8 @@ from pddlstream.language.external import ExternalInfo, Result, Instance, Externa
     get_procedure_fn, parse_lisp_list, select_inputs, convert_constants
 from pddlstream.language.generator import get_next, from_fn, universe_test, from_test, BoundedGenerator
 from pddlstream.language.object import Object, OptimisticObject, UniqueOptValue, SharedOptValue, DebugValue, SharedDebugValue
-from pddlstream.utils import str_from_object, get_mapping, irange, apply_mapping, safe_apply_mapping, safe_zip
+from pddlstream.utils import str_from_object, get_mapping, irange, apply_mapping, safe_apply_mapping, safe_zip, \
+    get_clock
 
 VERBOSE_FAILURES = True
 VERBOSE_WILD = False
@@ -299,7 +298,7 @@ class StreamInstance(Instance):
 
     def next_results(self, verbose=False):
         assert not self.enumerated
-        start_time = time.time()
+        start_time = get_clock().now()
         start_history = len(self.history)
         new_values, new_facts = self._next_outputs()
         self._check_output_values(new_values)

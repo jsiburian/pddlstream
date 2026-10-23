@@ -1,9 +1,7 @@
-import time
-
 from pddlstream.language.conversion import substitute_expression, list_from_conjunction, str_from_head
 from pddlstream.language.constants import Not, Equal, get_prefix, get_args, is_head, FunctionAction
 from pddlstream.language.external import ExternalInfo, Result, Instance, External, DEBUG_MODES, get_procedure_fn
-from pddlstream.utils import str_from_object, apply_mapping
+from pddlstream.utils import str_from_object, apply_mapping, get_clock
 
 # https://stackoverflow.com/questions/847936/how-can-i-find-the-number-of-arguments-of-a-python-function
 #try:
@@ -94,7 +92,7 @@ class FunctionInstance(Instance):
         return self.value
     def next_results(self, verbose=False):
         assert not self.enumerated
-        start_time = time.time()
+        start_time = get_clock().now()
         start_history = len(self.history)
         value = self._compute_output()
         new_results = [self._Result(self, value, optimistic=False)]

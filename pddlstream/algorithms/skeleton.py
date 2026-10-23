@@ -13,7 +13,7 @@ from pddlstream.language.constants import is_plan, INFEASIBLE, FAILED, SUCCEEDED
 from pddlstream.language.function import FunctionResult
 from pddlstream.algorithms.visualization import visualize_stream_orders
 from pddlstream.utils import elapsed_time, HeapElement, apply_mapping, INF, get_mapping, adjacent_from_edges, \
-    incoming_from_edges, outgoing_from_edges, CreationHash
+    incoming_from_edges, outgoing_from_edges, CreationHash, get_clock, BINDING_WORK
 
 # TODO: the bias away from solved things is actually due to USE_PRIORITIES+timed_process not REQUIRE_DOWNSTREAM
 USE_PRIORITIES = True
@@ -334,6 +334,7 @@ class SkeletonQueue(Sized):
     #########################
 
     def process_root(self):
+        get_clock().charge(BINDING_WORK)
         _, binding = self.pop_binding()
         readd, is_new = self._process_binding(binding)
         if readd is not False:
@@ -399,9 +400,9 @@ class SkeletonQueue(Sized):
         iterations = num_new = 0
         if not self.is_active():
             return num_new
-        print('Sampling for up to {:.3f} seconds'.format(max_time)) #, max_iterations))
-        start_time = time.time() # TODO: instead use sample_time
-        while self.is_active() and (elapsed_time(start_time) < max_time) and (iterations < max_iterations):
+        print('Sampling for up to {:.3f} {}'.format(max_time, get_clock().unit)) #, max_iterations))
+        start_time = get_clock().now()
+        while self.is_active() and (get_clock().now() - start_time < max_time) and (iterations < max_iterations):
             iterations += 1
             num_new += self.process_root()
         #print('Iterations: {} | New: {} | Time: {:.3f}'.format(iterations, num_new, elapsed_time(start_time)))
@@ -425,7 +426,7 @@ class SkeletonQueue(Sized):
         # TODO: AssertionError: Could not find instantiation for numeric expression: dist
 
     def process(self, stream_plan, action_plan, cost, complexity_limit, max_time=0, accelerate=False):
-        start_time = time.time()
+        start_time = get_clock().now()
         if is_plan(stream_plan):
             self.new_skeleton(stream_plan, action_plan, cost)
             self.greedily_process()
@@ -436,7 +437,7 @@ class SkeletonQueue(Sized):
             return FAILED
 
         # TODO: add and process
-        self.timed_process(max_time=(max_time - elapsed_time(start_time)))
+        self.timed_process(max_time=(max_time - (get_clock().now() - start_time)))
         self.process_complexity(complexity_limit)
         if accelerate:
            self.accelerate_best_bindings()

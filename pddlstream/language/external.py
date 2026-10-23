@@ -5,7 +5,8 @@ from pddlstream.language.constants import get_args, is_parameter, get_prefix, Fa
 from pddlstream.language.conversion import values_from_objects, substitute_fact, obj_from_value_expression
 from pddlstream.language.object import Object, OptimisticObject
 from pddlstream.language.statistics import Performance, PerformanceInfo, DEFAULT_SEARCH_OVERHEAD, Stats
-from pddlstream.utils import elapsed_time, get_mapping, flatten, INF, safe_apply_mapping, Score, CreationHash
+from pddlstream.utils import get_mapping, flatten, INF, safe_apply_mapping, Score, CreationHash, get_clock, \
+    CALL_WORK
 
 DEBUG = 'debug'
 SHARED_DEBUG = 'shared_debug'
@@ -223,7 +224,9 @@ class Instance(CreationHash):
         return replan_effort + self.external.get_effort(search_overhead=search_overhead)
 
     def update_statistics(self, start_time, results):
-        overhead = elapsed_time(start_time)
+        # start_time is from get_clock().now(), taken before the call
+        get_clock().charge(CALL_WORK)
+        overhead = get_clock().now() - start_time
         successes = sum(r.is_successful() for r in results)
         self.external.update_statistics(overhead, bool(successes))
         self.results_history.append(results)

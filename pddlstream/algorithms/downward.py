@@ -9,7 +9,7 @@ from pddlstream.language.constants import EQ, NOT, Head, Evaluation, get_prefix,
 from pddlstream.language.conversion import is_atom, is_negated_atom, objects_from_evaluations, pddl_from_object, \
     pddl_list_from_expression, obj_from_pddl
 from pddlstream.utils import read, write, INF, clear_dir, get_file_path, MockSet, find_unique, int_ceil, \
-    safe_remove, safe_zip, elapsed_time
+    safe_remove, safe_zip, elapsed_time, get_clock, SEARCH_WORK
 from pddlstream.language.write_pddl import get_problem_pddl
 
 USE_CERBERUS = False
@@ -462,6 +462,7 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
     max_time = convert_value(max_planner_time)
     max_cost = convert_value(scale_cost(max_cost))
     start_time = time()
+    get_clock().charge(SEARCH_WORK)
     search = os.path.abspath(os.path.join(FD_BIN, SEARCH_COMMAND))
     if planner == 'cerberus':
         planner_config = SEARCH_OPTIONS[planner] # Check if max_time, max_cost exist

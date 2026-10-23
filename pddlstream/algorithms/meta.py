@@ -50,7 +50,7 @@ def solve(problem, algorithm=DEFAULT_ALGORITHM, constraints=PlanConstraints(),
           unit_efforts=False, max_effort=INF, effort_weight=None, reorder=True,
           #temp_dir=TEMP_DIR, clean=False, debug=False, hierarchy=[],
           #planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_TIME, max_cost=INF, debug=False
-          visualize=False, verbose=True, **search_kwargs):
+          visualize=False, verbose=True, deterministic=False, **search_kwargs):
     """
     Solves a PDDLStream problem generically using one of the available algorithms
     :param problem: a PDDLStream problem
@@ -80,6 +80,8 @@ def solve(problem, algorithm=DEFAULT_ALGORITHM, constraints=PlanConstraints(),
 
     :param visualize: if True, draw the constraint network and stream plan as a graphviz file
     :param verbose: if True, print the result of each stream application
+    :param deterministic: if True, make seeded runs repeatable: time-based decisions (e.g. the sampling budget) count
+        work units instead of seconds, and saved stream statistics are not loaded. max_time is still wall-clock time
     :param search_kwargs: keyword args for the search subroutine
 
     :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
@@ -96,7 +98,7 @@ def solve(problem, algorithm=DEFAULT_ALGORITHM, constraints=PlanConstraints(),
             unit_costs=unit_costs, success_cost=success_cost,
             max_iterations=max_iterations, max_time=max_time, max_memory=max_memory,
             initial_complexity=initial_complexity, complexity_step=complexity_step, max_complexity=max_complexity,
-            verbose=verbose, **search_kwargs)
+            verbose=verbose, deterministic=deterministic, **search_kwargs)
 
     # if algorithm == 'abstract_focused': # meta_focused | meta_focused
     #     return solve_focused(
@@ -121,7 +123,7 @@ def solve(problem, algorithm=DEFAULT_ALGORITHM, constraints=PlanConstraints(),
             #max_skeletons=max_skeletons, search_sample_ratio=search_sample_ratio,
             fail_fast=fail_fast, # bind=bind, max_failures=max_failures,
             unit_efforts=unit_efforts, max_effort=max_effort, effort_weight=effort_weight, reorder=reorder,
-            visualize=visualize, verbose=verbose, **search_kwargs)
+            visualize=visualize, verbose=verbose, deterministic=deterministic, **search_kwargs)
 
     if algorithm == 'binding':
         return solve_binding(
@@ -133,7 +135,7 @@ def solve(problem, algorithm=DEFAULT_ALGORITHM, constraints=PlanConstraints(),
             #max_skeletons=max_skeletons, search_sample_ratio=search_sample_ratio,
             fail_fast=fail_fast, # bind=bind, max_failures=max_failures,
             unit_efforts=unit_efforts, max_effort=max_effort, effort_weight=effort_weight, reorder=reorder,
-            visualize=visualize, verbose=verbose, **search_kwargs)
+            visualize=visualize, verbose=verbose, deterministic=deterministic, **search_kwargs)
 
     if algorithm == 'adaptive':
         return solve_adaptive(
@@ -145,7 +147,7 @@ def solve(problem, algorithm=DEFAULT_ALGORITHM, constraints=PlanConstraints(),
             max_skeletons=max_skeletons, search_sample_ratio=search_sample_ratio,
             #bind=bind, max_failures=max_failures,
             unit_efforts=unit_efforts, max_effort=max_effort, effort_weight=effort_weight, reorder=reorder,
-            visualize=visualize, verbose=verbose, **search_kwargs)
+            visualize=visualize, verbose=verbose, deterministic=deterministic, **search_kwargs)
     raise NotImplementedError(algorithm)
 
 ##################################################

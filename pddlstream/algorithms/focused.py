@@ -1,6 +1,6 @@
 import time
 
-from pddlstream.algorithms.algorithm import parse_problem
+from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
 from pddlstream.algorithms.advanced import enforce_simultaneous, automatically_negate_externals
 from pddlstream.algorithms.common import SolutionStore
 from pddlstream.algorithms.constraints import PlanConstraints
@@ -67,13 +67,14 @@ def check_dominated(skeleton_queue, stream_plan):
 
 ##################################################
 
+@scoped_solve
 def solve_abstract(problem, constraints=PlanConstraints(), stream_info={}, replan_actions=set(),
                   unit_costs=False, success_cost=INF,
                   max_time=INF, max_iterations=INF, max_memory=INF,
                   initial_complexity=0, complexity_step=1, max_complexity=INF,
                   max_skeletons=INF, search_sample_ratio=0, bind=True, max_failures=0,
                   unit_efforts=False, max_effort=INF, effort_weight=None, reorder=True,
-                  visualize=False, verbose=True, **search_kwargs):
+                  visualize=False, verbose=True, deterministic=False, **search_kwargs):
     """
     Solves a PDDLStream problem by first planning with optimistic stream outputs and then querying streams
     :param problem: a PDDLStream problem
@@ -104,6 +105,8 @@ def solve_abstract(problem, constraints=PlanConstraints(), stream_info={}, repla
 
     :param visualize: if True, draw the constraint network and stream plan as a graphviz file
     :param verbose: if True, print the result of each stream application
+    :param deterministic: if True, make seeded runs repeatable: time-based decisions (e.g. the sampling budget) count
+        work units instead of seconds, and saved stream statistics are not loaded. max_time is still wall-clock time
     :param search_kwargs: keyword args for the search subroutine
 
     :return: a tuple (plan, cost, evaluations) where plan is a sequence of actions
@@ -131,7 +134,8 @@ def solve_abstract(problem, constraints=PlanConstraints(), stream_info={}, repla
     # if (effort_weight is None) and not has_costs(domain):
     #     effort_weight = 1
 
-    load_stream_statistics(externals)
+    if not deterministic:
+        load_stream_statistics(externals)
     if visualize and not has_pygraphviz():
         visualize = False
         print('Warning, visualize=True requires pygraphviz. Setting visualize=False')

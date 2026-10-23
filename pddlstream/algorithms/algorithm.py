@@ -1,4 +1,6 @@
+import functools
 from collections import Counter
+from contextlib import contextmanager
 
 from pddlstream.algorithms.common import evaluations_from_init, SOLUTIONS
 from pddlstream.algorithms.constraints import add_plan_constraints
@@ -6,14 +8,14 @@ from pddlstream.algorithms.downward import parse_lisp, parse_goal, has_costs, se
 from pddlstream.language.temporal import parse_domain, SimplifiedDomain
 from pddlstream.language.constants import get_prefix, get_args
 from pddlstream.language.conversion import obj_from_value_expression
-from pddlstream.language.exogenous import compile_to_exogenous
+from pddlstream.language.exogenous import compile_to_exogenous, FutureValue
 from pddlstream.language.external import External
 from pddlstream.language.function import parse_function, parse_predicate
-from pddlstream.language.object import Object, OptimisticObject
+from pddlstream.language.object import Object, OptimisticObject, DebugValue
 from pddlstream.language.optimizer import parse_optimizer
 from pddlstream.language.rule import parse_rule, apply_rules_to_streams, RULES
 from pddlstream.language.stream import parse_stream, Stream, StreamInstance
-from pddlstream.utils import INF
+from pddlstream.utils import INF, WallClock, WorkClock, set_clock, reset_creation_hashes
 
 
 # TODO: rename file to parsing
@@ -65,12 +67,47 @@ def check_problem(domain, streams, obj_from_constant):
         print('Warning! Undeclared predicates: {}'.format(
             sorted(undeclared_predicates))) # Undeclared predicate: {}
 
-def reset_globals():
+def reset_registries():
     # TODO: maintain these dictionaries in an object
     Object.reset()
     OptimisticObject.reset()
+    DebugValue._output_counts.clear()
+    FutureValue._output_counts.clear()
     RULES[:] = []
+    reset_creation_hashes()
+
+def reset_globals():
+    reset_registries()
     SOLUTIONS[:] = []
+
+_solve_depth = 0
+
+@contextmanager
+def solve_scope(deterministic=False):
+    """Wraps a top-level solve. With deterministic=True, decisions based on elapsed time use work units instead of
+    seconds (max_time is still wall-clock time). Afterwards, the object registries are cleared, so every solve starts
+    from the same state. Nested solves share the outer solve's scope."""
+    global _solve_depth
+    if _solve_depth:
+        yield
+        return
+    _solve_depth += 1
+    previous_clock = set_clock(WorkClock() if deterministic else WallClock())
+    try:
+        yield
+    finally:
+        set_clock(previous_clock)
+        _solve_depth -= 1
+        # Cleared afterwards rather than beforehand because callers may create objects before solving (satisfaction)
+        reset_registries()
+
+def scoped_solve(solve_fn):
+    """Runs a solver inside solve_scope; the solver also receives deterministic, e.g. to skip loading statistics."""
+    @functools.wraps(solve_fn)
+    def wrapper(problem, *args, deterministic=False, **kwargs):
+        with solve_scope(deterministic):
+            return solve_fn(problem, *args, deterministic=deterministic, **kwargs)
+    return wrapper
 
 def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, unit_efforts=False):
     # TODO: just return the problem if already written programmatically

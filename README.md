@@ -202,6 +202,13 @@ Property descriptions:
 * **Wild streams**: supported 
 <!--* **Semantic attachments (SA)**: TBD-->
 
+### Reproducible runs
+
+With `solve(..., deterministic=True)` and a fixed `PYTHONHASHSEED` (e.g. `PYTHONHASHSEED=0`), seeded runs repeat exactly.
+Decisions that otherwise depend on elapsed time, such as the adaptive algorithm's sampling budget, then count work units (stream calls and searches) instead of seconds, and saved stream statistics are not loaded.
+`max_time` is still measured in seconds, so a run that stops because of it may not repeat.
+Seed your samplers (`random`, `numpy.random`) as usual.
+
 ## Search Subroutines
 
 Many (but not all) **pddlstream** algorithms have a discrete planning phase that can be implemented using any finite state-space search algorithm, such as Breadth-First Search (BFS) and Uniform-Cost Search (UCS).
