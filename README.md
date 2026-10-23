@@ -54,7 +54,7 @@ Environments:
 * `py311`: the `default` environment on Python 3.11 (the version Isaac Sim pins).
 
 Other tasks:
-* `pixi run build-fd`: rebuild FastDownward.
+* `pixi run build-fd`: rebuild FastDownward. It compiles on every core; add `-j4` to limit memory use.
 * `pixi run clean-fd`: delete the FastDownward build (needed after switching compilers).
 * `pixi run build-ikfast`: optionally compile the PR2 IKFast solver; PyBullet IK is used otherwise.
 * `pixi run test`: run the example test suite.

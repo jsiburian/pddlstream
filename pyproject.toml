@@ -90,7 +90,7 @@ submodules = { cmd = "git submodule update --init --recursive", description = "F
 # The FastDownward fork declares cmake_minimum_required(2.8.3), which CMake 4 rejects without this policy floor.
 # GCC 15 errors on an uninstantiated template in the bundled tl::optional (ext/optional.hh); -Wno-template-body
 # downgrades that check. CMake reads CXXFLAGS only on first configure, so run clean-fd after changing it.
-build-fd = { cmd = "python build.py", cwd = "downward", env = { CMAKE_POLICY_VERSION_MINIMUM = "3.5", CXXFLAGS = "-Wno-template-body" }, description = "Compile FastDownward" }
+build-fd = { cmd = "python build.py", cwd = "downward", env = { CMAKE_POLICY_VERSION_MINIMUM = "3.5", CXXFLAGS = "-Wno-template-body" }, description = "Compile FastDownward (uses every core; pass -jN to limit memory use)" }
 clean-fd = { cmd = "rm -rf downward/builds", description = "Delete the FastDownward build (needed after switching compilers)" }
 setup = { depends-on = ["submodules", "build-fd"], description = "Fetch submodules and compile FastDownward" }
 build-ikfast = { cmd = "python setup.py", cwd = "examples/pybullet/utils/pybullet_tools/ikfast/pr2", description = "Optional: compile the PR2 IKFast solver (otherwise pybullet IK is used)" }
