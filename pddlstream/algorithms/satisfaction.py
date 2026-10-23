@@ -112,6 +112,27 @@ def dump_assignment(solution):
 
 
 @console_output()
+def plan_constraint_streams(
+    queue, init_evaluations, goal_facts, stream_results, function_plan, max_effort, planner, **search_args
+):
+    """A stream plan that binds every free parameter while avoiding the skeletons already in the queue, or None."""
+    queue.domain.axioms[:] = create_disabled_axioms(queue, use_parameters=False)
+    stream_plan = reschedule_stream_plan(
+        init_evaluations,
+        goal_facts,
+        queue.domain,
+        stream_results,
+        unique_binding=True,
+        unsatisfiable=True,
+        max_effort=max_effort,
+        planner=planner,
+        **search_args,
+    )
+    if stream_plan is None:
+        return None
+    return reorder_stream_plan(queue.store, combine_optimizers(init_evaluations, stream_plan + list(function_plan)))
+
+
 def constraint_satisfaction(
     problem,
     stream_info={},
@@ -178,23 +199,9 @@ def constraint_satisfaction(
 
         external_plan = None
         if len(queue.skeletons) < max_skeletons:
-            domain.axioms[:] = create_disabled_axioms(queue, use_parameters=False)
-            stream_plan = reschedule_stream_plan(
-                init_evaluations,
-                goal_facts,
-                domain,
-                stream_results,
-                unique_binding=True,
-                unsatisfiable=True,
-                max_effort=max_effort,
-                planner=planner,
-                **search_args,
+            external_plan = plan_constraint_streams(
+                queue, init_evaluations, goal_facts, stream_results, function_plan, max_effort, planner, **search_args
             )
-            if stream_plan is not None:
-                external_plan = reorder_stream_plan(
-                    store, combine_optimizers(init_evaluations, stream_plan + list(function_plan))
-                )
-
         logger.info(
             f'Stream plan ({get_length(external_plan)}, {compute_plan_effort(external_plan):.3f}): {external_plan}'
         )
