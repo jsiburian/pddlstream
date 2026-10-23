@@ -85,7 +85,6 @@ def create_optimizer_visualizations(result, iteration):
 
 
 def create_visualizations(evaluations, stream_plan, iteration):
-    # TODO: place it in the temp_dir?
     # TODO: decompose any joint streams
     for result in stream_plan:
         create_optimizer_visualizations(result, iteration)

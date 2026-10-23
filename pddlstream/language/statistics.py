@@ -135,8 +135,6 @@ def write_stream_statistics(externals, verbose):
     previous_data = load_data(pddl_name)
     data = {}
     for external in externals:
-        if not hasattr(external, 'instances'):
-            continue  # TODO: SynthesizerStreams
         previous_statistics = previous_data.get(external.name, {})
         data[external.name] = merge_data(external, previous_statistics)
 

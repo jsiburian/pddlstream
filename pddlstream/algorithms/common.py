@@ -49,7 +49,6 @@ class SolutionStore:
 
     @property
     def best_plan(self):
-        # TODO: return INFEASIBLE if can prove no solution
         return self.solutions[-1].plan if self.solutions else FAILED
 
     @property
@@ -98,8 +97,7 @@ class SolutionStore:
         status = Status.SUCCEEDED if is_plan(plan) else Status.INFEASIBLE if infeasible else Status.FAILED
         return SolveResult(plan, cost, certificate, status, self.export_summary() if stats is None else stats)
 
-    def export_summary(self):  # TODO: log, etc...
-        # TODO: SOLUTIONS
+    def export_summary(self):
         return {
             'solved': self.is_solved(),
             'solutions': len(self.solutions),
