@@ -379,6 +379,13 @@ def solve_optimistic_sequential(
 ##################################################
 
 
+def get_replan_step(action_plan, replan_actions):
+    """The step after the first replanning action, or after the whole plan without one."""
+    return min(
+        [step + 1 for step, action in enumerate(action_plan) if action.name in replan_actions] or [len(action_plan) + 1]
+    )
+
+
 def plan_streams(
     evaluations,
     goal_expression,
@@ -392,6 +399,8 @@ def plan_streams(
     replan_actions=set(),
     **kwargs,
 ):
+    """Searches for an action plan whose preconditions optimistic stream results can achieve, and recovers the stream
+    plan that supports it. Returns an OptSolution (stream_plan, opt_plan, cost), with FAILED plans if none exists."""
     # TODO: alternatively could translate with stream actions on real opt_state and just discard them
     # TODO: only consider axioms that have stream conditions?
     applied_results, deferred_results = partition_results(
@@ -436,10 +445,7 @@ def plan_streams(
     )
 
     action_plan = transform_plan_args(map(pddl_from_instance, action_instances), obj_from_pddl)
-    replan_step = min(
-        [step + 1 for step, action in enumerate(action_plan) if action.name in replan_actions] or [len(action_plan) + 1]
-    )  # step after action application
-
+    replan_step = get_replan_step(action_plan, replan_actions)
     stream_plan, opt_plan = recover_stream_plan(
         evaluations,
         stream_plan,
