@@ -29,6 +29,7 @@ def create_optimizer(min_take=0, max_take=INF, max_wallet=INF, max_time=5, integ
                 (cash,) = args
                 if is_parameter(cash):
                     # TODO: scale by 100 for cents
+                    # lb=0 keeps every amount nonnegative, including the machine's balance (mcash)
                     var_from_param[cash] = model.addVar(
                         lb=0, ub=GRB.INFINITY, vtype=GRB.INTEGER if integer else GRB.CONTINUOUS
                     )
@@ -38,9 +39,6 @@ def create_optimizer(min_take=0, max_take=INF, max_wallet=INF, max_time=5, integ
                             model.addConstr(var_from_param[cash] <= max_take)
                     if (prefix == 'pcash') and (max_wallet < INF):
                         model.addConstr(var_from_param[cash] <= max_wallet)
-                    if prefix == 'mcash':
-                        # min_balance >= 0
-                        pass
 
         get_var = lambda p: var_from_param[p] if is_parameter(p) else p  # var_from_param.get(p, p)
 

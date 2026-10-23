@@ -12,7 +12,7 @@ from pddlstream.utils import flatten, Profiler, SEPARATOR
 
 DOMAIN_PDDL = """
 (define (domain storage)
-  (:predicates 
+  (:predicates
     (Region ?r)
     (Prepush ?r1 ?r2)
     (Stackable ?t ?b)
@@ -53,18 +53,18 @@ DOMAIN_PDDL = """
   )
   (:action push
     :parameters (?o ?r1 ?r2)
-    :precondition (and (Movable ?o) (Prepush ?r1 ?r2) 
+    :precondition (and (Movable ?o) (Prepush ?r1 ?r2)
                        (HandEmpty) (On ?o ?r1)
                        (Clear ?o)
                        ;(not (Supporting ?o))
                        )
-    :effect (and (In ?o ?r2) 
+    :effect (and (In ?o ?r2)
                  (not (On ?o ?r1)))
   )
   ;(:derived (Clear ?b)
   ;  (exists (?t) (and (Movable ?t) (Thing ?b) (not (= ?t ?b))
   ;                    (not (On ?t ?b))
-  ;                    
+  ;
   ;                    )))
   ;(:derived (Supporting ?b)
   ;  (exists (?t) (and (Movable ?t) (Thing ?b) (not (= ?t ?b))

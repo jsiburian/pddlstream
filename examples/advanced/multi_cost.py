@@ -10,7 +10,7 @@ from pddlstream.utils import Profiler, inf_generator, INF
 
 DOMAIN_PDDL = """
 (define (domain cost)
-  (:predicates 
+  (:predicates
     (Control ?x)
     (Goal)
   )

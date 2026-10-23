@@ -7,7 +7,7 @@ from pddlstream.language.generator import from_fn, from_test
 
 DOMAIN_PDDL = """
 (define (domain debug)
-  (:predicates 
+  (:predicates
     (Integer ?x)
     (Large ?x)
     (Small ?x)

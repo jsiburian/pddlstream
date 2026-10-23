@@ -27,13 +27,13 @@ STREAM_PDDL = """
                     (StartTime ?t2) ; TODO: toggle depending on if can start from any stop time
                )
   )
-  
+
   (:stream ge
     :inputs (?t1 ?t2)
     :domain (and (Time ?t1) (Time ?t2))
     :certified (GE ?t1 ?t2)
   )
-  (:function (Elapsed ?dt) 
+  (:function (Elapsed ?dt)
              (Duration ?dt))
   (:function (Difference ?t2 ?t1)
              (GE ?t2 ?t1))

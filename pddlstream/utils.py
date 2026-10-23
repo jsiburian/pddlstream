@@ -242,7 +242,8 @@ def get_peak_memory_in_kb():
     # vms: aka "Virtual Memory Size", this is the total amount of virtual memory used by the process. (bytes)
     # shared: (Linux) memory that could be potentially shared with other processes.
     # text (Linux, BSD): aka TRS (text resident set) the amount of memory devoted to executable code.
-    # data (Linux, BSD): aka DRS (data resident set) the amount of physical memory devoted to other than executable code.
+    # data (Linux, BSD): aka DRS (data resident set) the amount of physical memory devoted to other than
+    #   executable code.
     # lib (Linux): the memory used by shared libraries.
     # dirty (Linux): the number of dirty pages.
     # pfaults (macOS): number of page faults.
@@ -405,7 +406,7 @@ def sorted_str_from_list(obj, **kwargs):
 def str_from_object(obj, ndigits=None):  # str_object
     if type(obj) in [list]:
         return '[{}]'.format(', '.join(str_from_object(item, ndigits) for item in obj))
-    if type(obj) == tuple:
+    if type(obj) is tuple:
         return '({})'.format(', '.join(str_from_object(item, ndigits) for item in obj))
     if type(obj) in [dict, defaultdict, Counter]:
         return '{{{}}}'.format(

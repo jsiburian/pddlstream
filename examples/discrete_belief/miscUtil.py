@@ -81,12 +81,11 @@ def argmaxWithVal(l, f):
 
 
 def update(x, **entries):
-    # Update a dict; or an object with slots; according to entries.
-    # >>> update({'a': 1}, a=10, b=20)
-    # {'a': 10, 'b': 20}
-    # >>> update(Struct(a=1), a=10, b=20)
-    # Struct(a=10, b=20)
+    """Updates a dict, or an object's attributes, with entries.
 
+    >>> update({'a': 1}, a=10, b=20)
+    {'a': 10, 'b': 20}
+    """
     if isinstance(x, dict):
         x.update(entries)
     else:
@@ -99,18 +98,18 @@ def applyBindings1(s, bindings):
     if not bindings:
         return s
     tps = type(s)
-    if tps == str:
+    if tps is str:
         if s in bindings:
             return applyBindings1(bindings[s], bindings)
         else:
             return s
-    if tps == dict:
+    if tps is dict:
         return dict(applyBindings1(s.items(), bindings))
-    elif tps == tuple:
+    elif tps is tuple:
         return tuple([applyBindings1(thing, bindings) for thing in s])
-    elif tps == set:
+    elif tps is set:
         return set([applyBindings1(thing, bindings) for thing in s])
-    elif tps == list:
+    elif tps is list:
         return [applyBindings1(thing, bindings) for thing in s]
     elif hasattr(s, 'applyBindings'):
         return s.applyBindings(bindings)

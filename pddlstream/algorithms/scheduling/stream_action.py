@@ -21,7 +21,7 @@ def get_stream_actions(results, unique_binding=False, effort_scale=1, max_effort
     result_from_name = OrderedDict()
     stream_actions = []
     for result in results:
-        if type(result) == FunctionResult:
+        if type(result) is FunctionResult:
             continue
         effort = result.get_effort(**kwargs)
         if not check_effort(effort, max_effort):

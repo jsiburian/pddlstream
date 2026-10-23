@@ -35,8 +35,8 @@ STREAM_PDDL = """
     :outputs (?x3)
     :certified (and (Sum ?x1 ?x2 ?x3) (Integer ?x3))
   )
-  
-  (:function (Cost ?x) 
+
+  (:function (Cost ?x)
              (Integer ?x)
   )
 )

@@ -14,7 +14,7 @@ DOMAIN_PDDL = """
 """
 
 PROBLEM_PDDL = """
-(define (problem check) 
+(define (problem check)
  (:domain sanity)
     (:objects
         A
@@ -24,7 +24,7 @@ PROBLEM_PDDL = """
         (isA A)
         (isB B)
     )
-    (:goal 
+    (:goal
         (or (isA A) (isB B))
     )
 )

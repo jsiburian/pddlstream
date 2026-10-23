@@ -34,7 +34,7 @@ DOMAIN_PDDL = """
     :precondition (and (on ?ob ?underob) (arm-empty) (not (unsafe ?ob)))
     :effect (and (holding ?ob)
                  (not (on ?ob ?underob)) (not (arm-empty))))
-  (:derived (unsafe ?underob) 
+  (:derived (unsafe ?underob)
     (exists (?ob) (on ?ob ?underob)))
 )
 """
@@ -43,7 +43,7 @@ PROBLEM_PDDL = """
 (define (problem pb2)
    (:domain blocksworld)
    (:objects a b)
-   (:init 
+   (:init
      (on b a)
      (on-table a)
      (arm-empty))

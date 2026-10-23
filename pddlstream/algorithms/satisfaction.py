@@ -82,7 +82,7 @@ def extract_streams(evaluations, externals, goal_facts):
 
 
 def get_optimistic_cost(function_plan):
-    return sum([0.0] + [result.value for result in function_plan if type(result.external) == Function])
+    return sum([0.0] + [result.value for result in function_plan if type(result.external) is Function])
 
 
 def bindings_from_plan(plan_skeleton, action_plan):

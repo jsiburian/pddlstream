@@ -353,7 +353,8 @@ class SkeletonQueue(Sized):
         binding.visits += 1
         instance = binding.result.instance
         if REQUIRE_DOWNSTREAM and not binding.check_downstream():  # TODO: move check_complexity here
-            # TODO: causes redundant plan skeletons to be identified (along with complexity using visits instead of calls)
+            # TODO: causes redundant plan skeletons to be identified
+            # (along with complexity using visits instead of calls)
             # Do I need to re-enable this stream in case another skeleton needs it?
             # TODO: should I perform this when deciding to sample something new instead?
             return STANDBY, is_new

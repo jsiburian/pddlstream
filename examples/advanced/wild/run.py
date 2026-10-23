@@ -21,13 +21,13 @@ from pddlstream.language.generator import from_fn, from_sampler
 
 DOMAIN_PDDL = """
 (define (domain wild)
-  (:predicates 
+  (:predicates
     (Carrot ?c)
     (Cut ?c0 ?s ?c1 ?c2)
     (Loc ?l)
     (AtLoc ?c ?l)
   )
-  (:functions 
+  (:functions
     (SplitCost ?c0 ?s)
   )
   (:action move
@@ -38,13 +38,13 @@ DOMAIN_PDDL = """
     :effect (and (AtLoc ?c ?l2)
                  (not (AtLoc ?c ?l1))
                  (increase (total-cost) 1))
-  )  
+  )
   (:action cut
     :parameters (?l ?c0 ?s ?c1 ?c2)
-    :precondition (and (Loc ?l) (Cut ?c0 ?s ?c1 ?c2) 
+    :precondition (and (Loc ?l) (Cut ?c0 ?s ?c1 ?c2)
                        (AtLoc ?c0 ?l))
     :effect (and (AtLoc ?c1 ?l) (AtLoc ?c2 ?l)
-                 (not (AtLoc ?c0 ?l)) 
+                 (not (AtLoc ?c0 ?l))
                  (increase (total-cost) (SplitCost ?c0 ?s)))
   )
 )
@@ -60,7 +60,7 @@ STREAM_PDDL = """
     :inputs (?c0 ?s)
     :domain (and (Carrot ?c0) (Split ?s))
     :outputs (?c1 ?c2)
-    :certified (and (Carrot ?c1) (Carrot ?c2) 
+    :certified (and (Carrot ?c1) (Carrot ?c2)
                     (Cut ?c0 ?s ?c1 ?c2))
   )
   (:function (SplitCost ?c0 ?s)

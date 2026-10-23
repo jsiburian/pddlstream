@@ -263,7 +263,8 @@ def recover_stream_plan(
             future_step = latest_step if defer else earliest_step
             results_from_step[future_step].append(result)
 
-    # TODO: some sort of obj side-effect bug that requires obj_from_pddl to be applied last (likely due to fluent streams)
+    # TODO: some sort of obj side-effect bug that requires obj_from_pddl to be applied last
+    # (likely due to fluent streams)
     eager_plan = convert_fluent_streams(eager_plan, real_states, action_plan, steps_from_fact, node_from_atom)
     combined_plan = []
     for step, action in enumerate(action_plan):
