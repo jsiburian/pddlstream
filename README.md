@@ -51,6 +51,7 @@ pixi installs **pddlstream** in editable mode, so `import pddlstream` works from
 Environments:
 * `default`: the library, the FastDownward toolchain, and the dependencies of the Tkinter and PyBullet examples (Python 3.14, NumPy 2).
 * `full`: adds pygraphviz and matplotlib (`visualize=True`) and gurobipy for the optimizer examples. Use it with `pixi run -e full ...`; Gurobi requires a license for non-trivial models.
+* `py311`: the `default` environment on Python 3.11 (the version Isaac Sim pins).
 
 Other tasks:
 * `pixi run build-fd`: rebuild FastDownward.
@@ -58,7 +59,7 @@ Other tasks:
 * `pixi run build-ikfast`: optionally compile the PR2 IKFast solver; PyBullet IK is used otherwise.
 * `pixi run test`: run the example test suite.
 
-PDDLStream requires Python 3.12 or newer.
+PDDLStream requires Python 3.11 or newer.
 A non-editable `pip install .` is not supported because FastDownward is located relative to the source checkout.
 Without pixi, install CMake and a C++ compiler, then run `CMAKE_POLICY_VERSION_MINIMUM=3.5 CXXFLAGS=-Wno-template-body ./downward/build.py` and `pip install -e .` (the `CXXFLAGS` setting is only needed for GCC 15 and newer).
 See FastDownward's [documentation](http://www.fast-downward.org/ObtainingAndRunningFastDownward) for more detailed build instructions.

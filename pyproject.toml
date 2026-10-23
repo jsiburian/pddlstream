@@ -10,7 +10,7 @@ readme = "README.md"
 license = "GPL-3.0-only"
 license-files = ["LICENSE"]
 authors = [{ name = "Caelan Reed Garrett" }]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = ["numpy>=2"]
 
 [project.urls]
@@ -35,7 +35,6 @@ platforms = ["linux-64"]
 requires-pixi = ">=0.60"
 
 [tool.pixi.dependencies]
-python = "3.14.*"
 numpy = ">=2.3,<3"
 psutil = "*" # Only needed when a solver is given max_memory
 
@@ -74,9 +73,17 @@ gurobipy = ">=13"
 [tool.pixi.feature.test.dependencies]
 pytest = "*"
 
+# Python versions: 3.14 by default; 3.11 to match Isaac Sim (RoboLab)
+[tool.pixi.feature.py314.dependencies]
+python = "3.14.*"
+
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
+
 [tool.pixi.environments]
-default = { features = ["build", "examples", "pybullet", "test"], solve-group = "default" }
-full = { features = ["build", "examples", "pybullet", "test", "viz", "gurobi"], solve-group = "default" }
+default = { features = ["py314", "build", "examples", "pybullet", "test"], solve-group = "default" }
+full = { features = ["py314", "build", "examples", "pybullet", "test", "viz", "gurobi"], solve-group = "default" }
+py311 = { features = ["py311", "build", "examples", "pybullet", "test"], solve-group = "py311" }
 
 [tool.pixi.tasks]
 submodules = { cmd = "git submodule update --init --recursive", description = "Fetch the FastDownward and pybullet-planning submodules" }
