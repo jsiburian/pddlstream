@@ -3,6 +3,19 @@ from collections import namedtuple
 
 from pddlstream.core.context import get_clock
 from pddlstream.core.conversion import revert_solution
+
+# Moved to pddlstream.core.evaluations; re-exported for existing code
+from pddlstream.core.evaluations import COMPLEXITY_OP as COMPLEXITY_OP
+from pddlstream.core.evaluations import INIT_EVALUATION as INIT_EVALUATION
+from pddlstream.core.evaluations import INTERNAL_EVALUATION as INTERNAL_EVALUATION
+from pddlstream.core.evaluations import UNKNOWN_EVALUATION as UNKNOWN_EVALUATION
+from pddlstream.core.evaluations import EvaluationNode as EvaluationNode
+from pddlstream.core.evaluations import add_certified as add_certified
+from pddlstream.core.evaluations import add_fact as add_fact
+from pddlstream.core.evaluations import add_facts as add_facts
+from pddlstream.core.evaluations import compute_complexity as compute_complexity
+from pddlstream.core.evaluations import evaluations_from_init as evaluations_from_init
+from pddlstream.core.evaluations import is_instance_ready as is_instance_ready
 from pddlstream.core.problem import FAILED, SolveResult, Status, get_length, is_plan
 from pddlstream.core.utils import INF, check_memory, elapsed_time
 

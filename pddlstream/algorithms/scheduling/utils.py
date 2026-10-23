@@ -6,6 +6,9 @@ from pddlstream.fastdownward.translator import pddl
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.optimizer import UNSATISFIABLE
 
+# Moved to pddlstream.language.plans; re-exported for existing code
+from pddlstream.language.plans import partition_external_plan as partition_external_plan
+
 
 def partition_results(evaluations, results, apply_now):
     applied_results = []

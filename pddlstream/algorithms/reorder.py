@@ -9,7 +9,13 @@ from pddlstream.core.utils import (
     safe_zip,
     topological_sort,
 )
+
+# Moved to pddlstream.language.plans; re-exported for existing code
+from pddlstream.language.plans import get_fact_orders as get_fact_orders
+from pddlstream.language.plans import get_object_orders as get_object_orders
+from pddlstream.language.plans import get_output_objects as get_output_objects
 from pddlstream.language.plans import get_partial_orders
+from pddlstream.language.plans import get_stream_plan_components as get_stream_plan_components
 from pddlstream.language.statistics import EPSILON, Performance, Stats
 
 logger = logging.getLogger(__name__)
