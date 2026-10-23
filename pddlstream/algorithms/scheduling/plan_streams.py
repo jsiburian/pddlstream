@@ -5,10 +5,8 @@ from collections import defaultdict, namedtuple
 from pddlstream.algorithms.downward import (
     get_problem,
     task_from_domain_problem,
-    get_cost_scale,
     conditions_hold,
     apply_action,
-    scale_cost,
     fd_from_fact,
     make_domain,
     make_predicate,
@@ -18,6 +16,7 @@ from pddlstream.algorithms.downward import (
     pddl_from_instance,
 )
 from pddlstream.algorithms.instantiate_task import instantiate_task, sas_from_instantiated, FD_INSTANTIATE
+from pddlstream.fastdownward.translator import get_cost_scale, scale_cost
 from pddlstream.algorithms.scheduling.add_optimizers import (
     add_optimizer_effects,
     using_optimizers,

@@ -2,9 +2,7 @@ from pddlstream.algorithms.downward import apply_action, get_conjunctive_parts
 from pddlstream.algorithms.instantiate_task import get_goal_instance
 from pddlstream.utils import MockSet
 from pddlstream.language.optimizer import UNSATISFIABLE
-
-import pddl
-import instantiate
+from pddlstream.fastdownward.translator import instantiate, pddl
 
 
 def instantiate_unsatisfiable(state, action, var_mapping, negative_from_name={}):

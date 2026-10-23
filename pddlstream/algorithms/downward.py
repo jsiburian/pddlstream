@@ -1,10 +1,22 @@
 import os
 import re
-import sys
 import subprocess
 from collections import namedtuple, defaultdict
 from time import time
 
+from pddlstream.fastdownward.translator import (
+    convert_value,
+    find_build,
+    get_cost_scale,
+    instantiate,
+    normalize,
+    pddl,
+    pddl_parser,
+    scale_cost,
+)
+
+# Re-exported for examples and downstream code that import them from here
+from pddlstream.fastdownward.translator import MAX_FD_COST, set_cost_scale  # noqa: F401
 from pddlstream.language.constants import (
     EQ,
     NOT,
@@ -30,10 +42,8 @@ from pddlstream.utils import (
     write,
     INF,
     clear_dir,
-    get_file_path,
     MockSet,
     find_unique,
-    int_ceil,
     safe_remove,
     safe_zip,
     elapsed_time,
@@ -47,87 +57,12 @@ filepath = os.path.abspath(__file__)
 if ' ' in filepath:
     raise RuntimeError('The path to pddlstream cannot include spaces')
 
-
-def find_build(fd_path):
-    for release in ['release', 'release64', 'release32']:  # TODO: list the directory
-        path = os.path.join(fd_path, f'builds/{release}/')
-        if os.path.exists(path):
-            return path
-    # TODO: could also just automatically compile
-    raise RuntimeError(
-        f'FastDownward is not compiled in {fd_path}. Run [.../pddlstream$ pixi run setup] '
-        '(pddlstream must be installed in editable mode)'
-    )
-
-
-# TODO: check at runtime so users can use utils without FD
-FD_PATH = get_file_path(__file__, '../../downward/')
-TRANSLATE_PATH = os.path.join(find_build(FD_PATH), 'bin/translate')
-FD_BIN = os.path.join(find_build(FD_PATH), 'bin')
-
 DOMAIN_INPUT = 'domain.pddl'
 PROBLEM_INPUT = 'problem.pddl'
-TRANSLATE_FLAGS = []
-original_argv = sys.argv[:]
-sys.argv = sys.argv[:1] + TRANSLATE_FLAGS + [DOMAIN_INPUT, PROBLEM_INPUT]
-sys.path.append(TRANSLATE_PATH)
-# TODO: max translate time
-
-import pddl.f_expression
-import pddl
-import instantiate
-import pddl_parser.lisp_parser
-import normalize
-import pddl_parser
-from pddl_parser.parsing_functions import parse_domain_pddl, parse_task_pddl, parse_condition, check_for_duplicates
-
-sys.argv = original_argv
-
-
-def hash_conditions_by_class_name():
-    # The translator hashes conditions as hash((self.__class__, ...)), and classes hash by memory address, so sets of
-    # literals (which both the translator and pddlstream iterate over) were ordered differently on every run.
-    # These are the translator's constructors, except that they hash the class name.
-    def condition_init(self, parts):
-        unique_parts = []
-        for part in parts:
-            if part not in unique_parts:
-                unique_parts.append(part)
-        self.parts = tuple(unique_parts)
-        self.hash = hash((self.__class__.__name__, self.parts))
-
-    def constant_condition_init(self):
-        self.hash = hash(self.__class__.__name__)
-
-    def quantified_condition_init(self, parameters, parts):
-        self.parameters = tuple(parameters)
-        self.parts = tuple(parts)
-        self.hash = hash((self.__class__.__name__, self.parameters, self.parts))
-
-    def literal_init(self, predicate, args):
-        self.predicate = predicate
-        self.args = tuple(args)
-        self.hash = hash((self.__class__.__name__, self.predicate, self.args))
-
-    def numeric_expression_init(self, symbol, args):
-        self.symbol = symbol
-        self.args = tuple(args)
-        self.hash = hash((self.__class__.__name__, self.symbol, self.args))
-
-    pddl.conditions.Condition.__init__ = condition_init
-    pddl.conditions.ConstantCondition.__init__ = constant_condition_init
-    pddl.conditions.QuantifiedCondition.__init__ = quantified_condition_init
-    pddl.conditions.Literal.__init__ = literal_init
-    pddl.f_expression.PrimitiveNumericExpression.__init__ = numeric_expression_init
-
-
-hash_conditions_by_class_name()
-
 TEMP_DIR = 'temp/'
 TRANSLATE_OUTPUT = 'output.sas'
 SEARCH_OUTPUT = 'sas_plan'
 SEARCH_COMMAND = 'downward --internal-plan-file {} {} < {}'
-INFINITY = 'infinity'
 GOAL_NAME = '@goal'  # @goal-reachable
 
 INTERNAL_AXIOM = 'new-axiom'  # @0
@@ -210,34 +145,6 @@ DEFAULT_PLANNER = DEFAULT_GREEDY_PLANNER
 
 ##################################################
 
-# WARNING: overflow on h^add! Costs clamped to 100000000
-MAX_FD_COST = 1e8
-
-
-def get_cost_scale():
-    return pddl.f_expression.COST_SCALE
-
-
-def set_cost_scale(cost_scale):
-    pddl.f_expression.COST_SCALE = cost_scale
-
-
-def convert_value(value):
-    if value == INF:
-        return INFINITY
-    return int_ceil(value)
-
-
-def scale_cost(cost):
-    if cost == INF:
-        return INF
-    return int_ceil(get_cost_scale() * float(cost))
-
-
-set_cost_scale(cost_scale=1e3)  # TODO: make unit costs be equivalent to cost scale = 0
-
-##################################################
-
 
 def parse_lisp(lisp):
     return pddl_parser.lisp_parser.parse_nested_list(lisp.splitlines())
@@ -265,7 +172,7 @@ Domain = namedtuple(
 def parse_sequential_domain(domain_pddl):
     if isinstance(domain_pddl, Domain):
         return domain_pddl
-    args = list(parse_domain_pddl(parse_lisp(domain_pddl))) + [domain_pddl]
+    args = list(pddl_parser.parsing_functions.parse_domain_pddl(parse_lisp(domain_pddl))) + [domain_pddl]
     domain = Domain(*args)
     return domain
 
@@ -278,7 +185,9 @@ Problem = namedtuple(
 def parse_problem(domain, problem_pddl):
     if isinstance(problem_pddl, Problem):
         return problem_pddl
-    args = list(parse_task_pddl(parse_lisp(problem_pddl), domain.type_dict, domain.predicate_dict)) + [problem_pddl]
+    args = list(
+        pddl_parser.parsing_functions.parse_task_pddl(parse_lisp(problem_pddl), domain.type_dict, domain.predicate_dict)
+    ) + [problem_pddl]
     return Problem(*args)
 
 
@@ -332,7 +241,10 @@ def fd_from_evaluations(evaluations):
 
 
 def parse_goal(goal_exp, domain):
-    return parse_condition(pddl_list_from_expression(goal_exp), domain.type_dict, domain.predicate_dict).simplified()
+    condition = pddl_parser.parsing_functions.parse_condition(
+        pddl_list_from_expression(goal_exp), domain.type_dict, domain.predicate_dict
+    )
+    return condition.simplified()
 
 
 def get_problem(evaluations, goal_exp, domain, unit_costs=False):
@@ -374,7 +286,7 @@ def task_from_domain_problem(domain, problem, add_identical=True):
     assert domain.name == task_domain_name
     requirements = pddl.Requirements(sorted(set(domain.requirements.requirements + task_requirements.requirements)))
     objects = domain.constants + objects
-    check_for_duplicates(
+    pddl_parser.parsing_functions.check_for_duplicates(
         [o.name for o in objects],
         errmsg='error: duplicate object %r',
         finalmsg='please check :constants and :objects definitions',
@@ -472,7 +384,7 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
     max_cost = convert_value(scale_cost(max_cost))
     start_time = time()
     get_clock().charge(SEARCH_WORK)
-    search = os.path.abspath(os.path.join(FD_BIN, SEARCH_COMMAND))
+    search = os.path.join(find_build(), 'bin', SEARCH_COMMAND)
     planner_config = SEARCH_OPTIONS[planner] % (max_time, max_cost)
     temp_dir = os.path.abspath(temp_dir)
     command = search.format(

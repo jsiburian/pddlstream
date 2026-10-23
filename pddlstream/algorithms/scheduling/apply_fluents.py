@@ -6,6 +6,7 @@ from pddlstream.language.conversion import pddl_from_object
 from pddlstream.language.object import OptimisticObject, UniqueOptValue
 from pddlstream.language.function import FunctionResult
 from pddlstream.utils import neighbors_from_orders, get_mapping, safe_zip
+from pddlstream.fastdownward.translator import pddl
 
 
 def get_steps_from_stream(stream_plan, step_from_fact, node_from_atom):
@@ -22,7 +23,6 @@ def get_steps_from_stream(stream_plan, step_from_fact, node_from_atom):
 
 
 def get_fluent_instance(external, input_objects, state):
-    import pddl
 
     fluent_facts = map(
         fact_from_fd, filter(lambda f: isinstance(f, pddl.Atom) and (f.predicate in external.fluents), state)
@@ -31,7 +31,6 @@ def get_fluent_instance(external, input_objects, state):
 
 
 def convert_fluent_streams(stream_plan, real_states, action_plan, step_from_fact, node_from_atom):
-    import pddl
 
     assert len(real_states) == len(action_plan) + 1
     steps_from_stream = get_steps_from_stream(stream_plan, step_from_fact, node_from_atom)

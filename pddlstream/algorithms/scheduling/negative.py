@@ -5,6 +5,7 @@ from pddlstream.language.conversion import obj_from_pddl
 from pddlstream.language.function import Predicate, PredicateResult
 from pddlstream.language.stream import Stream
 from pddlstream.utils import safe_zip, INF
+from pddlstream.fastdownward.translator import pddl
 
 
 def convert_negative_predicate(negative, literal, step_from_atom, negative_plan):
@@ -32,7 +33,6 @@ def get_negative_result(negative, input_objects, fluent_facts=frozenset()):
 
 
 def convert_negative_stream(negative, literal, step_from_atom, real_states, negative_plan):
-    import pddl
 
     # assert not negative.is_fluent
     fluent_facts_list = []

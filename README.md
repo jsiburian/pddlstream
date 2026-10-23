@@ -64,7 +64,8 @@ Other tasks:
 * `pixi run lint`: check the code with ruff; `pixi run format` fixes what it can and formats the code. To skip the formatting commit in `git blame`, run `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 PDDLStream requires Python 3.11 or newer.
-A non-editable `pip install .` is not supported because FastDownward is located relative to the source checkout.
+pddlstream looks for FastDownward in the `downward` submodule of its source checkout, so install it in editable mode, or point `PDDLSTREAM_FD_PATH` to a compiled checkout of the fork (for example after a non-editable `pip install .`).
+FastDownward is loaded the first time a solver needs it, so `import pddlstream` works without a build.
 Without pixi, install CMake and a C++ compiler, then run `CMAKE_POLICY_VERSION_MINIMUM=3.5 CXXFLAGS=-Wno-template-body ./downward/build.py` and `pip install -e .` (the `CXXFLAGS` setting is only needed for GCC 15 and newer).
 See FastDownward's [documentation](http://www.fast-downward.org/ObtainingAndRunningFastDownward) for more detailed build instructions.
 

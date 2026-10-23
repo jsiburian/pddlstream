@@ -4,6 +4,7 @@ from pddlstream.algorithms.algorithm import solve_scope
 from pddlstream.algorithms.meta import solve
 from pddlstream.language.object import Object
 from pddlstream.utils import CreationHash, WallClock, WorkClock, get_clock
+from pddlstream.fastdownward.translator import pddl
 
 
 def test_creation_hash():
@@ -26,7 +27,6 @@ def test_solve_scope():
 
 
 def test_fastdownward_hashes():
-    import pddl
 
     atom = pddl.Atom('on', ['a', 'b'])
     assert hash(atom) == hash(('Atom', 'on', ('a', 'b')))  # Not the class's memory address

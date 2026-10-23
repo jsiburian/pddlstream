@@ -3,10 +3,10 @@ from collections import defaultdict
 from pddlstream.utils import INF
 from pddlstream.language.constants import is_parameter, Head
 from pddlstream.language.conversion import obj_from_pddl
+from pddlstream.fastdownward.translator import pddl
 
 
 def extract_function_result(results_from_head, action, pddl_args):
-    import pddl
 
     if action.cost is None:
         return None

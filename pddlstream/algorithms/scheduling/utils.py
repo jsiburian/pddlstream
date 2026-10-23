@@ -3,6 +3,7 @@ from pddlstream.language.constants import And, Not
 from pddlstream.language.conversion import evaluation_from_fact
 from pddlstream.language.function import FunctionResult
 from pddlstream.utils import apply_mapping
+from pddlstream.fastdownward.translator import pddl
 
 
 def partition_results(evaluations, results, apply_now):
@@ -28,7 +29,6 @@ def partition_external_plan(external_plan):
 
 
 def add_unsatisfiable_to_goal(domain, goal_expression):
-    import pddl
     from pddlstream.language.optimizer import UNSATISFIABLE
 
     add_predicate(domain, make_predicate(UNSATISFIABLE, []))

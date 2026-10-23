@@ -8,13 +8,13 @@ from pddlstream.language.function import Function
 from pddlstream.language.optimizer import UNSATISFIABLE, ConstraintStream
 from pddlstream.language.stream import Stream
 from pddlstream.utils import find_unique, get_mapping
+from pddlstream.fastdownward.translator import pddl
 
 UNIVERSAL_TO_CONDITIONAL = False
 # TODO: AUTOMATICALLY_NEGATE = False can omit collisions
 
 
 def get_predicates(expression):
-    import pddl.conditions
 
     if isinstance(expression, pddl.conditions.ConstantCondition):
         return set()
@@ -31,7 +31,6 @@ def get_predicates(expression):
 
 
 def universal_to_conditional(action):
-    import pddl
 
     new_parts = []
     unsatisfiable = fd_from_fact((UNSATISFIABLE,))
@@ -47,7 +46,6 @@ def universal_to_conditional(action):
 
 
 def process_conditional_effect(effect, negative_from_predicate):
-    import pddl
 
     new_parts = []
     stream_facts = []
@@ -69,7 +67,6 @@ def process_conditional_effect(effect, negative_from_predicate):
 
 
 def optimizer_conditional_effects(domain, externals):
-    import pddl
 
     # TODO: extend this to predicates
     if UNIVERSAL_TO_CONDITIONAL:
@@ -148,7 +145,6 @@ def get_certifiers(externals):
 
 def get_negated_predicates(domain):
     # TODO: generalize to more complicated formulas and recursive axioms
-    import pddl
 
     negated_action_preconditions = set()
     for action in domain.actions:

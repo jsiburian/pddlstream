@@ -21,6 +21,7 @@ from pddlstream.algorithms.downward import (
     get_fluents,
 )
 from pddlstream.algorithms.common import evaluations_from_init
+from pddlstream.fastdownward.translator import pddl
 
 
 def serialize_goal(goal):
@@ -42,7 +43,6 @@ def partition_facts(domain, facts):
 
 
 def apply_actions(domain, state, plan, unit_costs=False):
-    import pddl
 
     # Goal serialization just assumes the tail of the plan includes an abstract action to achieve each condition
     static_state, _ = partition_facts(domain, state)

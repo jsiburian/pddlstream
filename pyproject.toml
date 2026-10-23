@@ -18,7 +18,8 @@ Homepage = "https://github.com/caelan/pddlstream"
 
 [tool.setuptools.packages.find]
 # Only the library is packaged; examples/ and the FastDownward submodule stay in the checkout.
-# FastDownward is located relative to the source tree, so install in editable mode (pixi does this).
+# FastDownward is found relative to the source tree, so install in editable mode (pixi does this) or set
+# PDDLSTREAM_FD_PATH to a compiled FastDownward checkout.
 include = ["pddlstream*"]
 
 [tool.pytest.ini_options]

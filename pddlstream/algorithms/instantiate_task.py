@@ -28,11 +28,19 @@ from pddlstream.utils import (
     ensure_dir,
     str_from_object,
 )
+from pddlstream.fastdownward.translator import (
+    axiom_rules,
+    fact_groups,
+    instantiate,
+    normalize,
+    options,
+    pddl,
+    simplify,
+    timers,
+    translate,
+    variable_order,
+)
 
-import pddl
-import instantiate
-import translate
-import normalize
 
 FD_INSTANTIATE = True
 
@@ -229,25 +237,11 @@ def instantiate_task(task, check_infeasible=True, use_fd=FD_INSTANTIATE, **kwarg
 
 
 def sas_from_instantiated(instantiated_task):
-    import timers
-    import fact_groups
-    import options
-    import simplify
-    import variable_order
-    from translate import (
-        translate_task,
-        unsolvable_sas_task,
-        strips_to_sas_dictionary,
-        build_implied_facts,
-        build_mutex_key,
-        solvable_sas_task,
-    )
-
     start_time = time()
     print()
 
     if not instantiated_task:
-        return unsolvable_sas_task('No relaxed solution')
+        return translate.unsolvable_sas_task('No relaxed solution')
     task, atoms, actions, axioms, reachable_action_params, goal_list = instantiated_task
 
     # TODO: option to skip and just use binary variables
@@ -255,22 +249,22 @@ def sas_from_instantiated(instantiated_task):
         groups, mutex_groups, translation_key = fact_groups.compute_groups(task, atoms, reachable_action_params)
 
     with timers.timing('Building STRIPS to SAS dictionary'):
-        ranges, strips_to_sas = strips_to_sas_dictionary(groups, assert_partial=options.use_partial_encoding)
+        ranges, strips_to_sas = translate.strips_to_sas_dictionary(groups, assert_partial=options.use_partial_encoding)
 
     with timers.timing('Building dictionary for full mutex groups'):
-        mutex_ranges, mutex_dict = strips_to_sas_dictionary(mutex_groups, assert_partial=False)
+        mutex_ranges, mutex_dict = translate.strips_to_sas_dictionary(mutex_groups, assert_partial=False)
 
     if options.add_implied_preconditions:
         with timers.timing('Building implied facts dictionary...'):
-            implied_facts = build_implied_facts(strips_to_sas, groups, mutex_groups)
+            implied_facts = translate.build_implied_facts(strips_to_sas, groups, mutex_groups)
     else:
         implied_facts = {}
 
     with timers.timing('Building mutex information', block=True):
-        mutex_key = build_mutex_key(strips_to_sas, mutex_groups)
+        mutex_key = translate.build_mutex_key(strips_to_sas, mutex_groups)
 
     with timers.timing('Translating task', block=True):
-        sas_task = translate_task(
+        sas_task = translate.translate_task(
             strips_to_sas,
             ranges,
             translation_key,
@@ -290,9 +284,9 @@ def sas_from_instantiated(instantiated_task):
             try:
                 simplify.filter_unreachable_propositions(sas_task)
             except simplify.Impossible:
-                return unsolvable_sas_task('Simplified to trivially false goal')
+                return translate.unsolvable_sas_task('Simplified to trivially false goal')
             except simplify.TriviallySolvable:
-                return solvable_sas_task('Simplified to empty goal')
+                return translate.solvable_sas_task('Simplified to empty goal')
 
     if options.reorder_variables or options.filter_unimportant_vars:
         with timers.timing('Reordering and filtering variables', block=True):
@@ -337,8 +331,6 @@ def translate_and_write_pddl(domain_pddl, problem_pddl, temp_dir, verbose):
 def convert_instantiated(instantiated_task, verbose=False):
     task, atoms, actions, axioms, reachable_action_params, goal_list = instantiated_task
     normalize.normalize(task)
-    import axiom_rules
-    import options
 
     with Verbose(verbose):
         axioms, axiom_layers = axiom_rules.handle_axioms(actions, axioms, goal_list, options.layer_strategy)

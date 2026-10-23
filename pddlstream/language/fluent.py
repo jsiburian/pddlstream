@@ -3,6 +3,7 @@ from pddlstream.language.exogenous import replace_literals
 from pddlstream.language.external import get_domain_predicates
 from pddlstream.language.stream import Stream
 from pddlstream.utils import find_unique, get_mapping, safe_apply_mapping
+from pddlstream.fastdownward.translator import pddl
 
 
 def get_predicate_map(state_streams):
@@ -37,7 +38,6 @@ def compile_fluent_streams(domain, externals):
 
     # TODO: could make free parameters free
     # TODO: could treat like a normal stream that generates values (but with no inputs required/needed)
-    import pddl
 
     def fn(literal, action):
         if literal.predicate not in predicate_map:

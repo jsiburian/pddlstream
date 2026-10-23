@@ -1,13 +1,16 @@
 """Tests of PDDLStream's calls into the FastDownward fork's translator API."""
 
+import os
+import subprocess
+import sys
+
 from pddlstream.algorithms.common import evaluations_from_init
 from pddlstream.algorithms.downward import parse_sequential_domain, get_problem, task_from_domain_problem
 from pddlstream.algorithms.instantiate_task import instantiate_task
 from pddlstream.algorithms.scheduling.reinstantiate import instantiate_unsatisfiable
 from pddlstream.language.conversion import obj_from_value_expression
 from pddlstream.language.optimizer import UNSATISFIABLE
-
-import pddl
+from pddlstream.fastdownward.translator import pddl
 
 
 def test_instantiate_domain_costs(tmp_path, monkeypatch):
@@ -37,3 +40,34 @@ def test_instantiate_unsatisfiable():
     state = {pddl.Atom('p', ('b',))}
     precondition = instantiate_unsatisfiable(state, action, {'?x': 'a'}, negative_from_name={blocked: None})
     assert precondition == [pddl.NegatedAtom(blocked, ('a', 'b'))]
+
+
+def run_python(code, *args, **env):
+    return subprocess.run(
+        [sys.executable, '-c', code, *args], capture_output=True, text=True, env=dict(os.environ, **env)
+    )
+
+
+def test_import_needs_no_build():
+    # Importing pddlstream neither loads the translator nor changes sys.path or sys.argv
+    code = (
+        'import sys; path, argv = list(sys.path), list(sys.argv)\n'
+        'import pddlstream.algorithms.meta, pddlstream.algorithms.focused, pddlstream.language.stream\n'
+        "assert 'pddl' not in sys.modules and sys.path == path and sys.argv == argv"
+    )
+    result = run_python(code, PDDLSTREAM_FD_PATH=os.devnull)
+    assert result.returncode == 0, result.stderr
+
+
+def test_missing_build(tmp_path):
+    result = run_python(
+        "from pddlstream.algorithms.downward import parse_lisp; parse_lisp('(a)')", PDDLSTREAM_FD_PATH=str(tmp_path)
+    )
+    assert 'FastDownward is not compiled' in result.stderr and 'PDDLSTREAM_FD_PATH' in result.stderr
+
+
+def test_translator_ignores_command_line():
+    # The translator's options module parses sys.argv, which holds the calling script's own flags
+    result = run_python("from pddlstream.algorithms.downward import parse_lisp; print(parse_lisp('(a b)'))", '-p', 'x')
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "['a', 'b']"
