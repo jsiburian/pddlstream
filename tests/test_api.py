@@ -13,7 +13,14 @@ PUBLIC_NAMES = {
     'pddlstream.algorithms.focused': ['solve_adaptive', 'solve_focused', 'solve_binding'],
     'pddlstream.algorithms.incremental': ['solve_incremental'],
     'pddlstream.algorithms.algorithm': ['reset_globals'],
-    'pddlstream.algorithms.downward': ['set_cost_scale', 'get_cost_scale'],
+    'pddlstream.algorithms.downward': [
+        'set_cost_scale',
+        'get_cost_scale',
+        'MAX_FD_COST',
+        'SEARCH_OPTIONS',
+        'DEFAULT_PLANNER',
+        'DEFAULT_MAX_TIME',
+    ],
     'pddlstream.algorithms.instantiate_task': ['FD_INSTANTIATE'],
     'pddlstream.algorithms.constraints': ['PlanConstraints', 'WILD', 'OrderedSkeleton'],
     'pddlstream.language.constants': [
