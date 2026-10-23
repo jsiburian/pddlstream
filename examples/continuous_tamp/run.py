@@ -14,7 +14,6 @@ from examples.continuous_tamp.primitives import get_pose_gen, collision_test, di
     update_state, ENVIRONMENT_NAMES, STOVE_NAMES, duration_fn, apply_action
 from pddlstream.algorithms.downward import get_cost_scale
 from pddlstream.algorithms.constraints import PlanConstraints, WILD
-#from pddlstream.algorithms.serialized import solve_serialized
 from pddlstream.algorithms.visualization import VISUALIZATIONS_DIR
 from pddlstream.language.external import defer_shared, get_defer_all_unbound, get_defer_any_unbound
 from pddlstream.language.constants import And, Equal, PDDLProblem, TOTAL_COST, print_solution, Or, Output
@@ -33,7 +32,6 @@ def create_problem(tamp_problem, hand_empty=False, manipulate_cost=1.):
     assert(not initial.holding)
 
     init = [
-       #('Region', GROUND_NAME),
        Equal(('Cost',), manipulate_cost),
        Equal((TOTAL_COST,), 0)] + \
            [('Stove', r) for r in STOVE_NAMES if r in tamp_problem.regions] + \
@@ -46,7 +44,6 @@ def create_problem(tamp_problem, hand_empty=False, manipulate_cost=1.):
             ('Block', b),
             ('Pose', b, p),
             ('AtPose', b, p),
-            #('Grasp', b, GRASP),
         ]
 
     goal_literals = [] + \
@@ -75,10 +72,8 @@ def create_problem(tamp_problem, hand_empty=False, manipulate_cost=1.):
         if hand_empty:
             goal_literals += [('HandEmpty', r)]
         if tamp_problem.goal_conf is not None:
-            # goal_literals += [('AtConf', tamp_problem.goal_conf)]
             goal_literals += [('AtConf', r, q)]
 
-    # goal_literals += [Not(('Unsafe',))] # ('HandEmpty',)
     goal = And(*goal_literals)
 
     return init, goal
@@ -98,7 +93,6 @@ def pddlstream_from_tamp(tamp_problem, use_stream=True, use_optimizer=False, col
         's-grasp': from_fn(lambda b: Output(GRASP)),
         's-region': from_gen_fn(get_pose_gen(tamp_problem.regions)),
         's-ik': from_fn(inverse_kin_fn),
-        #'s-ik': from_gen_fn(unreliable_ik_fn),
         's-motion': from_fn(plan_motion),
         't-region': from_test(get_region_test(tamp_problem.regions)),
         't-cfree': from_test(lambda *args: implies(collisions, not collision_test(*args))),
@@ -111,7 +105,6 @@ def pddlstream_from_tamp(tamp_problem, use_stream=True, use_optimizer=False, col
             'gurobi': from_list_fn(get_optimize_fn(tamp_problem.regions, collisions=collisions)),
             'rrt': from_fn(cfree_motion_fn),
         })
-    #stream_map = 'debug'
 
     init, goal = create_problem(tamp_problem)
     if not use_stream:
@@ -149,7 +142,6 @@ def display_plan(tamp_problem, plan, display=True, save=False, time_step=0.025, 
     from examples.discrete_tamp.viewer import COLORS
 
     if save:
-        #example_name = os.path.basename(os.path.dirname(__file__))
         example_name = 'continuous_tamp'
         directory = os.path.join(VISUALIZATIONS_DIR, '{}/'.format(example_name))
         safe_rm_dir(directory)
@@ -201,7 +193,6 @@ TIGHT_SKELETON = [
 ]
 
 MUTEXES = [
-    #[('kin', '?b1', '?p1', '?q'), ('kin', '?b2', '?p2', '?q')],
     # TODO: add mutexes to reduce search over skeletons
 ]
 
@@ -265,31 +256,23 @@ def main():
     stream_info = get_stream_info()
 
     hierarchy = [
-        #ABSTRIPSLayer(pos_pre=['atconf']), #, horizon=1),
     ]
 
     skeletons = [TIGHT_SKELETON] if args.skeleton else None
     assert implies(args.skeleton, args.problem == 'tight')
     max_cost = INF # 8*MOVE_COST
     constraints = PlanConstraints(skeletons=skeletons,
-                                  #skeletons=[],
-                                  #skeletons=[skeleton, []],
                                   exact=True,
                                   max_cost=max_cost)
     replan_actions = set()
-    #replan_actions = {'move', 'pick', 'place'}
 
     pddlstream_problem = pddlstream_from_tamp(tamp_problem, collisions=not args.cfree,
                                               use_stream=not args.gurobi, use_optimizer=args.gurobi)
     dump_pddlstream(pddlstream_problem)
 
     success_cost = 0 if args.optimal else INF
-    #planner = 'dijkstra'
     planner = 'max-astar'
-    #planner = 'ff-wastar1'
-    #effort_weight = 1.
     effort_weight = 1. / get_cost_scale()
-    #effort_weight = None
 
     with Profiler(field='cumtime', num=20):
         solution = solve(pddlstream_problem, algorithm=args.algorithm, constraints=constraints, stream_info=stream_info,

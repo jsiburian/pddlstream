@@ -120,7 +120,6 @@ def main():
             print(SEPARATOR)
             print('Block order:', order)
             print('Goal region:', region)
-            #tamp_problem = dual(n_blocks=args.number, goal_regions=[region])
             tamp_problem.goal_regions.update({block: region for block in order})
 
             init, goal = create_problem(tamp_problem)
@@ -130,7 +129,6 @@ def main():
             skeleton = create_skeleton(robot, order, home=tamp_problem.goal_conf is not None)
             print(skeleton)
             skeletons = [skeleton]
-            #skeletons = None
             constraints = PlanConstraints(skeletons=skeletons, exact=True)
 
             solution = solve_focused(problem, constraints=constraints, stream_info=stream_info,
@@ -150,8 +148,6 @@ def main():
                         # TODO: propagate recursively
                         streams.add((value.stream, value.inputs))
             streams_from_problem[order, region] = streams
-            #print(streams)
-            #user_input()
 
     print(SEPARATOR)
     dump_statistics()
@@ -163,7 +159,7 @@ def main():
         intersection = set.intersection(*stream_plans)
         p = p_disjunction(stream_plans, STATS_PER_STREAM)
         assert 0 <= p <= 1
-        print('Problems: {} | Intersection: {} | p={:.3f}'.format(problems, len(intersection), p)) #, intersection)
+        print('Problems: {} | Intersection: {} | p={:.3f}'.format(problems, len(intersection), p))
         if p > best_p:
             best_problems, best_p = problems, p
 

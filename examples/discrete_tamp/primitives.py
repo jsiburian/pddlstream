@@ -53,7 +53,6 @@ def get_shift_one_problem(n_blocks=2, n_poses=9):
     goal_poses = {blocks[0]: poses[1]}
 
     return DiscreteTAMPProblem(initial, poses[n_blocks:], goal_poses)
-    #return DiscreteTAMPProblem(initial, poses, goal_poses)
 
 
 def get_shift_all_problem(n_blocks=2, n_poses=9):

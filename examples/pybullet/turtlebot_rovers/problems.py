@@ -20,7 +20,6 @@ def set_base_conf(robot, conf):
     set_joint_positions(robot, get_base_joints(robot), conf)
 
 KINECT_FRAME = 'camera_rgb_optical_frame' # eyes
-#KINECT_FRAME = 'eyes'
 
 #######################################################
 
@@ -99,13 +98,8 @@ def rovers1(n_rovers=2, n_objectives=4, n_rocks=3, n_soil=3, n_stores=1, n_obsta
             rover = load_model(TURTLEBOT_URDF)
         robot_z = stable_z(rover, floor)
         set_point(rover, Point(z=robot_z))
-        #handles = draw_aabb(get_aabb(rover)) # Includes the origin
-        #print(get_center_extent(rover))
-        #wait_for_user()
         set_base_conf(rover, rover_confs[i])
         rovers.append(rover)
-        #dump_body(rover)
-        #draw_pose(get_link_pose(rover, link_from_name(rover, KINECT_FRAME)))
 
     obj_width = 0.07
     obj_height = 0.2
@@ -114,7 +108,6 @@ def rovers1(n_rovers=2, n_objectives=4, n_rocks=3, n_soil=3, n_stores=1, n_obsta
     for i in range(n_objectives):
         body = create_box(obj_width, obj_width, obj_height, color=BLUE)
         objectives.append(body)
-        #initial_surfaces[body] = random.choice(mounds)
         initial_surfaces[body] = mounds[i]
     min_distances.update({r: 0.05 for r in objectives})
 

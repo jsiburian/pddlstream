@@ -201,7 +201,6 @@ def prettyString(struct, eq=True):
             hasattr(struct, '__float__'):
         struct = round(struct, dig)
         if struct == 0: struct = 0  # catch stupid -0.0
-        # return ("%5.8f" % struct) if eq else ("%5.3f" % struct)
         return ("%5." + str(dig) + "f") % struct
     elif hasattr(struct, 'getStr'):
         return struct.getStr(eq)
@@ -271,9 +270,6 @@ def argmax(l, f):
     @param f: C{Procedure} that maps an item into a numeric score
     @returns: the element of C{l} that has the highest score
     """
-    # LPK changed to work on sets
-    # vals = [f(x) for x in l]
-    # return l[vals.index(max(vals))]
 
     return max(((x, f(x)) for x in l), key=lambda x: x[1])[0]
 
@@ -284,9 +280,6 @@ def argmin(l, f):
     @param f: C{Procedure} that maps an item into a numeric score
     @returns: the element of C{l} that has the lowest score
     """
-    # LPK changed to work on sets.
-    # vals = [f(x) for x in l]
-    # return l[vals.index(min(vals))]
 
     return min(((x, f(x)) for x in l), key=lambda x: x[1])[0]
 
@@ -304,7 +297,6 @@ def argminWithVal(l, f):
 
 
 def isStruct(thing):
-    # return isinstance(thing, collections.Iterable) and not type(thing)==str
     return isinstance(thing, (list, tuple, set, frozenset)) and not type(thing) == str
 
 
@@ -333,7 +325,6 @@ def combineBindings(a, b):
 
 # Doesn't extend bindings if there are bindings in s
 def applyBindings1(s, bindings):
-    # assert goodBindings(bindings)
     if not bindings:
         return s
     tps = type(s)
@@ -397,7 +388,6 @@ def makeVar(v):
 
 def isAnyVar(thing):
     # This gets called millions of times, so it's worth making more efficient - TLP
-    # return isVar(thing) or isConstraintVar(thing)
     if isinstance(thing, str):
         return thing[0] == '?' or (thing[0].isalpha() and thing[0].isupper())
 

@@ -88,7 +88,6 @@ def get_file_path(file, rel_path):
     return os.path.join(directory, rel_path)
 
 
-    # safe_remove(filename)
     # TODO: close output
 
 ##################################################
@@ -223,47 +222,27 @@ def argmax(fn, iterable):
 
 BYTES_PER_KILOBYTE = math.pow(2, 10)
 def get_peak_memory_in_kb():
-    # TODO: use psutil instead
     import psutil
     # https://pypi.org/project/psutil/
     # https://psutil.readthedocs.io/en/latest/
-    #rss: aka "Resident Set Size", this is the non-swapped physical memory a process has used. (bytes)
-    #vms: aka "Virtual Memory Size", this is the total amount of virtual memory used by the process. (bytes)
-    #shared: (Linux) memory that could be potentially shared with other processes.
-    #text (Linux, BSD): aka TRS (text resident set) the amount of memory devoted to executable code.
-    #data (Linux, BSD): aka DRS (data resident set) the amount of physical memory devoted to other than executable code.
-    #lib (Linux): the memory used by shared libraries.
-    #dirty (Linux): the number of dirty pages.
-    #pfaults (macOS): number of page faults.
-    #pageins (macOS): number of actual pageins.
+    # rss: aka "Resident Set Size", this is the non-swapped physical memory a process has used. (bytes)
+    # vms: aka "Virtual Memory Size", this is the total amount of virtual memory used by the process. (bytes)
+    # shared: (Linux) memory that could be potentially shared with other processes.
+    # text (Linux, BSD): aka TRS (text resident set) the amount of memory devoted to executable code.
+    # data (Linux, BSD): aka DRS (data resident set) the amount of physical memory devoted to other than executable code.
+    # lib (Linux): the memory used by shared libraries.
+    # dirty (Linux): the number of dirty pages.
+    # pfaults (macOS): number of page faults.
+    # pageins (macOS): number of actual pageins.
     process = psutil.Process(os.getpid())
-    #process.pid()
-    #process.ppid()
     pmem = process.memory_info() # this seems to actually get the current memory!
     memory_in_kb = pmem.vms / BYTES_PER_KILOBYTE
     return memory_in_kb
-    #print(process.memory_full_info())
-    #print(process.memory_percent())
-    # process.rlimit(psutil.RLIMIT_NOFILE)  # set resource limits (Linux only)
-    #print(psutil.virtual_memory())
-    #print(psutil.swap_memory())
-    #print(psutil.pids())
-    #try:
-    #    # This will only work on Linux systems.
-    #    with open("/proc/self/status") as status_file:
-    #        for line in status_file:
-    #            parts = line.split()
-    #            if parts[0] == "VmPeak:":
-    #                return float(parts[1])
-    #except IOError:
-    #    pass
-    #return 0.
 
 def check_memory(max_memory):
     if max_memory == INF:
         return True
     peak_memory = get_peak_memory_in_kb()
-    #print('Peak memory: {} | Max memory: {}'.format(peak_memory, max_memory))
     if peak_memory <= max_memory:
         return True
     print('Peak memory of {} KB exceeds memory limit of {} KB'.format(
@@ -301,7 +280,6 @@ class Profiler(Saver):
         if self.num is None:
             return None
         stream = None
-        #stream = io.StringIO()
         stats = pstats.Stats(self.pr, stream=stream).sort_stats(self.field) # TODO: print multiple
         stats.print_stats(self.num)
         return stats
@@ -316,16 +294,11 @@ class Verbose(Saver): # TODO: use DisableOutput
         self.stdout = sys.stdout
         self.devnull = open(os.devnull, 'w')
         sys.stdout = self.devnull
-        #self.stderr = sys.stderr
-        #self.devnull = open(os.devnull, 'w')
-        #sys.stderr = self.stderr
     def restore(self):
         if self.verbose:
             return
         sys.stdout = self.stdout
         self.devnull.close()
-        #sys.stderr = self.stderr
-        #self.devnull.close()
 
 
 ##################################################
@@ -353,7 +326,6 @@ class MockSet(object):
 class Score(Comparable): # tuple
     def __init__(self, *args):
         # TODO: convert to float
-        #super(Score, self).__init__(args)
         self.values = tuple(args)
     def check_other(self, other):
         return isinstance(other, Score) and (len(self.values) == len(other.values))
@@ -386,11 +358,10 @@ def sorted_str_from_list(obj, **kwargs):
     return '[{}]'.format(', '.join(sorted(str_from_object(item, **kwargs) for item in obj)))
 
 def str_from_object(obj, ndigits=None):  # str_object
-    if type(obj) in [list]: #, np.ndarray):
+    if type(obj) in [list]:
         return '[{}]'.format(', '.join(str_from_object(item, ndigits) for item in obj))
     if type(obj) == tuple:
         return '({})'.format(', '.join(str_from_object(item, ndigits) for item in obj))
-    #if isinstance(obj, dict):
     if type(obj) in [dict, defaultdict, Counter]:
         return '{{{}}}'.format(', '.join('{}: {}'.format(str_from_object(key, ndigits), str_from_object(obj[key], ndigits)) \
                                   for key in sorted(obj.keys(), key=lambda k: str_from_object(k, ndigits))))
@@ -401,10 +372,7 @@ def str_from_object(obj, ndigits=None):  # str_object
         if obj == 0.:
             obj = 0.  # NOTE - catches -0.0 bug
         return '{0:.{1}f}'.format(obj, ndigits)
-    #if isinstance(obj, types.FunctionType):
-    #    return obj.__name__
     return str(obj)
-    #return repr(obj)
 
 ##################################################
 
@@ -538,7 +506,6 @@ def get_connected_components(vertices, edges):
 ##################################################
 
 def is_hashable(value):
-    #return isinstance(value, Hashable) # TODO: issue with hashable and numpy 2.7.6
     try:
         hash(value)
     except TypeError:
@@ -546,10 +513,6 @@ def is_hashable(value):
     return True
 
 
-# def hash_or_id(value):
-#     if is_hashable(value):
-#         return hash(value)
-#     return id(value)
 
 
 def value_or_id(value):

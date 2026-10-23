@@ -33,10 +33,8 @@ from pddlstream.language.object import Object
 from pddlstream.utils import Verbose, INF, topological_sort, get_ancestors
 
 RENAME_ACTIONS = True
-#RENAME_ACTIONS = not USE_FORBID
 
 OptSolution = namedtuple('OptSolution', ['stream_plan', 'opt_plan', 'cost']) # TODO: move to the below
-#OptSolution = namedtuple('OptSolution', ['stream_plan', 'action_plan', 'cost', 'supporting_facts', 'axiom_plan'])
 
 ##################################################
 
@@ -45,19 +43,15 @@ def add_stream_efforts(node_from_atom, instantiated, effort_weight, **kwargs):
         return
     # TODO: make effort just a multiplier (or relative) to avoid worrying about the scale
     # TODO: regularize & normalize across the problem?
-    #efforts = []
     for instance in instantiated.actions:
         # TODO: prune stream actions here?
         # TODO: round each effort individually to penalize multiple streams
         facts = get_instance_facts(instance, node_from_atom)
-        #effort = COMBINE_OP([0] + [node_from_atom[fact].effort for fact in facts])
         stream_plan = []
         extract_stream_plan(node_from_atom, facts, stream_plan)
         effort = compute_plan_effort(stream_plan, **kwargs)
         instance.cost += scale_cost(effort_weight*effort)
         # TODO: store whether it uses shared/unique outputs and prune too expensive streams
-        #efforts.append(effort)
-    #print(min(efforts), efforts)
 
 ##################################################
 
@@ -80,7 +74,6 @@ def get_plan_cost(action_plan, cost_from_action):
     if action_plan is None:
         return INF
     # TODO: return cost per action instance
-    #return sum([0.] + [instance.cost for instance in action_plan])
     scaled_cost = sum([0.] + [cost_from_action[instance] for instance in action_plan])
     return scaled_cost / get_cost_scale()
 
@@ -115,7 +108,6 @@ def recover_partial_orders(stream_plan, node_from_atom):
             parent = node_from_atom[fact].result
             if parent is not None:
                 partial_orders.add((parent, child))
-    #stream_plan = topological_sort(stream_plan, partial_orders)
     return partial_orders
 
 def recover_stream_plan(evaluations, current_plan, opt_evaluations, goal_expression, domain, node_from_atom,
@@ -142,8 +134,6 @@ def recover_stream_plan(evaluations, current_plan, opt_evaluations, goal_express
     positive_preimage = {l for l in (set(full_preimage) - real_states[0] - negative_preimage) if not l.negated}
     steps_from_fact = {fact_from_fd(l): full_preimage[l] for l in positive_preimage}
     last_from_fact = {fact: min(steps) for fact, steps in steps_from_fact.items() if get_prefix(fact) != EQ}
-    #stream_plan = reschedule_stream_plan(evaluations, target_facts, domain, stream_results)
-    # visualize_constraints(map(fact_from_fd, target_facts))
 
     for result, step in function_plan.items():
         for fact in result.get_domain():
@@ -192,10 +182,6 @@ def recover_stream_plan(evaluations, current_plan, opt_evaluations, goal_express
                 if isinstance(ancestor, StreamResult):
                     bound_objects.update(out for out in ancestor.output_objects if out.is_unique())
 
-    #local_plan = [] # TODO: not sure what this was for
-    #for fact, step in sorted(last_from_fact.items(), key=lambda pair: pair[1]): # Earliest to latest
-    #    print(step, fact)
-    #    extract_stream_plan(node_from_atom, [fact], local_plan, last_from_fact, last_from_stream)
 
     # Each stream has an earliest evaluation time
     # When computing the latest, use 0 if something isn't deferred
@@ -205,7 +191,6 @@ def recover_stream_plan(evaluations, current_plan, opt_evaluations, goal_express
     state = set(real_task.init)
     remaining_results = list(stream_plan)
     first_from_stream = {}
-    #assert 1 <= replan_step # Plan could be empty
     for step, instance in enumerate(action_plan):
         for result in list(remaining_results):
             # TODO: could do this more efficiently if need be
@@ -218,7 +203,6 @@ def recover_stream_plan(evaluations, current_plan, opt_evaluations, goal_express
                     first_from_stream[result] = step
         # TODO: assumes no fluent axiom domain conditions
         apply_action(state, instance)
-    #assert not remaining_results # Not true if retrace
     if first_from_stream:
         replan_step = min(replan_step, *first_from_stream.values())
 
@@ -227,7 +211,6 @@ def recover_stream_plan(evaluations, current_plan, opt_evaluations, goal_express
     for result in stream_plan:
         earliest_step = first_from_stream.get(result, 0) # exogenous
         latest_step = last_from_stream.get(result, 0) # defer
-        #assert earliest_step <= latest_step
         defer = replan_step <= latest_step
         if not defer:
             eager_plan.append(result)
@@ -262,7 +245,6 @@ def recover_stream_plan(evaluations, current_plan, opt_evaluations, goal_express
 def solve_optimistic_sequential(domain, stream_domain, applied_results, all_results,
                                 opt_evaluations, node_from_atom, goal_expression,
                                 effort_weight, debug=False, **kwargs):
-    #print(sorted(map(fact_from_evaluation, opt_evaluations)))
     problem = get_problem(opt_evaluations, goal_expression, stream_domain)  # begin_metric
     with Verbose(verbose=debug):
         task = task_from_domain_problem(stream_domain, problem)
@@ -280,7 +262,6 @@ def solve_optimistic_sequential(domain, stream_domain, applied_results, all_resu
     # TODO: the action unsatisfiable conditions are pruned
     with Verbose(debug):
         sas_task = sas_from_instantiated(instantiated)
-        #sas_task.metric = task.use_min_cost_metric
         sas_task.metric = True
 
     # TODO: apply renaming to hierarchy as well
@@ -300,9 +281,6 @@ def plan_streams(evaluations, goal_expression, domain, all_results, negative, ef
                  simultaneous=False, reachieve=True, replan_actions=set(), **kwargs):
     # TODO: alternatively could translate with stream actions on real opt_state and just discard them
     # TODO: only consider axioms that have stream conditions?
-    #reachieve = reachieve and not using_optimizers(all_results)
-    #for i, result in enumerate(all_results):
-    #    print(i, result, result.get_effort())
     applied_results, deferred_results = partition_results(
         evaluations, all_results, apply_now=lambda r: not (simultaneous or r.external.info.simultaneous))
     stream_domain, deferred_from_name = add_stream_actions(domain, deferred_results)
@@ -328,7 +306,6 @@ def plan_streams(evaluations, goal_expression, domain, all_results, negative, ef
 
     action_instances, axiom_plans = recover_axioms_plans(instantiated, action_instances)
     # TODO: extract out the minimum set of conditional effects that are actually required
-    #simplify_conditional_effects(instantiated.task, action_instances)
     stream_plan, action_instances = recover_simultaneous(
         applied_results, negative, deferred_from_name, action_instances)
 

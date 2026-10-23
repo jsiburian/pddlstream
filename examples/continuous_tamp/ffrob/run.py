@@ -61,8 +61,6 @@ def main():
         print_solution(solution)
     plan, cost, evaluations = solution
     step_plan(tamp_problem, plan)
-    #if plan is not None:
-    #    display_plan(tamp_problem, retime_plan(plan))
 
 if __name__ == '__main__':
     main()

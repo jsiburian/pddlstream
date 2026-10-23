@@ -46,7 +46,6 @@ def check_problem(domain, streams, obj_from_constant):
             if c != 1:
                 raise ValueError('Parameter [{}] for action [{}] is not unique'.format(p.name, action.name))
         # TODO: check that no undeclared parameters & constants
-        #action.dump()
 
     undeclared_predicates = set()
     for stream in streams:
@@ -60,9 +59,6 @@ def check_problem(domain, streams, obj_from_constant):
                 undeclared_predicates.add(name)
             elif len(get_args(fact)) != domain.predicate_dict[name].get_arity(): # predicate used with wrong arity: {}
                 print('Warning! predicate used with wrong arity in stream [{}]: {}'.format(stream.name, fact))
-        # for constant in stream.constants:
-        #     if constant not in obj_from_constant:
-        #         raise ValueError('Undefined constant in stream [{}]: {}'.format(stream.name, constant))
     if undeclared_predicates:
         print('Warning! Undeclared predicates: {}'.format(
             sorted(undeclared_predicates))) # Undeclared predicate: {}
@@ -111,11 +107,9 @@ def scoped_solve(solve_fn):
 
 def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, unit_efforts=False):
     # TODO: just return the problem if already written programmatically
-    #reset_globals() # Prevents use of satisfaction.py
     domain_pddl, constant_map, stream_pddl, stream_map, init, goal = problem
 
     domain = parse_sequential_domain(domain_pddl) # TODO: normalize here
-    #domain = domain_pddl
     if len(domain.types) != 1:
         raise NotImplementedError('Types are not currently supported')
     if unit_costs:

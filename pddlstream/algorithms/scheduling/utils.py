@@ -26,7 +26,6 @@ def partition_external_plan(external_plan):
     return stream_plan, function_plan
 
 def add_unsatisfiable_to_goal(domain, goal_expression):
-    #return goal_expression
     import pddl
     from pddlstream.language.optimizer import UNSATISFIABLE
     add_predicate(domain, make_predicate(UNSATISFIABLE, []))
@@ -34,7 +33,6 @@ def add_unsatisfiable_to_goal(domain, goal_expression):
     for action in domain.actions:
         if negated_atom not in action.precondition.parts:
             action.precondition = pddl.Conjunction([action.precondition, negated_atom]).simplified()
-    #return goal_expression
     return And(goal_expression, Not((UNSATISFIABLE,)))
 
 def get_instance_facts(instance, node_from_atom):

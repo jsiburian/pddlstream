@@ -17,7 +17,6 @@ class PRMViewer(object):
 
     def pixel_from_point(self, point):
         (x, y) = point
-        # return (int(x*self.width), int(self.height - y*self.height))
         return (x * self.width, self.height - y * self.height)
 
     def draw_point(self, point, radius=5):
@@ -61,7 +60,6 @@ def get_distance(q1, q2):
 def contains(q, box):
     (lower, upper) = box
     return np.greater_equal(q, lower).all() and np.greater_equal(upper, q).all()
-    #return np.all(q >= lower) and np.all(upper >= q)
 
 def sample_line(segment, step_size=.02):
     (q1, q2) = segment
@@ -110,7 +108,6 @@ def draw_solution(segments, obstacles, regions):
         return
     for line in segments:
         viewer.draw_line(line)
-        #for p in [p1, p2]:
         for p in sample_line(line):
             viewer.draw_point(p, radius=2)
 

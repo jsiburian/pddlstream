@@ -41,8 +41,6 @@ def get_belief_problem(deterministic, observable):
         ('o2', l2, p2),
     ]
 
-    #goal = [('o1', l1, 0.95)]
-    #goal = [('o1', l0, 0.95)]
     goal = [('o1', l2, 0.95)]
 
     locations = {l0}
@@ -67,14 +65,8 @@ def clip_cost(cost, max_cost=MAX_COST): # TODO: move this to downward?
     return min(cost, max_cost)
 
 
-#def clip_p(p, min_p=1e-3, max_p=1-1e-3):
-#    return min(max(min_p, p), max_p)
 
 
-#def log_cost(p):
-#    if p == 0:
-#        return INF
-#    return -math.log(p)
 
 
 def geometric_cost(cost, p):
@@ -121,9 +113,6 @@ def get_collision_test(max_p_collision):
     # TODO: function that computes this threshold and then test?
     def test(l, o, d):
         return max_p_collision < prob_occupied(l, d)
-        #return ge_fn(d, l, max_p_collision)
-        #return max_p_collision < prob_collision(..., d)
-        #return max_p_collision < prob_collision(..., d)
     return test
 
 ##################################################
@@ -134,15 +123,12 @@ def get_transition_fn(loc1, loc2, p_move_s):
         # P(s2 | s1=loc1, a=(control_loc1, control_loc2))
         perfect_d = DeltaDist(loc2)
         fail_d = DeltaDist(l)
-        # fail_d = UniformDist(locations)
-        # return MixtureDD(perfect_d, fail_d, p_move_s)
         if loc1 == l:
             return MixtureDD(perfect_d, fail_d, p_move_s)
         return fail_d
     return fn
 
 def move_cost_fn():
-#def move_cost_fn(l1, l2):
     action_cost = 1
     return clip_cost(action_cost)
 
@@ -255,7 +241,6 @@ def to_pddlstream(belief_problem, collisions=True):
         'MoveCost': move_cost_fn,
         'prob-after-look': from_fn(get_look_fn(belief_problem.p_look_fp, belief_problem.p_look_fn)),
         'LookCost': get_look_cost_fn(belief_problem.p_look_fp, belief_problem.p_look_fn),
-        #'PCollision': from_fn(prob_occupied), # Then can use GE
     }
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)

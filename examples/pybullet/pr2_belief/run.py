@@ -40,7 +40,6 @@ def pddlstream_from_state(state, teleport=False):
         'head': 'head',
     }
 
-    #base_conf = state.poses[robot]
     base_conf = Conf(robot, get_group_joints(robot, 'base'), get_group_conf(robot, 'base'))
     scan_cost = 1
     init = [
@@ -88,7 +87,6 @@ def pddlstream_from_state(state, teleport=False):
             cost = revisit_mdp_cost(0, scan_cost, p_obs)  # TODO: imperfect observation model
             init += [('Stackable', body, surface),
                      Equal(('LocalizeCost', surface, body), clip_cost(cost))]
-            #if is_placement(body, surface):
             if is_center_stable(body, surface):
                 if body in holding_bodies:
                     continue
@@ -149,7 +147,6 @@ def post_process(state, plan, replan_obs=True, replan_base=False, look_move=Fals
             if look_move:
                 # TODO: some sort of new bug here where the trajectory repeats
                 new_commands = [move_look_trajectory(state.task, t)]
-                #new_commands = [inspect_trajectory(state.task, t), t]
             else:
                 new_commands = [t]
             if replan_base:
@@ -177,11 +174,6 @@ def post_process(state, plan, replan_obs=True, replan_base=False, look_move=Fals
                 new_commands += [attach, ht, ScanRoom(robot, o), detach]
             else:
                 new_commands += [ht, Scan(robot, o)]
-                #with BodySaver(robot):
-                #    for hq2 in ht.path:
-                #        st = plan_head_traj(state.task, hq2.values)
-                #        new_commands += [st, Scan(robot, o)]
-                #        hq2.step()
             # TODO: return to start conf?
         elif name == 'localize':
             r, _, o, _ = args
@@ -210,7 +202,6 @@ def plan_commands(state, args, profile=True, verbose=True):
     # TODO: could make indices into set of bodies to ensure the same...
     # TODO: populate the bodies here from state and not the real world
     sim_world = connect(use_gui=args.viewer)
-    #clone_world(client=sim_world)
     task = state.task
     robot_conf = get_configuration(task.robot)
     robot_pose = get_pose(task.robot)
@@ -273,11 +264,9 @@ def main(time_step=0.01):
         add_body_name(body)
 
     robot = task.robot
-    #dump_body(robot)
     assert(USE_DRAKE_PR2 == is_drake_pr2(robot))
     attach_viewcone(robot) # Doesn't work for the normal pr2?
     draw_base_limits(get_base_limits(robot), color=(0, 1, 0))
-    #wait_for_user()
     # TODO: partially observable values
     # TODO: base movements preventing pick without look
 
@@ -292,7 +281,6 @@ def main(time_step=0.01):
         print('\n' + 50 * '-')
         print(step, state)
         wait_for_user()
-        #print({b: p.value for b, p in state.poses.items()})
         with ClientSaver():
             commands = plan_commands(state, args)
         print()

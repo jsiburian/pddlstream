@@ -68,8 +68,6 @@ def get_problem1(n=5):
     ]
     goal = Or(
         ('Goal',)
-        #Exists(['?x'], ('Large', '?x')),
-        #Exists(['?x'], ('Small', '?x')),
     )
     # TODO: sort actions when renaming to make deterministic
 

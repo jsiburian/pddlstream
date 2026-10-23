@@ -31,9 +31,6 @@ OPTIMIZER_TEMPLATE = '{}_{}' + DEFAULT_EXTENSION
 def has_pygraphviz():
     # TODO: networkx
     # https://github.com/caelan/pddlstream/blob/82ee5e363585d0af8ff9532ecc14641687d5b56b/examples/fault_tolerant/data_network/run.py#L189
-    #import networkx
-    #import graphviz
-    #import pydot
     try:
         import pygraphviz
     except ImportError:
@@ -83,7 +80,6 @@ def create_visualizations(evaluations, stream_plan, iteration):
     for result in stream_plan:
         create_optimizer_visualizations(result, iteration)
     filename = ITERATION_TEMPLATE.format(iteration)
-    # visualize_stream_plan(stream_plan, path)
 
     constraints = set() # TODO: approximates needed facts using produced ones
     for stream in stream_plan:
@@ -95,7 +91,6 @@ def create_visualizations(evaluations, stream_plan, iteration):
     if len(decomposed_plan) != len(stream_plan):
         visualize_stream_plan(decomposed_plan, os.path.join(STREAM_PLAN_DIR, filename))
 
-    #visualize_stream_plan_bipartite(stream_plan, os.path.join(STREAM_PLAN_DIR, 'fused_' + filename))
     visualize_stream_plan(stream_plan, os.path.join(STREAM_PLAN_DIR, 'fused_' + filename))
 
 ##################################################
@@ -105,20 +100,14 @@ def visualize_constraints(constraints, filename='constraint_network'+DEFAULT_EXT
 
     graph = AGraph(strict=True, directed=False)
     graph.node_attr['style'] = 'filled'
-    #graph.node_attr['fontcolor'] = 'black'
-    #graph.node_attr['fontsize'] = 12
     graph.node_attr['colorscheme'] = 'SVG'
     graph.edge_attr['colorscheme'] = 'SVG'
-    #graph.graph_attr['rotate'] = 90
-    #graph.node_attr['fixedsize'] = True
     graph.node_attr['width'] = 0
     graph.node_attr['height'] = 0.02 # Minimum height is 0.02
     graph.node_attr['margin'] = 0
     graph.graph_attr['rankdir'] = 'RL'
     graph.graph_attr['nodesep'] = 0.05
     graph.graph_attr['ranksep'] = 0.25
-    #graph.graph_attr['pad'] = 0
-    # splines="false";
     graph.graph_attr['outputMode'] = 'nodesfirst'
     graph.graph_attr['dpi'] = 300
 
@@ -154,7 +143,6 @@ def visualize_stream_orders(orders, streams=[], filename='stream_orders'+DEFAULT
     graph.node_attr['shape'] = 'box'
     graph.node_attr['color'] = STREAM_COLOR
     graph.node_attr['fontcolor'] = 'black'
-    #graph.node_attr['fontsize'] = 12
     graph.node_attr['width'] = 0
     graph.node_attr['height'] = 0.02 # Minimum height is 0.02
     graph.node_attr['margin'] = 0
@@ -171,7 +159,6 @@ def visualize_stream_orders(orders, streams=[], filename='stream_orders'+DEFAULT
 
     graph.draw(filename, prog='dot')
     print('Saved', filename)
-    #display_image(filename)
     return graph
 
 def visualize_stream_plan(stream_plan, filename='stream_plan'+DEFAULT_EXTENSION):
@@ -185,11 +172,9 @@ def visualize_stream_plan_bipartite(stream_plan, filename='stream_plan'+DEFAULT_
     graph.node_attr['style'] = 'filled'
     graph.node_attr['shape'] = 'box'
     graph.node_attr['fontcolor'] = 'black'
-    #graph.node_attr['fontsize'] = 12
     graph.node_attr['width'] = 0
     graph.node_attr['height'] = 0.02 # Minimum height is 0.02
     graph.node_attr['margin'] = 0
-    #graph.graph_attr['rankdir'] = 'LR'
     graph.graph_attr['nodesep'] = 0.1
     graph.graph_attr['ranksep'] = 0.25
     graph.graph_attr['outputMode'] = 'nodesfirst'
@@ -219,8 +204,6 @@ def visualize_stream_plan_bipartite(stream_plan, filename='stream_plan'+DEFAULT_
             if fact in achieved_facts:
                 s_fact = add_fact(fact)
                 graph.add_edge(s_fact, s_stream) # Add initial facts?
-        #if not isinstance(stream, StreamResult):
-        #    continue
         for fact in stream.get_certified():
             if fact not in achieved_facts: # Ensures DAG
                 s_fact = add_fact(fact)

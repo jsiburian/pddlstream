@@ -44,7 +44,6 @@ def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport
         '@stove': 'stove',
     }
 
-    #initial_bq = Pose(robot, get_pose(robot))
     initial_bq = Conf(robot, get_group_joints(robot, 'base'), get_group_conf(robot, 'base'))
     init = [
         ('CanMove',),
@@ -57,7 +56,6 @@ def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport
            [('Connected', b, d) for b, d in problem.buttons] + \
            [('Button', b) for b, _ in problem.buttons]
     for arm in ARM_NAMES:
-    #for arm in problem.arms:
         joints = get_arm_joints(robot, arm)
         conf = Conf(robot, joints, get_joint_positions(robot, joints))
         init += [('Arm', arm), ('AConf', arm, conf), ('HandEmpty', arm), ('AtAConf', arm, conf)]
@@ -103,7 +101,6 @@ def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport
     stream_map = {
         'sample-pose': from_gen_fn(get_stable_gen(problem, collisions=collisions)),
         'sample-grasp': from_list_fn(get_grasp_gen(problem, collisions=collisions)),
-        #'sample-grasp': from_gen_fn(get_grasp_gen(problem, collisions=collisions)),
         'inverse-kinematics': from_gen_fn(get_ik_ir_gen(problem, custom_limits=custom_limits,
                                                         collisions=collisions, teleport=teleport)),
         'plan-base-motion': from_fn(get_motion_gen(problem, custom_limits=custom_limits,
@@ -112,12 +109,9 @@ def pddlstream_from_problem(problem, base_limits=None, collisions=True, teleport
         'test-cfree-pose-pose': from_test(get_cfree_pose_pose_test(collisions=collisions)),
         'test-cfree-approach-pose': from_test(get_cfree_approach_pose_test(problem, collisions=collisions)),
         'test-cfree-traj-pose': from_test(get_cfree_traj_pose_test(robot, collisions=collisions)),
-        #'test-cfree-traj-grasp-pose': from_test(get_cfree_traj_grasp_pose_test(problem, collisions=collisions)),
 
-        #'MoveCost': move_cost_fn,
         'Distance': distance_fn,
     }
-    #stream_map = DEBUG
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal_formula)
 
@@ -152,10 +146,6 @@ def main(verbose=True):
     draw_base_limits(problem.base_limits, color=(1, 0, 0))
     saver = WorldSaver()
 
-    #handles = []
-    #for link in get_group_joints(problem.robot, 'left_arm'):
-    #    handles.append(draw_link_name(problem.robot, link))
-    #wait_for_user()
 
     pddlstream_problem = pddlstream_from_problem(problem, base_limits=problem.base_limits,
                                                  collisions=not args.cfree, teleport=args.teleport)
@@ -166,12 +156,9 @@ def main(verbose=True):
         'test-cfree-pose-pose': StreamInfo(p_success=1e-3, verbose=verbose),
         'test-cfree-approach-pose': StreamInfo(p_success=1e-2, verbose=verbose),
         'test-cfree-traj-pose': StreamInfo(p_success=1e-1, verbose=verbose), # TODO: apply to arm and base trajs
-        #'test-cfree-traj-grasp-pose': StreamInfo(verbose=verbose),
 
         'Distance': FunctionInfo(p_success=0.99, opt_fn=lambda q1, q2: BASE_CONSTANT),
-        #'MoveCost': FunctionInfo(lambda t: BASE_CONSTANT),
     }
-    #stream_info = {}
 
     _, _, _, stream_map, init, goal = pddlstream_problem
     print('Init:', init)
@@ -182,7 +169,6 @@ def main(verbose=True):
     planner = 'ff-astar' if args.optimal else 'ff-wastar3'
     search_sample_ratio = 2
     max_planner_time = 10
-    # effort_weight = 0 if args.optimal else 1
     effort_weight = 1e-3 if args.optimal else 1
 
     with Profiler(field='tottime', num=25): # cumtime | tottime
@@ -199,7 +185,6 @@ def main(verbose=True):
     cost_over_time = [(s.cost, s.time) for s in SOLUTIONS]
     for i, (cost, runtime) in enumerate(cost_over_time):
         print('Plan: {} | Cost: {:.3f} | Time: {:.3f}'.format(i, cost, runtime))
-    #print(SOLUTIONS)
     print_solution(solution)
     plan, cost, evaluations = solution
     if (plan is None) or not has_gui():

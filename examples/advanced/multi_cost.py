@@ -65,8 +65,6 @@ def cost_fn(x):
     cost = COST_CONSTANT
     if type(x) not in [UniqueOptValue, SharedOptValue]:
         cost += harmonic(x)
-    # print(x, cost)
-    # input()
     return cost
 
 def main():
@@ -76,13 +74,11 @@ def main():
 
     stream_map = {
         'sample-control': from_gen(Output(i) for i in inf_generator()),
-        #'Cost': lambda x: COST_CONSTANT + harmonic(x),
         'Cost': cost_fn,
         'Sum': lambda *xs: sum(cost_fn(x) for x in xs),
     }
     stream_info = {
         'sample-control': StreamInfo(opt_gen_fn=None),
-        #'Cost': FunctionInfo(opt_fn=lambda x: COST_CONSTANT),
         'Cost': FunctionInfo(opt_fn=cost_fn),
     }
 
@@ -105,7 +101,6 @@ def main():
 
     with Profiler():
         solution = solve(problem, stream_info=stream_info, algorithm=args.algorithm, unit_costs=args.unit, max_time=1,
-                         #success_cost=0,
                          success_cost=INF,
                          planner='max-astar', debug=False)
     print_solution(solution)

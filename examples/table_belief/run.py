@@ -26,7 +26,6 @@ def pddlstream_from_belief(initial_belief):
     stream_map = {}
 
     init = [
-        #('CanMove',),
         Equal(('RegisterCost',), 1),
         Equal(('PickCost',), 1), # TODO: imperfect transition model
         Equal(('PlaceCost',), 1),
@@ -62,10 +61,6 @@ def pddlstream_from_belief(initial_belief):
         init += [('Arm', arm), ('HandEmpty', arm)]
 
     goal_literals = [('On', 'soup0', 'table1'), ('Registered', 'soup0'), ('HoldingClass', 'green')]
-    #goal_literals = [('Holding', 'left', 'soup0')]
-    #goal_literals = [('HoldingClass', soup)]
-    #goal_literals = [Nearby('table1')]
-    #goal_literals = [('HoldingClass', 'green'), ('HoldingClass', 'soup')]
     goal = And(*goal_literals)
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
@@ -112,15 +107,9 @@ def main():
     print('Arguments:', args)
 
     uniform_rooms = UniformDist(['room0', OTHER])
-    #uniform_tables = UniformDist(['table0', 'table1'])
-    #uniform_tables = UniformDist(['table0', OTHER])
     uniform_tables = UniformDist(['table0', 'table1', OTHER])
 
-    #initial_belief = get_room_belief(uniform_rooms, uniform_tables, 1.0)
     initial_belief = get_room_belief(uniform_rooms, uniform_tables, 0.2)
-    #initial_belief = get_table_belief(uniform_tables, 1.0)
-    #initial_belief = get_table_belief(uniform_tables, 0.2)
-    #initial_belief = get_item_belief()
 
     pddlstream_problem = pddlstream_from_belief(initial_belief)
     _, _, _, _, init, goal = pddlstream_problem

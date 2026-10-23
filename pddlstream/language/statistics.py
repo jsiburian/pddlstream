@@ -54,11 +54,7 @@ def load_data(pddl_name):
     filename = get_data_path(pddl_name)
     if not os.path.exists(filename):
         return {}
-    #try:
     data = read_pickle(filename) # TODO: try/except
-    #except pickle.UnpicklingError:
-    #return {}
-    #print('Loaded:', filename)
     return data
 
 def load_stream_statistics(externals):
@@ -77,7 +73,6 @@ def dump_total_statistics(externals):
     print('\nTotal External Statistics')
     for external in externals:
         external.dump_total()
-        # , external.get_effort()) #, data[external.name])
 
 ##################################################
 
@@ -88,19 +83,13 @@ def merge_data(external, previous_data):
     distribution = []
     for instance in external.instances.values():
         if instance.results_history:
-            # attempts = len(instance.results_history)
-            # successes = sum(map(bool, instance.results_history))
-            # print(instance, successes, attempts)
             # TODO: also first attempt, first success
             last_success = -1
             for i, results in enumerate(instance.results_history):
                 if results:
                     distribution.append(i - last_success)
-                    # successful = (0 <= last_success)
                     last_success = i
     combined_distribution = previous_data.get('distribution', []) + distribution
-    # print(external, distribution)
-    # print(external, Counter(combined_distribution))
     # TODO: count num failures as well
     # Alternatively, keep metrics on the lower bound and use somehow
     # Could assume that it is some other distribution beyond that point
@@ -120,7 +109,6 @@ def write_stream_statistics(externals, verbose):
     if not externals:
         return
     if verbose:
-        #dump_online_statistics(externals)
         dump_total_statistics(externals)
     pddl_name = externals[0].pddl_name # TODO: ensure the same
     previous_data = load_data(pddl_name)
@@ -128,7 +116,6 @@ def write_stream_statistics(externals, verbose):
     for external in externals:
         if not hasattr(external, 'instances'):
             continue # TODO: SynthesizerStreams
-        #total_calls = 0 # TODO: compute these values
         previous_statistics = previous_data.get(external.name, {})
         data[external.name] = merge_data(external, previous_statistics)
 
@@ -152,8 +139,6 @@ class PerformanceInfo(object):
             assert 0. <= p_success <= 1.
         if overhead is not None:
             assert 0. <= overhead
-        #if effort is not None:
-        #    assert 0 <= effort
         self.p_success = p_success
         self.overhead = overhead
         self.effort = effort
@@ -253,43 +238,6 @@ class Performance(CreationHash):
 # Goal: estimate P(Success | History)
 # P(Success | History) = P(Success | Samples) * P(Samples | History)
 
-# Previously in Instance
-# def get_belief(self):
-#     #return 1.
-#     #prior = self.external.prior
-#     prior = 1. - 1e-2
-#     n = self.num_calls
-#     p_obs_given_state = self.external.get_p_success()
-#     p_state = prior
-#     for i in range(n):
-#         p_nobs_and_state = (1-p_obs_given_state)*p_state
-#         p_nobs_and_nstate = (1-p_state)
-#         p_nobs = p_nobs_and_state + p_nobs_and_nstate
-#         p_state = p_nobs_and_state/p_nobs
-#     return p_state
 
-# def update_belief(self, success):
-#     # Belief that remaining sequence is non-empty
-#     # Belief only degrades in this case
-#     nonempty = 0.9
-#     p_success_nonempty = 0.5
-#     if success:
-#         p_success = p_success_nonempty*nonempty
-#     else:
-#         p_success = (1-p_success_nonempty)*nonempty + (1-nonempty)
 
-#def get_p_success(self):
-    #p_success_belief = self.external.get_p_success()
-    #belief = self.get_belief()
-    #return p_success_belief*belief
-    # TODO: use the external as a prior
-    # TODO: Bayesian estimation of likelihood that has result
-    # Model hidden state of whether has values or if will produce values?
-    # TODO: direct estimation of different buckets in which it will finish
-    # TODO: we have samples from the CDF or something
 
-#def get_p_success(self):
-#    return self.external.get_p_success()
-#
-#def get_overhead(self):
-#    return self.external.get_overhead()

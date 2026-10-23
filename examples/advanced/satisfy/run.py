@@ -45,7 +45,6 @@ STREAM_PDDL = """
 
 LARGE = 5
 SMALL = -1
-#MAX_INT = 100000
 MAX_INT = 5
 
 pairs = set()
@@ -65,7 +64,6 @@ STREAM_MAP = {
 }
 
 def problem1():
-    #constant_map = {} # TODO: constant_map
     init = []
     terms = [('Integer', '?x1'), ('Large', '?x1'), ('Integer', '?x2'),
              ('minimize', ('Cost', '?x1')), ('minimize', ('Cost', '?x2'))]
@@ -86,7 +84,6 @@ def problem3():
 
 def main():
     parser = argparse.ArgumentParser()
-    #parser.add_argument('-p', '--problem', default='problem1', help='The name of the problem to solve')
     parser.add_argument('-a', '--algorithm', default=None, help='Specifies the algorithm')
     parser.add_argument('-o', '--optimal', action='store_true', help='Runs in an anytime mode')
     parser.add_argument('-t', '--max_time', default=2, type=int, help='The max time')
@@ -96,8 +93,6 @@ def main():
     problem_fn = problem3 # problem1 | problem2 | problem3 # TODO: use --problem
     satisfaction_problem = problem_fn()
     stream_pddl, stream_map, init, terms = satisfaction_problem
-    #print('Init:', pddlstream_problem.init)
-    #print('Goal:', pddlstream_problem.goal)
 
     info = {
         # Intentionally, misleading the stream
@@ -112,10 +107,9 @@ def main():
                                                  stream_info=info, max_time=args.max_time, success_cost=success_cost,
                                                  visualize=False)
     else:
-        solution = constraint_satisfaction(satisfaction_problem, stream_info=info, #unit_efforts=True,
+        solution = constraint_satisfaction(satisfaction_problem, stream_info=info,
                                            max_time=args.max_time, success_cost=success_cost)
     dump_assignment(solution)
-    #print(len(sorted(pairs)))
 
 if __name__ == '__main__':
     main()

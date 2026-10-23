@@ -54,7 +54,6 @@ def get_holding_motion_synth(robot, movable=[], teleport=False):
 #######################################################
 
 def pddlstream_from_problem(robot, movable=[], teleport=False, grasp_name='top'):
-    #assert (not are_colliding(tree, kin_cache))
 
     domain_pddl = read(get_file_path(__file__, 'domain.pddl'))
     stream_pddl = read(get_file_path(__file__, 'stream.pddl'))
@@ -90,10 +89,6 @@ def pddlstream_from_problem(robot, movable=[], teleport=False, grasp_name='top')
     body = movable[0]
     goal = ('and',
             ('AtConf', conf),
-            #('Holding', body),
-            #('On', body, fixed[1]),
-            #('On', body, fixed[2]),
-            #('Cleaned', body),
             ('Cooked', body),
     )
 
@@ -106,7 +101,7 @@ def pddlstream_from_problem(robot, movable=[], teleport=False, grasp_name='top')
 
         'test-cfree-pose-pose': from_test(get_cfree_pose_pose_test()),
         'test-cfree-approach-pose': from_test(get_cfree_obj_approach_pose_test()),
-        'test-cfree-traj-pose': from_test(negate_test(get_movable_collision_test())), #get_cfree_traj_pose_test()),
+        'test-cfree-traj-pose': from_test(negate_test(get_movable_collision_test())),
 
         'TrajCollision': get_movable_collision_test(),
     }
@@ -121,19 +116,14 @@ def load_world():
     set_default_camera()
     draw_global_system()
     with HideOutput():
-        #add_data_path()
         robot = load_model(DRAKE_IIWA_URDF, fixed_base=True) # DRAKE_IIWA_URDF | KUKA_IIWA_URDF
         floor = load_model('models/short_floor.urdf')
         sink = load_model(SINK_URDF, pose=Pose(Point(x=-0.5)))
         stove = load_model(STOVE_URDF, pose=Pose(Point(x=+0.5)))
         celery = load_model(BLOCK_URDF, fixed_base=False)
         radish = load_model(SMALL_BLOCK_URDF, fixed_base=False)
-        #cup = load_model('models/dinnerware/cup/cup_small.urdf',
-        # Pose(Point(x=+0.5, y=+0.5, z=0.5)), fixed_base=False)
 
     draw_pose(Pose(), parent=robot, parent_link=get_tool_link(robot)) # TODO: not working
-    # dump_body(robot)
-    # wait_for_user()
 
     body_names = {
         sink: 'sink',
@@ -194,7 +184,6 @@ def main():
         command.control()
     else:
         wait_for_user('Execute?')
-        #command.step()
         command.refine(num_steps=10).execute(time_step=0.001)
     wait_for_user('Finish?')
     disconnect()

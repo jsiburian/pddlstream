@@ -66,7 +66,6 @@ def process_conditional_effect(effect, negative_from_predicate):
 
 def optimizer_conditional_effects(domain, externals):
     import pddl
-    #from pddlstream.algorithms.scheduling.negative import get_negative_predicates
     # TODO: extend this to predicates
     if UNIVERSAL_TO_CONDITIONAL:
         negative_streams = list(filter(lambda e: e.is_negated, externals))
@@ -97,7 +96,6 @@ def enforce_simultaneous(domain, externals):
         axiom_predicates.update(get_predicates(axiom.condition))
     for external in externals:
         if isinstance(external, ConstraintStream) and not external.info.simultaneous:
-            #isinstance(external, ComponentStream) and not external.outputs
             # Only need for ConstraintStream because VariableStream used in action args
             # TODO: apply recursively to domain conditions?
             predicates = {get_prefix(fact) for fact in external.certified}
@@ -165,8 +163,6 @@ def automatically_negate_externals(domain, externals):
     producers = {e1 for e1, _ in get_interacting_externals(externals)}
     non_producers = set(externals) - producers
     for external in non_producers:
-        #if external.is_fluent:
-        #external.num_opt_fns = 0 # Streams that can be evaluated at the end as tests
         if isinstance(external, Stream) and not external.is_negated \
                 and external.is_test and not external.is_fluent and external.could_succeed() \
                 and all((predicate in negated_predicates) and (len(certifiers[predicate]) == 1)

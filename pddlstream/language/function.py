@@ -3,14 +3,7 @@ from pddlstream.language.constants import Not, Equal, get_prefix, get_args, is_h
 from pddlstream.language.external import ExternalInfo, Result, Instance, External, DEBUG_MODES, get_procedure_fn
 from pddlstream.utils import str_from_object, apply_mapping, get_clock
 
-# https://stackoverflow.com/questions/847936/how-can-i-find-the-number-of-arguments-of-a-python-function
-#try:
-#    from inspect import getfullargspec as get_arg_spec
-#except ImportError:
-#    from inspect import getargspec as get_arg_spec
 
-#from inspect import getargspec as get_arg_spec
-#from inspect import signature
 
 ##################################################
 
@@ -30,7 +23,6 @@ class FunctionInfo(ExternalInfo):
         super(FunctionInfo, self).__init__(eager=eager, **kwargs)
         self.opt_fn = opt_fn
         self.verbose = verbose # TODO: move to ExternalInfo
-        #self.order = 0
 
 class FunctionResult(Result):
     def __init__(self, instance, value, optimistic=True):
@@ -49,21 +41,16 @@ class FunctionResult(Result):
     def get_action(self):
         return FunctionAction(self.name, self.input_objects)
     def remap_inputs(self, bindings):
-        #if not any(o in bindings for o in self.instance.get_all_input_objects()):
-        #    return self
         input_objects = apply_mapping(self.instance.input_objects, bindings)
         new_instance = self.external.get_instance(input_objects)
         return self.__class__(new_instance, self.value, self.optimistic)
     def is_successful(self):
         return True
     def __repr__(self):
-        #from pddlstream.algorithms.downward import get_cost_scale
-        #value = math.log(self.value) # TODO: number of digits to display
         return '{}={:.3f}'.format(str_from_head(self.instance.head), self.value)
 
 class FunctionInstance(Instance):
     _Result = FunctionResult
-    #_opt_value = 0
     def __init__(self, external, input_objects):
         super(FunctionInstance, self).__init__(external, input_objects)
         self._head = None
@@ -124,20 +111,15 @@ class Function(External):
     """
     codomain = float # int | float
     _Instance = FunctionInstance
-    #_default_p_success = 0.99 # 0.99 | 1  # Might be pruned using cost threshold
     def __init__(self, head, fn, domain, info):
         # TODO: function values that act as preconditions (cost must be below threshold)
         if info is None:
             # TODO: move the defaults to FunctionInfo in the event that an optimistic fn is specified
-            info = FunctionInfo() #p_success=self._default_p_success)
+            info = FunctionInfo()
         super(Function, self).__init__(get_prefix(head), info, get_args(head), domain)
         self.head = head
         opt_fn = lambda *args: self.codomain()
         self.fn = opt_fn if (fn in DEBUG_MODES) else fn
-        #arg_spec = get_arg_spec(self.fn)
-        #if len(self.inputs) != len(arg_spec.args):
-        #    raise TypeError('Function [{}] expects inputs {} but its procedure has inputs {}'.format(
-        #        self.name, list(self.inputs), arg_spec.args))
         self.opt_fn = opt_fn if (self.info.opt_fn is None) else self.info.opt_fn
         self.num_opt_fns = 0 # TODO: support multiple opt_fns
     @property
@@ -177,10 +159,6 @@ class PredicateResult(FunctionResult):
 
 class PredicateInstance(FunctionInstance):
     _Result = PredicateResult
-    #_opt_value = True # True | False | Predicate._codomain()
-    #def was_successful(self, results):
-    #    #self.external.opt_fn(*input_values)
-    #    return any(r.value for r in results)
 
 class Predicate(Function):
     """
@@ -189,8 +167,6 @@ class Predicate(Function):
     """
     _Instance = PredicateInstance
     codomain = bool
-    #def is_negative(self):
-    #    return self._Instance._opt_value is False
     def __init__(self, head, fn, domain, info):
         if info is None:
             info = PredicateInfo()

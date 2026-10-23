@@ -66,7 +66,6 @@ class Skeleton(CreationHash):
         self.incoming_indices = incoming_from_edges(index_orders)
         self.outgoing_indices = outgoing_from_edges(index_orders)
 
-        #min_complexity = stream_plan_complexity(self.queue.evaluations, self.stream_plan, [0]*len(stream_plan))
         # TODO: compute this all at once via hashing
     def compute_complexity(self, stream_calls, complexities=[]):
         # TODO: use the previous value when possible
@@ -85,8 +84,6 @@ class Skeleton(CreationHash):
         if (self.best_binding is None) or (self.best_binding.index < binding.index) or \
                 ((self.best_binding.index == binding.index) and (binding.cost < self.best_binding.cost)):
             self.best_binding = binding
-            #print('Skeleton {} | Progress: {} | New best: {}'.format(
-            #    self.index, self.best_binding.index, self.best_binding))
             self.improved = True
             return True
         return False
@@ -105,7 +102,6 @@ class Skeleton(CreationHash):
 class Binding(CreationHash):
     counter = count()
     def __init__(self, skeleton, cost, history, mapping, index, parent, parent_result):
-    #def __init__(self, skeleton, cost=0., history=[], mapping={}, index=0, parent=None):
         self.skeleton = skeleton
         self.cost = cost
         self.history = history
@@ -148,9 +144,6 @@ class Binding(CreationHash):
     def up_to_date(self):
         if self.is_fully_bound:
             return True
-        #if REQUIRE_DOWNSTREAM:
-        #    return self.result.instance.num_calls <= self.visits
-        #else:
         return self.calls == self.result.instance.num_calls
     def compute_complexity(self):
         if self.is_fully_bound:
@@ -167,10 +160,7 @@ class Binding(CreationHash):
                 self.complexities = list(parent_complexities)
                 self.complexities[self.index] = self.skeleton.compute_index_complexity(self.index, self.calls, self.complexities)
             self.complexity = COMPLEXITY_OP(self.complexities)
-            #self.complexity = stream_plan_complexity(self.skeleton.queue.evaluations, self.skeleton.stream_plan, future)
         return self.complexity
-        #return compute_complexity(self.skeleton.queue.evaluations, self.result.get_domain()) + \
-        #       self.result.external.get_complexity(self.visits) # visits, calls
     def check_complexity(self, complexity_limit=INF):
         if complexity_limit == INF:
             return True
@@ -185,9 +175,6 @@ class Binding(CreationHash):
         if self.is_unsatisfied(): # or type(self.result) == FunctionResult): # not self.visits
             return self.index in affected.indices
         # TODO: only prune functions here if the reset of the plan is feasible
-        #if not affected.indices or (max(affected.indices) < self.index):
-        #    # Cut branch for efficiency purposes
-        #    return False
         # TODO: discard bindings that have been pruned by their cost per affected component
         # TODO: both any and all weakly prune
         return any(binding.check_downstream_helper(affected) for binding in self.children)
@@ -198,8 +185,6 @@ class Binding(CreationHash):
             return Priority(not_greedy=True, complexity=0, visits=self.visits, remaining=0, cost=0.)
         # TODO: use effort instead
         # TODO: instead of remaining, use the index in the queue to reprocess earlier ones
-        #priority = self.visits
-        #priority = self.compute_complexity()
         priority = self.compute_complexity() + (self.visits - self.calls) # TODO: check this
         # TODO: call_index
         remaining = len(self.skeleton.stream_plan) - self.index
@@ -240,7 +225,6 @@ class Binding(CreationHash):
         self.calls = instance.num_calls
         self.visits = max(self.visits, self.calls)
         self.complexity = None # Forces re-computation
-        #self.skeleton.visualize_bindings()
         return new_bindings
     def __repr__(self):
         return '{}(skeleton={}, {})'.format(self.__class__.__name__, self.skeleton.index, self.result)
@@ -277,7 +261,6 @@ class SkeletonQueue(Sized):
 
     def pop_binding(self):
         priority, binding = heappop(self.queue)
-        #return binding
         return priority, binding
 
     def peak_binding(self):
@@ -290,7 +273,6 @@ class SkeletonQueue(Sized):
         skeleton = Skeleton(self, stream_plan, action_plan, cost)
         self.skeletons.append(skeleton)
         self.push_binding(skeleton.root)
-        #self.greedily_process()
         return skeleton
 
     def readd_standby(self):
@@ -317,8 +299,6 @@ class SkeletonQueue(Sized):
             # Do I need to re-enable this stream in case another skeleton needs it?
             # TODO: should I perform this when deciding to sample something new instead?
             return STANDBY, is_new
-        #if not is_instance_ready(self.evaluations, instance):
-        #    raise RuntimeError(instance)
         if binding.up_to_date():
             new_results, _ = process_instance(self.store, self.domain, instance, disable=self.disable)
             is_new = bool(new_results)
@@ -342,7 +322,7 @@ class SkeletonQueue(Sized):
         num_new = 0
         while self.is_active():
             priority, binding = self.peak_binding()
-            if not binding.is_greedy(): #priority.not_greedy:
+            if not binding.is_greedy():
                 break
             num_new += self.process_root()
         return num_new
@@ -396,12 +376,11 @@ class SkeletonQueue(Sized):
         iterations = num_new = 0
         if not self.is_active():
             return num_new
-        print('Sampling for up to {:.3f} {}'.format(max_time, get_clock().unit)) #, max_iterations))
+        print('Sampling for up to {:.3f} {}'.format(max_time, get_clock().unit))
         start_time = get_clock().now()
         while self.is_active() and (get_clock().now() - start_time < max_time) and (iterations < max_iterations):
             iterations += 1
             num_new += self.process_root()
-        #print('Iterations: {} | New: {} | Time: {:.3f}'.format(iterations, num_new, elapsed_time(start_time)))
         return num_new + self.greedily_process()
 
     #########################
@@ -415,9 +394,7 @@ class SkeletonQueue(Sized):
             skeleton.improved = False
             for result in skeleton.best_binding.recover_bound_results():
                 # TODO: just accelerate the facts within the plan preimage
-                #print(result, result.compute_complexity(self.evaluations, **kwargs))
                 result.call_index = 0 # Pretends the fact was first
-                #print(result.compute_complexity(self.evaluations, **kwargs))
                 add_certified(self.evaluations, result, **kwargs) # TODO: should special have a complexity of INF?
         # TODO: AssertionError: Could not find instantiation for numeric expression: dist
 

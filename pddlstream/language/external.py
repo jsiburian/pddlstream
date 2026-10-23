@@ -60,7 +60,6 @@ class ExternalInfo(PerformanceInfo):
         self.eager_skeleton = eager_skeleton # TODO: apply in binding and adaptive
         # TODO: automatically set tests and costs to be eager
         self.defer_fn = defer_fn # Old syntax was defer=True
-        #self.complexity_fn = complexity_fn
 
 ##################################################
 
@@ -122,9 +121,7 @@ class Result(CreationHash):
     def overhead_heuristic(self): # Low is cheap
         return self.external.overhead_heuristic()
     def stats_heuristic(self): # Low is cheap and unlikely to succeed
-        #return self.overhead_heuristic() + self.success_heuristic()
         return Score(self.overhead_heuristic(), self.success_heuristic())
-        #return Stats(self.overhead_heuristic(), self.success_heuristic())
     def effort_heuristic(self): # Low is cheap and likely to succeed
         return Score(self.overhead_heuristic(), -self.success_heuristic())
 
@@ -148,13 +145,10 @@ class Instance(CreationHash):
     def mapping(self):
         if self._mapping is None:
             self._mapping = get_mapping(self.external.inputs, self.input_objects)
-            #for constant in self.external.constants: # TODO: no longer needed
-            #    self._mapping[constant] = Object.from_name(constant)
         return self._mapping
     @property
     def domain(self):
         if self._domain is None:
-            #self._domain = substitute_expression(self.external.domain, self.mapping)
             self._domain = tuple(substitute_fact(atom, self.mapping)
                                  for atom in self.external.domain)
         return self._domain
@@ -166,12 +160,7 @@ class Instance(CreationHash):
         return set(self.input_objects)
     def get_input_values(self):
         return values_from_objects(self.input_objects)
-    #def is_first_call(self): # TODO: use in streams
-    #    return self.online_calls == 0
-    #def has_previous_success(self):
-    #    return self.online_success != 0
     def reset(self):
-        #self.enable(evaluations={}, domain=None)
         self.disabled = False
         self.opt_index = self.external.num_opt_fns
         self.num_calls = 0
@@ -211,7 +200,6 @@ class Instance(CreationHash):
 
     def compute_complexity(self, evaluations, **kwargs):
         # Will change as self.num_calls increases
-        #num_calls = INF if self.enumerated else self.num_calls
         return compute_complexity(evaluations, self.get_domain(), **kwargs) + \
                self.external.get_complexity(self.num_calls)
 
@@ -230,7 +218,6 @@ class Instance(CreationHash):
         successes = sum(r.is_successful() for r in results)
         self.external.update_statistics(overhead, bool(successes))
         self.results_history.append(results)
-        #self.successes += successes
 
     def disable(self, evaluations, domain):
         self.disabled = True
@@ -297,11 +284,7 @@ class External(Performance):
     def overhead_heuristic(self): # Low is little overhead
         # TODO: infer other properties from use in the context of a stream plan
         # TODO: use num_certified (only those that are in another stream) instead of num_outputs?
-        #num_inputs = len(self.inputs)
-        #num_domain = len(self.domain)
         return Score(self.is_fluent, not self.is_function, self.has_outputs, len(self.inputs)) # structural/relational overhead
-        #overhead = 1e0*num_inputs + 1e1*num_outputs + 1e2*bool(num_fluents)
-        #return overhead
 
 ##################################################
 

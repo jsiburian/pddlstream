@@ -78,14 +78,12 @@ def solve_pddlstream(focused=False, unit_costs=True, debug=False):
     if focused:
         solution = solve_focused(pddlstream_problem, unit_costs=unit_costs, debug=debug)
     else:
-        #solution = solve_exhaustive(pddlstream_problem, unit_costs=unit_costs, debug=debug)
         solution = solve_incremental(pddlstream_problem, unit_costs=unit_costs, debug=debug)
     print_solution(solution)
 
 ##################################################
 
 def main():
-    #solve_pddl()
     solve_pddlstream()
 
 if __name__ == '__main__':

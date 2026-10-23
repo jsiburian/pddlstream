@@ -68,7 +68,6 @@ STREAM_PDDL = """
   )
 )
 """
-#STREAM_PDDL = None
 
 ##################################################
 
@@ -94,14 +93,12 @@ def get_problem(num=3):
     stream_map = {
         'sample-split': from_sampler(lambda: to_tuple(round(random.random(), 2))),
         'compute-split': from_fn(compute_split),
-        #'SplitCost': fn_from_constant(2),
         'SplitCost': compute_cost,
     }
 
     locations = ['loc{}'.format(i) for i in range(num)]
     init_carrot = (0., 1.)
     init = [
-        #('Split', 0.5),
         ('Carrot', init_carrot),
         ('AtLoc', init_carrot, 'loc0'),
     ] + [('Loc', loc) for loc in locations]
@@ -129,7 +126,7 @@ def main():
         'decrement': StreamInfo(p_success=1, overhead=1),
     }
     solution = solve(problem, algorithm=args.algorithm, planner='max-astar', unit_costs=args.unit,
-                     stream_info=info, effort_weight=1, #success_cost=0., max_iterations=3, max_time=5,
+                     stream_info=info, effort_weight=1,
                      debug=False, verbose=True)
     print_solution(solution)
 

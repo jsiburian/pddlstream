@@ -6,7 +6,6 @@ import numpy as np
 from pddlstream.algorithms.meta import solve, create_parser
 from pddlstream.language.constants import PDDLProblem, Or, Exists, print_solution, Output, And
 from pddlstream.utils import read_pddl, INF
-#from pddlstream.algorithms.downward import print_search_options
 from pddlstream.language.stream import StreamInfo
 from pddlstream.language.function import FunctionInfo
 from pddlstream.language.generator import from_fn, from_test
@@ -58,8 +57,6 @@ def create_problem(max_t=20., n_foods=3, n_stoves=2):
 
     t0 = 0.
     goal_t = 5
-    #wait_dt = 0.5
-    #discretize_dt = 1./3
     discretize_dt = None # TODO: set to None if not all times are StartTimes
     # TODO: iteratively increase max_t and/or discretize_dt
 
@@ -72,7 +69,6 @@ def create_problem(max_t=20., n_foods=3, n_stoves=2):
         ('Time', t0),
         ('StartTime', t0),
         ('AtTime', t0),
-        #('Duration', wait_dt), # T
         ('Time', goal_t),
     ]
     if discretize_dt is not None:
@@ -96,8 +92,6 @@ def create_problem(max_t=20., n_foods=3, n_stoves=2):
         ])
 
     goal_expressions = [
-        #Exists(['?t'], And(('GE', '?t', goal_t),
-        #                   ('AtTime', '?t'))),
     ]
     for food in foods:
         goal_expressions.append(('Cooked', food))
@@ -152,7 +146,6 @@ def main():
                      stream_info=info, planner='dijkstra', initial_complexity=INF,
                      effort_weight=None, debug=True, verbose=False)
     print_solution(solution)
-    #print_search_options()
 
 if __name__ == '__main__':
     main()

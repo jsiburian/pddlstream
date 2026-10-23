@@ -54,7 +54,6 @@ class BeliefState(State):
         super(BeliefState, self).__init__(**kwargs)
         self.task = task
         self.b_on = b_on
-        #self.localized = set(localized)
         self.registered = set(registered)
         # TODO: store configurations
         """
@@ -79,7 +78,6 @@ class BeliefState(State):
             support_items = ['{}: {:.2f}'.format(s, d.prob(s)) for s in sorted(d.support(), key=str)]
             items.append('{}: {{{}}}'.format(b, ', '.join(support_items)))
         return '{}({},{})'.format(self.__class__.__name__,
-                                  #self.b_on,
                                   '{{{}}}'.format(', '.join(items)),
                                   list(map(get_name, self.registered)))
 
@@ -156,10 +154,6 @@ def get_kitchen_task(arm='left', grasp_type='top'):
         robot=pr2, arms=[arm], grasp_types=[grasp_type],
         class_from_body=class_from_body,
         movable=movable, surfaces=surfaces, rooms=rooms,
-        #goal_localized=[cabbage],
-        #goal_registered=[cabbage],
-        #goal_holding=[(arm, cabbage)],
-        #goal_on=[(cabbage, table)],
         goal_on=[(cabbage, sink)],
     )
 

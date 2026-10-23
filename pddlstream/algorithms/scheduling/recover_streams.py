@@ -65,7 +65,6 @@ def extract_stream_plan(node_from_atom, target_facts, stream_plan):
     for fact in target_facts:
         if fact not in node_from_atom:
             raise RuntimeError('Preimage fact {} is not achievable!'.format(fact))
-            #RuntimeError: Preimage fact ('new-axiom@0',) is not achievable!
         result = node_from_atom[fact].result
         if result is None:
             continue

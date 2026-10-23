@@ -12,8 +12,6 @@ from pddlstream.language.stream import StreamInfo
 from pddlstream.utils import read, get_file_path, Profiler
 from pddlstream.language.constants import print_solution, PDDLProblem
 from pddlstream.language.external import defer_shared, never_defer
-#from pddlstream.language.exogenous import FutureValue
-#from examples.advanced.defer.run import ik_fn, motion_fn
 
 class Latent(object):
     pass
@@ -24,7 +22,6 @@ class Uncertain(Latent):
         self.mode = mode
         self.confidence = confidence
     def __repr__(self):
-        #return 'N(mu={})'.format(self.mode)
         return 'L({})'.format(self.mode)
 
 class Derived(Latent):
@@ -70,26 +67,19 @@ def pddlstream_from_belief():
     # - object has a unobserved fluent
 
     block = 'block1'
-    #pose = None # Unknown
     pose = Uncertain()
-    #pose = np.array([1, 0])
     conf = np.array([0, 1])
     booth = np.array([0, 2])
 
     init = [
         ('Initial',), # Forces move first
         ('Conf', conf),
-        #('Booth', conf),
-        #('Conf', booth),
-        #('Booth', booth),
         ('AtConf', conf),
         ('HandEmpty',),
 
         ('Block', block),
         ('Pose', pose),
         ('AtPose', block, pose),
-        #('Observable', pose),
-        #('Latent', pose),
     ]
     goal = ('Holding', block)
 
@@ -112,7 +102,6 @@ def main(planner='max-astar', defer=False):
     }
 
     replan_actions = set()
-    #replan_actions = {'phone'}
 
     with Profiler(field='tottime', num=5):
         solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit, planner=planner,

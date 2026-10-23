@@ -603,8 +603,6 @@ def fixSigma(sigma, ridge=1e-20):
         if minEig < 0:
             print('Not positive definite', minEig)
         print('Added to matrix', (ridge - minEig))
-        # if -minEig > 1e-5:
-        #     input('okay?')
         sigma = sigma + 2 * (ridge - minEig) * identity(len(sigma))
     return sigma
 
@@ -1139,8 +1137,6 @@ def probModeMoved(delta, var, obsVar):
     return p
 
 
-# chiSq = (0.71, 1.06, 1.65, 2.20, 3.36, 4.88, 5.99, 7.78, 9.49, 13.28, 18.47)
-# pValue = (0.95, 0.90, 0.80, 0.70, 0.50, 0.30, 0.20, 0.10, 0.05, 0.01, 0.001)
 
 pValue = (1.0, 0.995, 0.975, 0.20, 0.10, 0.05, 0.025, 0.02, 0.01, 0.005, 0.002, 0.001)
 chiSqTables = {
@@ -1266,6 +1262,5 @@ def varBeforeObs(obsVar, varAfterObs, maxV=1.0):
     # VA = 1 / (1/VO + 1 / VB)
     # VB = VA VO / (VO - VA)
 
-    # ov = undiag(obsVar)
     return tuple((x * y / (x - y) if x > y else maxV)
                  for (x, y) in zip(obsVar, varAfterObs))

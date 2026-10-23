@@ -37,10 +37,6 @@ class PlanConstraints(object):
         self.groups = groups # Could make this a list of lists
         self.exact = exact
         self.max_cost = max_cost
-        #self.max_length = max_length
-        #self.hint = hint # TODO: search over skeletons first and then fall back
-        #if self.hint:
-        #    raise NotImplementedError()
     def dump(self):
         print('{}(exact={}, max_cost={})'.format(self.__class__.__name__, self.exact, self.max_cost))
         if self.skeletons is None:
@@ -111,10 +107,8 @@ def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=Fa
 
             parameters = set(filter(is_parameter, args))
             ancestor_parameters = parameters & set(filter(is_parameter, (p for idx in ancestors for p in actions[idx][1])))
-            #descendant_parameters = parameters & set(filter(is_parameter, (p for idx in descendants for p in actions[idx][1])))
             parallel_parameters = parameters & set(filter(is_parameter, (p for idx in parallel for p in actions[idx][1])))
 
-            #bound_preconditions = [Imply(bound, assigned) for bound, assigned in safe_zip(bound_facts, assigned_facts)]
             bound_condition = pddl.Conjunction([pddl.Disjunction(map(fd_from_fact, [
                 Not((bound_predicate, to_constant(p))), (assigned_predicate, to_constant(p), local_from_global[p])
             ])) for p in parallel_parameters])
@@ -138,7 +132,6 @@ def add_plan_constraints(constraints, domain, evaluations, goal_exp, internal=Fa
             # TODO: should also negate the effects of all other sequences here
 
             new_actions.append(new_action)
-            #new_action.dump()
         new_goals.append(And(*[order_facts[idx] for idx in incoming_orders[GOAL_INDEX]]))
 
     add_predicate(domain, make_predicate(order_predicate, ['?num', '?step']))

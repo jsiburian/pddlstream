@@ -33,7 +33,6 @@ def get_pddlstream_problem():
     stream_map = {
         'sample-pickable': from_fn(feasibility_fn),
         'test-cleanable': from_test(universe_test), # TODO: bug because this stream is never called
-        #'test-cleanable': from_fn(lambda o, fluents=set(): None if fluents else (TRAJ,)),
     }
 
     # Currently tests whether one can clean twice
@@ -44,7 +43,6 @@ def get_pddlstream_problem():
         ('OnTable', 'b2'),
     ]
 
-    #goal = ('Holding', 'b1')
     goal = And(
         ('Clean', 'b1'),
         ('Cooked', 'b1'),
@@ -61,8 +59,6 @@ def main():
 
     # TODO: maybe load problems as a domain explicitly
     problem = get_pddlstream_problem()
-    #if args.algorithm not in FOCUSED_ALGORITHMS:
-    #    raise RuntimeError('The {} algorithm does not support fluent streams'.format(args.algorithm))
     solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit)
     print_solution(solution)
 

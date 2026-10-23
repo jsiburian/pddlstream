@@ -93,7 +93,6 @@ def get_problem1(n_regions=0, n_cylinders=3, n_boxes=3):
     init = [
         ('HandEmpty',),
         ('Prepush', prepushA, shelfA),
-        #('Stackable', cylinders[2], cylinders[1]),
     ]
     init += [('Region', region) for region in regions]
     init += [('Cylinder', cylinder) for cylinder in cylinders]

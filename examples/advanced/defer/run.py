@@ -8,7 +8,6 @@ from pddlstream.language.stream import StreamInfo
 from pddlstream.utils import read, get_file_path, Profiler
 from pddlstream.language.constants import print_solution, PDDLProblem
 from pddlstream.language.external import defer_unique, never_defer
-#from examples.advanced.exogenous.run import ik_fn, motion_fn
 
 GRASP = np.array([0, 1])
 
@@ -64,7 +63,6 @@ def main(replan=True, defer=True):
     problem = get_pddlstream()
 
     stream_info = {
-        #'test-pose': StreamInfo(eager=True, p_success=0),
         'motion': StreamInfo(defer_fn=defer_unique if defer else never_defer),
     }
     replan_actions = {'pick'} if replan else set()

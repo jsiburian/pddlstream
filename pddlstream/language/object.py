@@ -1,7 +1,6 @@
 from collections import namedtuple, defaultdict
 from itertools import count
 from pddlstream.language.constants import get_parameter_name
-#from pddlstream.language.conversion import values_from_objects
 from pddlstream.utils import str_from_object, is_hashable, CreationHash
 
 USE_HASH = True
@@ -19,7 +18,6 @@ class Object(CreationHash):
         self.value = value
         self.index = len(Object._obj_from_name)
         if name is None:
-            #name = str(value) # TODO: use str for the name when possible
             name = '{}{}'.format(self._prefix, self.index)
         self.pddl = name
         self.stream_instance = stream_instance # TODO: store first created stream instance
@@ -68,14 +66,12 @@ class Object(CreationHash):
 class UniqueOptValue(namedtuple('UniqueOptTuple', ['instance', 'sequence_index', 'output'])):
     @property
     def parameter(self):
-        # return self.instance.external.outputs[self.output_index]
         return self.output
 
 class SharedOptValue(namedtuple('SharedOptTuple', ['stream', 'inputs', 'input_objects', 'output'])):
     @property
     def values(self):
         return tuple(obj.value for obj in self.input_objects)
-        #return values_from_objects(self.input_objects)
 
 ##################################################
 
@@ -87,12 +83,6 @@ class DebugValue(object): # TODO: could just do an object
         self.input_values = input_values
         self.output_parameter = output_parameter
         self.index = next(self._output_counts[output_parameter])
-    # def __iter__(self):
-    #     return self.stream, self.input_values, self.output_parameter
-    # def __hash__(self):
-    #     return hash(tuple(self)) # self.__class__
-    # def __eq__(self, other):
-    #     return (self.__class__ == other.__class__) and (tuple(self) == tuple(other))
     def __repr__(self):
         # Can also just return first letter of the prefix
         return '{}{}{}'.format(self._prefix, get_parameter_name(self.output_parameter), self.index)
@@ -101,10 +91,6 @@ class SharedDebugValue(namedtuple('SharedDebugValue', ['stream', 'output_paramet
     # TODO: this alone doesn't refining at the shared object level
     _prefix = '&' # $ | @ | &
     def __repr__(self):
-        #index = hash(self.stream) % 1000
-        #index = self.stream.outputs.index(self.output_parameter) # TODO: self.stream is a str
-        #return '{}{}{}'.format(self._prefix, get_parameter_name(self.output_parameter), index)
-        #return '{}{}'.format(self._prefix, self.stream)
         return '{}{}'.format(self._prefix, get_parameter_name(self.output_parameter))
 
 ##################################################
@@ -124,11 +110,10 @@ class OptimisticObject(CreationHash):
         self.index = len(OptimisticObject._obj_from_inputs)
         if USE_OPT_STR and isinstance(self.param, UniqueOptValue):
             # TODO: instead just endow UniqueOptValue with a string function
-            #parameter = self.param.instance.external.outputs[self.param.output_index]
             parameter = self.param.output
             prefix = get_parameter_name(parameter)[:PREFIX_LEN]
             var_index = next(self._count_from_prefix.setdefault(prefix, count()))
-            self.repr_name = '{}{}{}'.format(OPT_PREFIX, prefix, var_index) #self.index)
+            self.repr_name = '{}{}{}'.format(OPT_PREFIX, prefix, var_index)
             self.pddl = self.repr_name
         else:
             self.pddl = '{}{}'.format(self._prefix, self.index)
@@ -138,7 +123,6 @@ class OptimisticObject(CreationHash):
     def is_unique(self):
         return isinstance(self.param, UniqueOptValue)
     def is_shared(self):
-        #return isinstance(self.param, SharedOptValue)
         return not isinstance(self.param, UniqueOptValue) # OptValue
     @staticmethod
     def from_opt(value, param):
@@ -159,4 +143,3 @@ class OptimisticObject(CreationHash):
         return self.index < other.index
     def __repr__(self):
         return self.repr_name
-        #return repr(self.repr_name) # Prints in quotations

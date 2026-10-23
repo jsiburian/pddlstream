@@ -26,7 +26,6 @@ def get_fluent_instance(external, input_objects, state):
     return external.get_instance(input_objects, fluent_facts=fluent_facts)
 
 def convert_fluent_streams(stream_plan, real_states, action_plan, step_from_fact, node_from_atom):
-    #return stream_plan
     import pddl
     assert len(real_states) == len(action_plan) + 1
     steps_from_stream = get_steps_from_stream(stream_plan, step_from_fact, node_from_atom)
@@ -45,11 +44,8 @@ def convert_fluent_streams(stream_plan, real_states, action_plan, step_from_fact
         if outgoing_edges[result]:
             # No way of taking into account the binding of fluent inputs when preventing cycles
             raise NotImplementedError('Fluent stream is required for another stream: {}'.format(result))
-        #if (len(steps_from_stream[result]) != 1) and result.output_objects:
-        #    raise NotImplementedError('Fluent stream required in multiple states: {}'.format(result))
         for state_index in steps_from_stream[result]:
             new_output_objects = [
-                #OptimisticObject.from_opt(out.value, object())
                 OptimisticObject.from_opt(out.value, UniqueOptValue(result.instance, object(), name))
                 for name, out in safe_zip(result.external.outputs, result.output_objects)]
             if new_output_objects and (state_index <= len(action_plan) - 1):

@@ -34,7 +34,6 @@ CLASSES = ['blue', 'red', 'rock', 'soil']
 #######################################################
 
 def pddlstream_from_problem(problem, collisions=True, teleport=False):
-    #rovers = problem.rovers
 
     domain_pddl = read(get_file_path(__file__, 'domain.pddl'))
     stream_pddl = read(get_file_path(__file__, 'stream.pddl'))
@@ -45,9 +44,6 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
 
     init = []
     goal_literals = [
-        #('Calibrated', camera, problem.rovers[0])
-        #('Analyzed', problem.rovers[0], problem.rocks[0])
-        #('ReceivedAnalysis', problem.rocks[0])
     ]
 
     init += [('Lander', l) for l in problem.landers]
@@ -65,19 +61,10 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
         init += [('Free', rover, name) for rover in problem.rovers]
     for name in problem.objectives:
         init += [('Objective', name)]
-        #initial_atoms += [IsClass(name, cl) for cl in CLASSES if cl in name]
         goal_literals += [('ReceivedImage', name, mode)]
     for name in problem.rocks + problem.soils:
-        # pose = Pose(name, get_pose(env.GetKinBody(name)))
         init += [('Rock', name)]  # , IsPose(name, pose), AtPose(name, pose)]
-        #init += [('IsClass', name, cl) for cl in CLASSES if cl in name]
 
-    #if problem.rocks:
-    #    goal_literals.append(Exists(['?rock'], And(('Rock', '?rock'),
-    #                                               ('ReceivedAnalysis', '?rock'))))
-    #if problem.soils:
-    #    goal_literals.append(Exists(['?soil'], And(('Soil', '?soil'),
-    #                                               ('ReceivedAnalysis', '?soil')))) # TODO: soil class
     goal_formula = And(*goal_literals)
 
     custom_limits = {}
@@ -93,7 +80,6 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
         'sample-base-motion': from_fn(get_base_motion_fn(problem, custom_limits=custom_limits, teleport=teleport)),
         'sample-head-motion': from_fn(get_head_motion_fn(problem, teleport=teleport)),
     }
-    #stream_map = 'debug'
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal_formula)
 
@@ -109,12 +95,8 @@ def post_process(problem, plan, teleport=False):
             pass
         elif name == 'sample_rock':
             pass
-            #v, bq, hq, y, o, c = args
-            #new_commands = [Attach(v, o)]
         elif name == 'drop_rock':
             pass
-            #v, bq, hq, y, o, c = args
-            #new_commands = [Detach(v, o)]
         elif name == 'calibrate':
             v, bq, hq, y, o, c = args
             new_commands = [Register(v, o)]
@@ -163,7 +145,6 @@ def main():
     _, _, _, stream_map, init, goal = pddlstream_problem
     print('Init:', init)
     print('Goal:', goal)
-    #print('Streams:', stream_map.keys())
 
     success_cost = 0 if args.optimal else INF
     planner = 'ff-astar'

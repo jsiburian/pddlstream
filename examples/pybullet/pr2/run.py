@@ -38,21 +38,10 @@ def place_movable(certified):
             _, a, o, g = fact[1:]
             # TODO: finish this
 
-# def get_base_motion_synth(problem, teleport=False):
-#     # TODO: could factor the safety checks if desired (but no real point)
-#     #fixed = get_fixed(robot, movable)
-#     def fn(outputs, certified):
-#         assert(len(outputs) == 1)
-#         q0, _, q1 = find_unique(lambda f: f[0] == 'basemotion', certified)[1:]
-#         place_movable(certified)
-#         free_motion_fn = get_motion_gen(problem, teleport)
-#         return free_motion_fn(q0, q1)
-#     return fn
 
 def move_cost_fn(c):
     [t] = c.commands
     distance = t.distance(distance_fn=lambda q1, q2: get_distance(q1[:2], q2[:2]))
-    #return BASE_CONSTANT + distance / BASE_VELOCITY
     return 1
 
 #######################################################
@@ -81,7 +70,6 @@ def extract_point2d(v):
 def opt_move_cost_fn(t):
     q1, q2 = t.values
     distance = get_distance(extract_point2d(q1), extract_point2d(q2))
-    #return BASE_CONSTANT + distance / BASE_VELOCITY
     return 1
 
 #######################################################
@@ -111,7 +99,6 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
     stream_pddl = read(get_file_path(__file__, 'stream.pddl'))
     constant_map = {}
 
-    #initial_bq = Pose(robot, get_pose(robot))
     initial_bq = Conf(robot, get_group_joints(robot, 'base'), get_group_conf(robot, 'base'))
     init = [
         ('CanMove',),
@@ -124,7 +111,6 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
            [('Connected', b, d) for b, d in problem.buttons] + \
            [('Button', b) for b, _ in problem.buttons]
     for arm in ARM_NAMES:
-    #for arm in problem.arms:
         joints = get_arm_joints(robot, arm)
         conf = Conf(robot, joints, get_joint_positions(robot, joints))
         init += [('Arm', arm), ('AConf', arm, conf), ('HandEmpty', arm), ('AtAConf', arm, conf)]
@@ -161,11 +147,7 @@ def pddlstream_from_problem(problem, collisions=True, teleport=False):
 
         'MoveCost': move_cost_fn,
 
-        # 'TrajPoseCollision': fn_from_constant(False),
-        # 'TrajArmCollision': fn_from_constant(False),
-        # 'TrajGraspCollision': fn_from_constant(False),
     }
-    # get_press_gen(problem, teleport=teleport)
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
 
@@ -234,9 +216,7 @@ def main(partial=False, defer=False, verbose=True):
     # cleaning_button_problem | cooking_button_problem
     with HideOutput():
         problem = problem_fn()
-    #state_id = save_state()
     saver = WorldSaver()
-    #dump_world()
 
     pddlstream_problem = pddlstream_from_problem(problem, collisions=not args.cfree, teleport=args.teleport)
 
@@ -280,7 +260,6 @@ def main(partial=False, defer=False, verbose=True):
         problem.remove_gripper()
         saver.restore()
 
-    #restore_state(state_id)
     saver.restore()
     wait_if_gui('Execute?')
     if args.simulate:

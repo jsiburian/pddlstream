@@ -63,7 +63,6 @@ def process_instance(store, domain, instance, disable=False):
     if disable:
         instance.disable(evaluations, domain)
     for result in new_results:
-        #add_certified(evaluations, result)  # TODO: only add if the fact is actually new?
         if isinstance(result, PredicateResult):
             # External predicates have no separate blocked fact: the planner reads their value directly,
             # so an INF complexity would hide known values and let it plan through them
@@ -122,29 +121,3 @@ def process_stream_plan(store, domain, disabled, stream_plan, action_plan, cost,
 
 ##################################################
 
-# def process_stream_plan_branch(store, domain, disabled, stream_plan, action_plan, cost):
-#     if not is_plan(stream_plan):
-#         return
-#     stream_plan = [result for result in stream_plan if result.optimistic]
-#     if not stream_plan:
-#         store.add_plan(action_plan, cost)
-#         return
-#     free_objects = get_free_objects(stream_plan)
-#     bindings = defaultdict(set)
-#     for opt_result in stream_plan:
-#         opt_inputs = [inp for inp in opt_result.instance.input_objects if inp in free_objects]
-#         inp_bindings = [bindings[inp] for inp in opt_inputs]
-#         for combo in product(*inp_bindings):
-#             bound_result = opt_result.remap_inputs(get_mapping(opt_inputs, combo))
-#             bound_instance = bound_result.instance
-#             if bound_instance.enumerated or not is_instance_ready(store.evaluations, bound_instance):
-#                 continue # Disabled
-#             new_results = process_instance(store, domain, bound_instance)
-#             if not bound_instance.enumerated:
-#                 disabled.add(bound_instance)
-#             if isinstance(opt_result, StreamResult):
-#                 for new_result in new_results:
-#                     for out, obj in safe_zip(opt_result.output_objects, new_result.output_objects):
-#                         bindings[out].add(obj)
-#     #Binding = namedtuple('Binding', ['index', 'mapping'])
-#     # TODO: after querying, search over all bindings of the produced sampled

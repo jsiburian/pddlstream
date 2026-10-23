@@ -87,7 +87,6 @@ def approach_kin(q):
 
 def inverse_kin_fn(b, p, g):
     q = inverse_kin(p, g)
-    #return (q,)
     a = approach_kin(q)
     return (a,)
 
@@ -203,21 +202,17 @@ STOVE_NAME = 'stove'
 TABLE_NAME = 'table'
 
 INITIAL_CONF = np.array([-5, CARRY_Y + 1])
-#GOAL_CONF = None
 GOAL_CONF = INITIAL_CONF
 
 REGIONS = {
     GROUND_NAME: (-10, 10),
     GOAL_NAME: (5, 10),
-    #REGION_NAME: (7.5, 10),
-    #STOVE_NAME: (5, 10),
 }
 
 ENVIRONMENT_NAMES = [GROUND_NAME]
 STOVE_NAMES = [STOVE_NAME]
 
 def make_blocks(num):
-    #return ['b{}'.format(i) for i in range(num)]
     return [string.ascii_uppercase[i] for i in range(num)]
 
 def mirror(n_blocks=1, n_robots=2):
@@ -241,9 +236,7 @@ def tight(n_blocks=2, n_goals=2, n_robots=1):
     robots = ['r{}'.format(x) for x in range(n_robots)]
     initial_confs = dict(zip(robots, confs))
 
-    #poses = [np.array([(BLOCK_WIDTH + 1)*x, 0]) for x in range(n_blocks)] # reversed
     poses = [np.array([-(BLOCK_WIDTH + 1) * x, 0]) for x in range(n_blocks)]
-    #poses = [sample_region(b, regions[GROUND]) for b in blocks] # randomly sample
     blocks = make_blocks(len(poses))
 
     initial = TAMPState(initial_confs, {}, dict(zip(blocks, poses)))
@@ -342,23 +335,11 @@ def cook(n_blocks=2, n_goals=1, n_robots=1):
     block_poses = rejection_sample_placed(block_regions=initial_regions, regions=regions)
     initial = TAMPState(dict(zip(robots, confs)), {}, block_poses)
     goal_regions = {block: TABLE_NAME for block in goal_cooked}
-    #goal_regions = {}
     # TODO: draw table legs
     # TODO: stove top burners
 
     return TAMPProblem(initial, regions, GOAL_CONF, goal_regions, goal_cooked)
 
-#def blocked2(n_blocks=0, **kwargs):
-#    lower, upper = REGIONS[GROUND_NAME]
-#    poses = [np.zeros(2), np.array([6.5, 0]), np.array([8.5, 0])]
-#    poses.extend(np.array([lower + BLOCK_WIDTH/2 + (BLOCK_WIDTH + 1) * x, 0])
-#                 for x in range(n_blocks-len(poses)))
-#    blocks = make_blocks(len(poses))
-#    block_poses = dict(zip(blocks, poses))
-#    initial = TAMPState(INITIAL_CONF, None, block_poses)
-#    goal_regions = {blocks[0]: 'red'}
-#
-#    return TAMPProblem(initial, REGIONS, GOAL_CONF, goal_regions)
 
 PROBLEMS = [
     mirror,
@@ -367,7 +348,6 @@ PROBLEMS = [
     blocked_cost,
     dual,
     cook,
-    #blocked2,
 ]
 
 ##################################################
@@ -383,7 +363,6 @@ def draw_block(viewer, block, pose, **kwargs):
 def draw_state(viewer, state, colors):
     # TODO: could draw the current time
     viewer.clear_state()
-    #viewer.draw_environment()
     print(state)
     for robot, conf in state.robot_confs.items():
         draw_robot(viewer, robot, conf)
@@ -410,7 +389,6 @@ def apply_action(state, action):
         else:
             robot, q1, q2 = args
             traj = [q1, q2]
-        #traj = plan_motion(*args)[0] if len(args) == 2 else args[1]
         for conf in traj[1:]:
             robot_confs[robot] = conf
             yield TAMPState(robot_confs, holding, block_poses)
@@ -452,9 +430,6 @@ def get_value_at_time(traj, fraction):
     waypoint_fraction = (fraction - cum_fractions[index - 1]) / (cum_fractions[index] - cum_fractions[index - 1])
     waypoint1, waypoint2 = np.array(waypoints[index - 1]), np.array(waypoints[index])
     conf = (1 - waypoint_fraction) * waypoint1 + waypoint_fraction * waypoint2
-    #if np.isnan(conf).any():
-    #    print(distances, fraction)
-    #    raw_input()
     return conf
 
 def update_state(state, action, t):

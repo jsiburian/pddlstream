@@ -28,7 +28,6 @@ def find_build(fd_path):
 
 # TODO: check at runtime so users can use utils without FD
 FD_PATH = get_file_path(__file__, '../../downward/')
-#FD_PATH = get_file_path(__file__, '../../FastDownward/')
 TRANSLATE_PATH = os.path.join(find_build(FD_PATH), 'bin/translate')
 FD_BIN = os.path.join(find_build(FD_PATH), 'bin')
 
@@ -115,8 +114,6 @@ SEARCH_OPTIONS = {
     # Optimal (when cost_type=NORMAL)
     'dijkstra': '--heuristic "h=blind(transform=adapt_costs(cost_type=PLUSONE))" '
                 '--search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"',
-    #'max-astar': '--heuristic "h=hmax(transform=adapt_costs(cost_type=PLUSONE))"'
-    #             ' --search "astar(h,cost_type=NORMAL,max_time=%s,bound=%s)"', # cost_type=NORMAL
     'max-astar': '--heuristic "h=hmax(transform=adapt_costs(cost_type=PLUSONE))"'
                  ' --search "astar(h,cost_type=PLUSONE,max_time=%s,bound=%s)"', # cost_type=PLUSONE
     'lmcut-astar': '--heuristic "h=lmcut(transform=adapt_costs(cost_type=PLUSONE))"'
@@ -217,9 +214,6 @@ def parse_sequential_domain(domain_pddl):
         return domain_pddl
     args = list(parse_domain_pddl(parse_lisp(domain_pddl))) + [domain_pddl]
     domain = Domain(*args)
-    # for action in domain.actions:
-    #    if (action.cost is not None) and isinstance(action.cost, pddl.Increase) and isinstance(action.cost.expression, pddl.NumericConstant):
-    #        action.cost.expression.value = scale_cost(action.cost.expression.value)
     return domain
 
 Problem = namedtuple('Problem', ['task_name', 'task_domain_name', 'task_requirements',
@@ -231,14 +225,6 @@ def parse_problem(domain, problem_pddl):
     args = list(parse_task_pddl(parse_lisp(problem_pddl), domain.type_dict, domain.predicate_dict)) + [problem_pddl]
     return Problem(*args)
 
-#def parse_action(lisp_list):
-#    action = [':action', 'test'
-#              ':parameters', [],
-#              ':precondition', [],
-#              ':effect', []]
-#    parse_action(action)
-#    pddl_parser.parsing_functions.parse_action(lisp_list, [], {})
-#    return pddl.Action
 
 ##################################################
 
@@ -249,13 +235,6 @@ def fd_from_fact(fact):
     prefix = get_prefix(fact)
     if prefix == NOT:
         return fd_from_fact(fact[1]).negate()
-    #if prefix == EQ:
-    #    _, head, value = fact
-    #    predicate = get_prefix(head)
-    #    args = list(map(pddl_from_object, get_args(head)))
-    #    fluent = pddl.f_expression.PrimitiveNumericExpression(symbol=predicate, args=args)
-    #    expression = pddl.f_expression.NumericConstant(value)
-    #    return pddl.f_expression.Assign(fluent, expression)
     args = list(map(pddl_from_object, get_args(fact)))
     return pddl.Atom(prefix, args)
 
@@ -290,10 +269,6 @@ def fd_from_evaluations(evaluations):
 ##################################################
 
 def parse_goal(goal_exp, domain):
-    #try:
-    #    pass
-    #except SystemExit as e:
-    #    return False
     return parse_condition(pddl_list_from_expression(goal_exp),
                            domain.type_dict, domain.predicate_dict).simplified()
 
@@ -303,7 +278,6 @@ def get_problem(evaluations, goal_exp, domain, unit_costs=False):
     # TODO: this doesn't include =
     init = fd_from_evaluations(evaluations)
     goal = pddl.Truth() if goal_exp is None else parse_goal(goal_exp, domain)
-    #print('{} objects and {} atoms'.format(len(objects), len(init)))
     problem_pddl = None
     write_pddl(domain.pddl, problem_pddl, temp_dir=TEMP_DIR)
     return Problem(task_name=domain.name, task_domain_name=domain.name,
@@ -324,8 +298,6 @@ def get_identical_atoms(objects):
 
 def task_from_domain_problem(domain, problem, add_identical=True):
     # TODO: prune evaluation that aren't needed in actions
-    #domain_name, domain_requirements, types, type_dict, constants, \
-    #    predicates, predicate_dict, functions, actions, axioms = domain
     task_name, task_domain_name, task_requirements, objects, init, goal, use_metric, problem_pddl = problem
 
     assert domain.name == task_domain_name
@@ -338,7 +310,6 @@ def task_from_domain_problem(domain, problem, add_identical=True):
     init.extend(pddl.Atom(EQ, (obj.name, obj.name)) for obj in objects)
     if add_identical:
         init.extend(get_identical_atoms(objects))
-    #print('{} objects and {} atoms'.format(len(objects), len(init)))
 
     task = pddl.Task(domain.name, task_name, requirements, domain.types, objects,
                      domain.predicates, domain.functions, init, goal,
@@ -417,17 +388,7 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
     if debug:
         print('Search command:', command)
 
-    # os.popen is deprecated
-    # run, call, check_call, check_output
-    #with subprocess.Popen(command.split(), stdout=subprocess.PIPE, shell=True, cwd=None) as proc:
-    #    output = proc.stdout.read()
-    # CalledProcessError
-    #try:
-    #    output = subprocess.check_output(command, shell=True, cwd=None) #, timeout=None)
-    #except subprocess.CalledProcessError as e:
-    #    print(e)
 
-    #temp_path = temp_dir
     temp_path = os.path.join(os.getcwd(), TEMP_DIR) # TODO: temp dir?
     for filename in os.listdir(temp_path):
         if filename.startswith(SEARCH_OUTPUT):
@@ -435,8 +396,6 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
 
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, cwd=None, close_fds=True)
     output, error = proc.communicate()
-    #if proc.returncode not in [0, 12]: # Good: [0, 12] | Bad: [127]
-    #    raise RuntimeError(proc.returncode)
 
     if debug:
         print(output.decode(encoding='UTF-8')[:-1])
@@ -454,7 +413,6 @@ def parse_action(line):
     return Action(name, args)
 
 def parse_solution(solution):
-    #action_regex = r'\((\w+(\s+\w+)\)' # TODO: regex
     cost = INF
     if solution is None:
         return None, cost
@@ -490,7 +448,6 @@ def write_pddl(domain_pddl=None, problem_pddl=None, temp_dir=TEMP_DIR):
 ##################################################
 
 def literal_holds(state, literal):
-    #return (literal in state) != literal.negated
     return (literal.positive() in state) != literal.negated
 
 def conditions_hold(state, conditions):
@@ -522,11 +479,6 @@ def apply_action(state, action):
         if conditions_hold(state, conditions):
             state.add(effect)
 
-#def apply_lifted_action(state, action):
-#    assert(isinstance(state, pddl.Action))
-#    assert(not action.parameters)
-#    for effect in state.effects:
-#        assert(not effect.parameters)
 
 ##################################################
 
@@ -558,16 +510,11 @@ def get_action_instances(task, action_plan):
 
 def add_preimage_condition(condition, preimage, i):
     for literal in condition:
-        #preimage[literal] = preimage.get(literal, set()) | {i}
         preimage.setdefault(literal, set()).add(i)
-    #preimage.update(condition)
 
 
 def add_preimage_effect(effect, preimage):
     preimage.pop(effect, None)
-    #if effect in preimage:
-    #    # Fluent effects kept, static dropped
-    #    preimage.remove(effect)
 
 
 def action_preimage(action, preimage, i):
@@ -586,7 +533,6 @@ def axiom_preimage(axiom, preimage, i):
 
 
 def plan_preimage(combined_plan, goal=[]):
-    #preimage = set(goal)
     action_plan = [action for action in combined_plan if isinstance(action, pddl.PropositionalAction)]
     step = len(action_plan)
     preimage = {condition: {step} for condition in goal}
@@ -649,7 +595,6 @@ def has_costs(domain):
 
 def set_unit_costs(domain):
     # Cost of None becomes zero if metric = True
-    #set_cost_scale(1)
     for action in domain.actions:
         action.cost = make_cost(1)
 

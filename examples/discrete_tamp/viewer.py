@@ -11,14 +11,11 @@ MAX_COLS = 9
 
 COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'violet', 'white', 'black']
 
-#def spaced_colors(n, s=1, v=1):
-#    return [colorsys.hsv_to_rgb(h, s, v) for h in np.linspace(0, 1, n, endpoint=False)]
 
 def tk_from_rgb(rgb):
     assert all(0 <= c < 256 for c in rgb)
     return "#%02x%02x%02x" % rgb
 
-#COLORS = list(map(tk_from_rgb, [(255, 0, 0)]))
 
 class DiscreteTAMPViewer(object):
     def __init__(self, rows, cols, width=500, height=250, side=25,
@@ -49,7 +46,6 @@ class DiscreteTAMPViewer(object):
         return self.table_y1 + r * (self.side + 2 * self.block_buffer) + 2 * self.block_buffer + self.side / 2
 
     def transform_c(self, c):
-        # assert r >= 0 and r < self.width
         return self.table_x1 + c * (self.side + 2 * self.block_buffer) + 2 * self.block_buffer + self.side / 2
 
     def draw_environment(self, table_color='lightgrey', bin_color='grey'):
@@ -57,10 +53,8 @@ class DiscreteTAMPViewer(object):
         table_height = self.rows * (self.side + 2 * self.block_buffer) + 2 * self.block_buffer
 
         border_buffer = 50
-        #self.table_x1 = border_buffer
         self.table_y1 = self.height - table_height - border_buffer
         self.table_x1 = self.width/2-table_width/2
-        #self.table_y1 = self.height/2-table_height/2
 
         bin_width = 20
         self.environment = [
@@ -135,14 +129,10 @@ class DiscreteTAMPViewer(object):
             self.canvas.create_text(x, y, text=name),
         ]
 
-    # def delete(self, (x, y)):
-    #  if (x, y) in self.cells:
-    #    self.canvas.delete(self.cells[(x, y)])
 
     def clear(self):
         self.canvas.delete('all')
 
     def save(self, filename):
-        # self.canvas.postscript(file='%s.ps'%filename, colormode='color')
         from PIL import ImageGrab
         ImageGrab.grab((0, 0, self.width, self.height)).save(filename + '.jpg')

@@ -47,7 +47,6 @@ def main():
 
     success_cost = 0 if args.optimal else INF
     planner = 'max-astar'
-    #planner = 'ff-wastar1'
     with Profiler():
         solution = solve(pddlstream_problem, stream_info=stream_info,
                          planner=planner, max_planner_time=10, debug=False,
@@ -59,8 +58,6 @@ def main():
     print_solution(solution)
     plan, cost, evaluations = solution
     step_plan(tamp_problem, plan)
-    #if plan is not None:
-    #    display_plan(tamp_problem, retime_plan(plan))
 
 if __name__ == '__main__':
     main()

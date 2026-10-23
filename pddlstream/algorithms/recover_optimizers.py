@@ -30,9 +30,6 @@ def combine_optimizer_plan(stream_plan, functions):
     for cluster_plan in cluster_plans:
         if all(isinstance(r, FunctionResult) for r in cluster_plan):
             continue
-        #if len(cluster_plan) == 1:
-        #    optimizer_plan.append(cluster_plan[0])
-        #    continue
         stream = OptimizerStream(optimizer, cluster_plan)
         instance = stream.get_instance(stream.input_objects, fluent_facts=stream.fluent_facts)
         result = instance.get_result(stream.output_objects)
@@ -67,7 +64,6 @@ def combine_optimizers(evaluations, external_plan):
                 break
         else: # TODO: can also just try one cluster and return
             raise RuntimeError()
-            #return None
     return combined_plan
 
 ##################################################

@@ -72,7 +72,6 @@ def from_sampler(sampler, max_attempts=INF):
 # Methods that convert some procedure -> function to a BoundedGenerator
 
 def from_list_fn(list_fn):
-    #return lambda *args, **kwargs: iter([list_fn(*args, **kwargs)])
     return lambda *args, **kwargs: BoundedGenerator(iter([list_fn(*args, **kwargs)]), max_calls=1)
 
 

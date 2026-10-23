@@ -126,8 +126,6 @@ def dynamic_programming(store, vertices, valid_head_fn, stats_fn=Performance.get
             break
         ordering.append(subproblem.head)
         subset = subproblem.subset
-    #print('Streams: {} | Expected cost: {:.3f} | Time: {:.3f}'.format(
-    #    len(ordering), compute_expected_cost(ordering, stats_fn=stats_fn), elapsed_time(start_time)))
     return ordering
 
 ##################################################
@@ -139,8 +137,6 @@ def compute_distances(stream_plan):
     sources = {stream for stream in stream_plan if not in_stream_orders[stream]} # In the reversed DAG
     output_sources = {stream for stream in sources if stream.external.has_outputs}
     test_sources = sources - output_sources
-    #visited = dijkstra(output_sources, reversed_orders)
-    #distances = {stream: node.g for stream, node in visited.items()}
     distances = layer_sort(set(stream_plan) - test_sources, reversed_orders)
 
     # TODO: take into account argument overlap
@@ -148,7 +144,6 @@ def compute_distances(stream_plan):
     for stream in stream_plan:
         if stream not in distances:
             distances[stream] = min([max_distance] + [distances[s] - 1 for s in out_stream_orders[stream]])
-    #dump_layers(distances)
     return distances
 
 def layer_reorder_stream_plan(stream_plan, **kwargs):
@@ -192,25 +187,15 @@ def optimal_reorder_stream_plan(store, stream_plan, stats_from_stream=None, **kw
     index_from_stream = dict(zip(stream_plan, indices))
     stream_orders = get_partial_orders(stream_plan)
     stream_orders = {(index_from_stream[s1], index_from_stream[s2]) for s1, s2 in stream_orders}
-    #nodes = stream_plan
     nodes = indices # TODO: are indices actually much faster?
 
     in_stream_orders, out_stream_orders = neighbors_from_orders(stream_orders)
     valid_combine = lambda v, subset: out_stream_orders[v] <= subset
-    #valid_combine = lambda v, subset: in_stream_orders[v] & subset
 
-    # TODO: these are special because they don't enable any downstream access to another stream
-    #sources = {stream_plan[index] for index in indices if not in_stream_orders[index]}
-    #sinks = {stream_plan[index] for index in indices if not out_stream_orders[index]} # Contains collision checks
-    #print(dijkstra(sources, get_partial_orders(stream_plan)))
 
     stats_fn = lambda idx: stats_from_stream[stream_plan[idx]]
-    #tiebreaker_fn = lambda *args: 0
-    #tiebreaker_fn = lambda *args: random.random() # TODO: introduces cycles
     tiebreaker_fn = lambda idx: stream_plan[idx].stats_heuristic()
     ordering = dynamic_programming(store, nodes, valid_combine, stats_fn=stats_fn, tiebreaker_fn=tiebreaker_fn, **kwargs)
-    #import gc
-    #gc.collect()
     return [stream_plan[index] for index in ordering]
 
 ##################################################
@@ -225,9 +210,7 @@ def reorder_stream_plan(store, stream_plan, algorithm=None, **kwargs):
         algorithm = 'layer' if len(stats) <= 1 else 'optimal'
 
     if algorithm == 'layer':
-        #print('Heuristic reordering:', stats)
         return layer_reorder_stream_plan(stream_plan, **kwargs)
     if algorithm == 'optimal':
-        #print('Optimal reordering:', stats)
         return optimal_reorder_stream_plan(store, stream_plan, stats_from_stream, **kwargs)
     raise NotImplementedError(algorithm)

@@ -53,7 +53,6 @@ def reinstantiate_action(state, instance, negative_from_name={}):
     for literal in instance.applied_effects:
         cond, effect, effect_mapping = effect_from_literal[literal]
         if effect is None: # Stream effect
-            #effects.append((cond, literal, cond, effect))
             continue
         else:
             effect._instantiate(effect_mapping, init_facts, fluent_facts, effects)

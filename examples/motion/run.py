@@ -12,8 +12,6 @@ from pddlstream.algorithms.constraints import PlanConstraints
 
 
 ARRAY = np.array # No hashing
-#ARRAY = list # No hashing
-#ARRAY = tuple # Hashing
 
 def create_problem(goal, obstacles=(), regions={}, max_distance=.5):
     directory = os.path.dirname(os.path.abspath(__file__))
@@ -44,16 +42,9 @@ def create_problem(goal, obstacles=(), regions={}, max_distance=.5):
             samples.append(q)
             yield (q,)
 
-    # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.419.5503&rep=rep1&type=pdf
-    #d = 2
-    #vol_free = (1 - 0) * (1 - 0)
-    #vol_ball = math.pi * (1 ** 2)
-    #gamma = 2 * ((1 + 1. / d) * (vol_free / vol_ball)) ** (1. / d)
 
     roadmap = []
     def connected_test(q1, q2):
-        #n = len(samples)
-        #threshold = gamma * (math.log(n) / n) ** (1. / d)
         threshold = max_distance
         are_connected = (get_distance(q1, q2) <= threshold) and \
                 is_collision_free((q1, q2), obstacles)
@@ -108,10 +99,6 @@ def main(max_time=20):
 
     print_solution(solution)
     plan, cost, evaluations = solution
-    #viewer = draw_environment(obstacles, regions)
-    #for sample in samples:
-    #    viewer.draw_point(sample)
-    #user_input('Continue?')
 
     # TODO: use the same viewer here
     draw_roadmap(roadmap, obstacles, regions) # TODO: do this in realtime

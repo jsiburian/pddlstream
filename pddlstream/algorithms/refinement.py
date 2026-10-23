@@ -95,12 +95,6 @@ def optimistic_stream_evaluation(evaluations, stream_plan, use_bindings=True):
 
 ##################################################
 
-# def compute_stream_results(evaluations, opt_results, externals, complexity_limit, **effort_args):
-#     # TODO: revisit considering double bound streams
-#     functions = list(filter(lambda s: type(s) is Function, externals))
-#     opt_evaluations = evaluations_from_stream_plan(evaluations, opt_results)
-#     new_results, _ = optimistic_process_streams(opt_evaluations, functions, complexity_limit, **effort_args)
-#     return opt_results + new_results
 
 def get_optimistic_solve_fn(goal_exp, domain, negative, max_cost=INF, **kwargs):
     # TODO: apply to hierarchical actions representations (will need to instantiate more actions)

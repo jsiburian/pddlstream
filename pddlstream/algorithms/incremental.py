@@ -25,7 +25,7 @@ def solve_finite(evaluations, goal_exp, domain, unit_costs=False, debug=False, *
 
 ##################################################
 
-def process_instance(instantiator, store, instance, verbose=False): #, **complexity_args):
+def process_instance(instantiator, store, instance, verbose=False):
     if instance.enumerated:
         return []
     start_time = get_clock().now()
@@ -33,10 +33,8 @@ def process_instance(instantiator, store, instance, verbose=False): #, **complex
     store.sample_time += get_clock().now() - start_time
 
     evaluations = store.evaluations
-    #remove_blocked(evaluations, instance, new_results)
     for result in new_results:
         complexity = result.compute_complexity(evaluations)
-        #complexity = instantiator.compute_complexity(instance)
         for evaluation in add_certified(evaluations, result):
             instantiator.add_atom(evaluation, complexity)
     fact_complexity = 0 # TODO: record the instance or treat as initial?
@@ -64,15 +62,6 @@ def process_stream_queue(instantiator, store, complexity_limit=INF, verbose=Fals
             str_from_object(Counter(instance.external.name for instance in instances))))
     return len(instances)
 
-# def retrace_stream_plan(store, domain, goal_expression):
-#     # TODO: retrace the stream plan that supports the plan to find the certificate
-#     if store.best_plan is None:
-#         return None
-#     assert not domain.axioms
-#     from pddlstream.algorithms.downward import plan_preimage
-#     print(goal_expression)
-#     plan_preimage(store.best_plan, goal_expression)
-#     raise NotImplementedError()
 
 ##################################################
 
@@ -108,7 +97,6 @@ def solve_incremental(problem, constraints=PlanConstraints(),
     """
     # max_complexity = 0 => current
     # complexity_step = INF => exhaustive
-    # success_cost = terminate_cost = decision_cost
     # TODO: warning if optimizers are present
     evaluations, goal_expression, domain, externals = parse_problem(
         problem, constraints=constraints, unit_costs=unit_costs)
@@ -141,8 +129,6 @@ def solve_incremental(problem, constraints=PlanConstraints(),
         else:
             complexity_limit += complexity_step
         num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
-    #retrace_stream_plan(store, domain, goal_expression)
-    #print('Final queue size: {}'.format(len(instantiator)))
 
     summary = store.export_summary()
     summary.update({

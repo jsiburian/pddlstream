@@ -38,7 +38,6 @@ def get_necessary_axioms(conditions, axioms, negative_from_name):
             partial_instantiations.add(key)
             parts = [l.rename_variables(var_mapping) for l in get_literals(axiom.condition)
                      if l.predicate not in negative_from_name] # Assumes a conjunction?
-            # new_condition = axiom.condition.uniquify_variables(None, var_mapping)
             effect_args = [var_mapping.get(a.name, a.name) for a in derived_parameters]
             effect = pddl.Effect([], pddl.Truth(), pddl.conditions.Atom(axiom.name, effect_args))
             free_parameters = [p for p in axiom.parameters if p.name not in var_mapping]
@@ -97,7 +96,6 @@ def extraction_helper(state, instantiated_axioms, goals, negative_from_name={}):
     # TODO: filter instantiated_axioms that aren't applicable?
     import options
     with Verbose(False):
-        # axioms, axiom_init, axiom_layer_dict = axiom_rules.handle_axioms(actions, axioms, goals)
         all_axioms, axiom_layers = axiom_rules.handle_axioms(
             operators=[], axioms=instantiated_axioms, goals=goals, layer_strategy=options.layer_strategy)
     axiom_init = set()  # TODO: new FastDownward does not use axiom_init
@@ -112,7 +110,6 @@ def extraction_helper(state, instantiated_axioms, goals, negative_from_name={}):
             axiom_init.add(init_atom)
 
     axiom_effects = {axiom.effect for axiom in helpful_axioms}
-    #assert len(axiom_effects) == len(axiom_init)
     for pre in list(goals) + list(axiom_effects):
         if pre.positive() not in axiom_init:
             axiom_init.add(pre.positive().negate())
@@ -122,7 +119,6 @@ def extraction_helper(state, instantiated_axioms, goals, negative_from_name={}):
     success = extract_axioms(state | axiom_init, axiom_from_atom, goals, axiom_plan, negative_from_name)
     if not success:
         print('Warning! Could not extract an axiom plan')
-        #return None
     return axiom_plan
 
 def extract_axiom_plan(task, goals, negative_from_name, static_state=set()):
@@ -178,8 +174,6 @@ def backtrack_axioms(conditions, axioms_from_effect, visited_atoms):
     return visited_axioms
 
 def recover_axioms_plans(instantiated, action_instances):
-    #axioms, axiom_init, _ = axiom_rules.handle_axioms(
-    #    instantiated.actions, instantiated.axioms, instantiated.goal_list)
 
     new_action_instances = [copy.deepcopy(instance) for instance in action_instances]
 
@@ -209,7 +203,6 @@ def recover_axioms_plans(instantiated, action_instances):
                     effects.pop(i)
 
         # RuntimeError: Preimage fact ('new-axiom@0',) is not achievable!
-        #precondition = action.precondition # TODO: strange bug if this applies
         precondition = [literal for literal in action.precondition if literal.predicate in axioms_from_name]
         axiom_plans.append([])
         success = extract_axioms(state, axiom_from_atom, precondition, axiom_plans[-1])

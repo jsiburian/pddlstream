@@ -21,7 +21,6 @@ def problem1(n_rovers=1, n_objectives=1, n_rocks=2, n_soil=2, n_stores=1):
     lander = load_pybullet(HUSKY_URDF, scale=1)
     lander_z = stable_z(lander, floor)
     set_point(lander, Point(-2, -2, lander_z))
-    #wait_for_user()
 
     mount_width = 0.5
     mound_height = mount_width
@@ -35,11 +34,9 @@ def problem1(n_rovers=1, n_objectives=1, n_rocks=2, n_soil=2, n_stores=1):
     rover_confs = [(+1, -1.75, np.pi), (-1, -1.75, 0)]
     assert n_rovers <= len(rover_confs)
 
-    #body_names = map(get_name, env.GetBodies())
     landers = [lander]
     stores = ['store{}'.format(i) for i in range(n_stores)]
 
-    #affine_limits = aabb_extrema(aabb_union([aabb_from_body(body) for body in env.GetBodies()])).T
     rovers = []
     for i in range(n_rovers):
         robot = create_pr2()
@@ -75,8 +72,6 @@ def problem1(n_rovers=1, n_objectives=1, n_rocks=2, n_soil=2, n_stores=1):
         initial_surfaces[body] = floor
     sample_placements(initial_surfaces)
 
-    #for name in rocks + soils:
-    #    env.GetKinBody(name).Enable(False)
     return RoversProblem(rovers, landers, objectives, rocks, soils, stores, base_limits)
 
 PROBLEMS = [

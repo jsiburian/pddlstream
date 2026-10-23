@@ -15,8 +15,6 @@ from examples.discrete_tamp.primitives import GRASP, is_valid, get_length, get_d
 from pddlstream.language.stream import StreamInfo
 from examples.discrete_tamp.viewer import MAX_COLS
 
-#array = np.array
-#array = tuple
 array = lambda args: tuple(map(int, args))
 
 # Unit pushes
@@ -42,7 +40,6 @@ def get_push_poses(p1, p2):
     waypoint_poses = [array(i*push_unit + p1) for i in range(1, num_pushes)]
     all_poses = [p1] + waypoint_poses + [p2]
     return all_poses
-    #return list(filter(is_valid, all_poses))
 
 def get_push_confs(poses):
     return [ik_fn(p)[0] for p in poses]
@@ -63,9 +60,6 @@ def push_direction_gen_fn(p1):
         p2 = array(MAX_PUSH*direction + p1)
         poses = get_push_poses(p1, p2)
         confs = get_push_confs(poses)
-        #facts = get_push_facts(poses, confs)
-        #facts = []
-        #yield [], facts
         value = (confs[0], poses[1], confs[1])
         yield WildOutput([value])
 

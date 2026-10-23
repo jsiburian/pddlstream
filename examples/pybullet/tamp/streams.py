@@ -23,7 +23,7 @@ def get_cfree_pose_pose_test(collisions=True, **kwargs):
             return True
         p1.assign()
         p2.assign()
-        return not pairwise_collision(b1, b2, **kwargs) #, max_distance=0.001)
+        return not pairwise_collision(b1, b2, **kwargs)
     return test
 
 
@@ -70,7 +70,6 @@ def get_cfree_traj_pose_test(robot, collisions=True):
             state.assign()
             for b1 in state.attachments:
                 if pairwise_collision(b1, b2):
-                    #wait_for_user()
                     return False
             if pairwise_collision(robot, b2):
                 return False

@@ -8,7 +8,6 @@ from pddlstream.algorithms.downward import make_domain, make_predicate, add_pred
 from pddlstream.algorithms.recover_optimizers import retrace_instantiation, combine_optimizers
 from pddlstream.algorithms.reorder import reorder_stream_plan
 from pddlstream.algorithms.scheduling.postprocess import reschedule_stream_plan
-# from pddlstream.algorithms.skeleton import SkeletonQueue
 from pddlstream.algorithms.skeleton import SkeletonQueue
 from pddlstream.language.constants import is_parameter, get_length, partition_facts, Assignment, OptPlan
 from pddlstream.language.conversion import revert_solution, \
@@ -144,8 +143,6 @@ def constraint_satisfaction(problem, stream_info={},
     queue = SkeletonQueue(store, domain, disable=False)
     num_iterations = search_time = sample_time = 0
     planner = 'ff-astar'  # TODO: toggle within reschedule_stream_plan
-    #last_clusters = set()
-    #last_success = True
     while not store.is_terminated():
         num_iterations += 1
         start_time = time.time()
@@ -157,9 +154,6 @@ def constraint_satisfaction(problem, stream_info={},
         external_plan = None
         if len(queue.skeletons) < max_skeletons:
             domain.axioms[:] = create_disabled_axioms(queue, use_parameters=False)
-            #dominated = are_domainated(last_clusters, clusters)
-            #last_clusters = clusters
-            #if last_success or not dominated: # Could also keep a history of results
             stream_plan = reschedule_stream_plan(init_evaluations, goal_facts, domain, stream_results,
                                                  unique_binding=True, unsatisfiable=True,
                                                  max_effort=max_effort, planner=planner, **search_args)

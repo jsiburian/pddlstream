@@ -53,22 +53,16 @@ DOMAIN_PDDL = """
 def get_problem1():
     value = 10
     constant_map = {
-        #'c1': value,
     }
     stream_pddl = None
     stream_map = {}
 
     init = [
-        #('Goal',),
-        #('A',),
         ('B',),
         ('P1', value),
-        #('P2', value),
     ]
     goal = Or(
         ('Goal',),
-        #Exists([], ('P2', value)),
-        #Exists(['?p'], ('P2', '?p')),
         ('Unachievable',),
     )
 
@@ -100,7 +94,6 @@ def solve_pddlstream():
     print('Goal:', problem.goal)
     solution = solve(problem, algorithm=args.algorithm, unit_costs=args.unit)
     print_solution(solution)
-    #print(*solve_from_pddl(DOMAIN_PDDL, PROBLEM_PDDL))
 
 ##################################################
 

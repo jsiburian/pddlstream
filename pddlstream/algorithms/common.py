@@ -1,7 +1,7 @@
 import time
 from collections import namedtuple, OrderedDict
 
-from pddlstream.language.constants import is_plan, get_length, FAILED #, INFEASIBLE, SUCCEEDED
+from pddlstream.language.constants import is_plan, get_length, FAILED
 from pddlstream.language.conversion import evaluation_from_fact, obj_from_value_expression, revert_solution
 from pddlstream.utils import INF, elapsed_time, check_memory, get_clock
 
@@ -28,14 +28,12 @@ class SolutionStore(object):
         # TODO: include other problem information here?
         # TODO: determine when the plan converges
         self.evaluations = evaluations
-        #self.initial_evaluations = copy.copy(evaluations)
         self.start_time = time.time()
         self.clock_start = get_clock().now() # Search and sample times are measured with the solve's clock
         self.max_time = max_time
         self.max_memory = max_memory
         self.success_cost = success_cost # Inclusive
         self.verbose = verbose
-        #self.best_cost = self.cost_fn(self.best_plan)
         self.solutions = []
         self.sample_time = 0.
     @property
@@ -62,17 +60,13 @@ class SolutionStore(object):
         return (self.max_time <= self.elapsed_time()) or not check_memory(self.max_memory)
     def is_terminated(self):
         return self.is_solved() or self.is_timeout()
-    #def __repr__(self):
-    #    raise NotImplementedError()
     def extract_solution(self):
         SOLUTIONS[:] = self.solutions
         return revert_solution(self.best_plan, self.best_cost, self.evaluations)
     def export_summary(self): # TODO: log, etc...
         # TODO: SOLUTIONS
-        #status = SUCCEEDED if self.is_solved() else FAILED # TODO: INFEASIBLE, OPTIMAL
         return {
             'solved': self.is_solved(),
-            #'solved': self.has_solution(),
             'solutions': len(self.solutions),
             'cost': self.best_cost,
             'length': get_length(self.best_plan),
@@ -81,7 +75,6 @@ class SolutionStore(object):
             'sample_time': self.sample_time,
             'run_time': self.elapsed_time(),
             'timeout': self.is_timeout(),
-            #'status': status,
         }
 
 ##################################################
@@ -122,7 +115,6 @@ def compute_complexity(evaluations, facts, complexity_op=COMPLEXITY_OP):
 
 ##################################################
 
-    #return optimistic_facts[fact]
 
 
 def stream_plan_preimage(stream_plan):
@@ -139,23 +131,16 @@ def stream_plan_complexity(evaluations, stream_plan, stream_calls, complexity_op
     if not is_plan(stream_plan):
         return INF
     # TODO: difference between a result having a particular complexity and the next result having something
-    #optimistic_facts = {}
     optimistic_facts = {fact: evaluations[evaluation_from_fact(fact)].complexity
                         for fact in stream_plan_preimage(stream_plan)}
     result_complexities = []
-    #complexity = 0
     for i, result in enumerate(stream_plan):
         # if result.external.get_complexity(num_calls=INF) == 0: # TODO: skip if true
         result_complexity = complexity_op([0] + [optimistic_facts[fact]
-                                                 #optimistic_complexity(evaluations, optimistic_facts, fact)
                                                  for fact in result.get_domain()])
-        # if stream_calls is None:
-        #     num_calls = result.instance.num_calls
-        # else:
         num_calls = stream_calls[i]
         result_complexity += result.external.get_complexity(num_calls)
         result_complexities.append(result_complexity)
-        #complexity = complexity_op(complexity, result_complexity)
         for fact in result.get_certified():
             if fact not in optimistic_facts:
                 optimistic_facts[fact] = result_complexity

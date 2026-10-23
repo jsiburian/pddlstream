@@ -39,7 +39,6 @@ class Instantiator(Sized): # Dynamic Instantiator
         # TODO: lazily instantiate upon demand
         self.streams = streams
         self.verbose = verbose
-        #self.streams_from_atom = defaultdict(list)
         self.queue = []
         self.num_pushes = 0 # shared between the queues
         # TODO: rename atom to head in most places

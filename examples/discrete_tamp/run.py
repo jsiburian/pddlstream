@@ -7,7 +7,6 @@ from pddlstream.algorithms.meta import solve, create_parser
 from examples.discrete_tamp.primitives import GRASP, collision_test, distance_fn, DiscreteTAMPState, \
     get_shift_one_problem
 from examples.discrete_tamp.viewer import DiscreteTAMPViewer, COLORS
-# from pddlstream.algorithms.serialized import solve_serialized
 from pddlstream.language.constants import And, Equal, TOTAL_COST, print_solution, PDDLProblem
 from pddlstream.language.generator import from_gen_fn, from_fn, from_test
 from pddlstream.utils import user_input, read, INF
@@ -32,7 +31,6 @@ def pddlstream_from_tamp(tamp_problem):
     }
 
     init = [
-        #Type(q100, 'conf'),
         ('CanMove',),
         ('Conf', q100),
         ('Conf', initial.conf),
@@ -42,7 +40,6 @@ def pddlstream_from_tamp(tamp_problem):
            [('Block', b) for b in initial.block_poses.keys()] + \
            [('Pose', p) for p in known_poses] + \
            [('AtPose', b, p) for b, p in initial.block_poses.items()]
-    # [('Pose', p) for p in known_poses + tamp_problem.poses] + \
 
     goal = And(*[
         ('AtPose', b, p) for b, p in tamp_problem.goal_poses.items()
@@ -50,7 +47,6 @@ def pddlstream_from_tamp(tamp_problem):
 
     # TODO: convert to lower case
     stream_map = {
-        #'sample-pose': from_gen_fn(lambda: ((np.array([x, 0]),) for x in range(len(poses), n_poses))),
         'sample-pose': from_gen_fn(lambda: ((p,) for p in tamp_problem.poses)),
         'inverse-kinematics':  from_fn(lambda p: (p + GRASP,)),
         'test-cfree': from_test(lambda *args: not collision_test(*args)),
@@ -112,7 +108,6 @@ def apply_plan(tamp_problem, plan):
 
 def main():
     parser = create_parser()
-    #parser.add_argument('-p', '--problem', default='blocked', help='The name of the problem to solve')
     args = parser.parse_args()
     print('Arguments:', args)
 
@@ -121,9 +116,7 @@ def main():
     print(tamp_problem)
 
     pddlstream_problem = pddlstream_from_tamp(tamp_problem)
-    #solution = solve_serialized(pddlstream_problem, planner='max-astar', unit_costs=args.unit)
     solution = solve(pddlstream_problem, algorithm=args.algorithm, unit_costs=args.unit, debug=False,
-                     #complexity_step=INF, max_complexity=0,
                     )
 
     print_solution(solution)

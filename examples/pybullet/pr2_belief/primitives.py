@@ -37,15 +37,12 @@ def get_vis_base_gen(task, base_range, collisions=False):
     def gen(o, p):
         if o in task.rooms: # TODO: predicate instead
             return
-        # default_conf = arm_conf(a, g.carry)
-        # joints = get_arm_joints(robot, a)
         # TODO: check collisions with fixed links
         target_point = point_from_pose(p.value)
         base_generator = visible_base_generator(robot, target_point, base_range)
         while True:
             set_pose(o, p.value)  # p.assign()
             bq = Conf(robot, base_joints, next(base_generator))
-            # bq = Pose(robot, get_pose(robot))
             bq.assign()
             if any(pairwise_collision(robot, b) for b in obstacles):
                 yield None
@@ -86,8 +83,6 @@ def get_inverse_visibility_fn(task, collisions=True):
 def plan_head_traj(task, head_conf):
     robot = task.robot
     obstacles = get_fixed_bodies(task) # TODO: movable objects
-    # head_conf = get_joint_positions(robot, head_joints)
-    # head_path = [head_conf, hq.values]
     head_joints = get_group_joints(robot, 'head')
     head_path = plan_direct_joint_motion(robot, head_joints, head_conf,
                                   obstacles=obstacles, self_collisions=SELF_COLLISIONS)
@@ -109,7 +104,6 @@ def inspect_trajectory(task, trajectory):
             continue
         head_waypoints.append(head_conf)
     head_joints = get_group_joints(robot, 'head')
-    #return create_trajectory(robot, head_joints, head_waypoints)
     head_path = plan_waypoints_joint_motion(robot, head_joints, head_waypoints,
                                             obstacles=obstacles, self_collisions=SELF_COLLISIONS)
     assert(head_path is not None)
@@ -118,7 +112,6 @@ def inspect_trajectory(task, trajectory):
 def move_look_trajectory(task, trajectory, max_tilt=np.pi / 6):  # max_tilt=INF):
     # TODO: implement a minimum distance instead of max_tilt
     # TODO: pr2 movement restrictions
-    #base_path = [pose.to_base_conf() for pose in trajectory.path]
     base_path = trajectory.path
     if not base_path:
         return trajectory
@@ -128,7 +121,6 @@ def move_look_trajectory(task, trajectory, max_tilt=np.pi / 6):  # max_tilt=INF)
     waypoints = []
     index = 0
     with BodySaver(robot):
-        #current_conf = base_values_from_pose(get_pose(robot))
         for i, conf in enumerate(base_path): # TODO: just do two loops?
             conf.assign()
             while index < len(target_path):
@@ -136,24 +128,17 @@ def move_look_trajectory(task, trajectory, max_tilt=np.pi / 6):  # max_tilt=INF)
                     # Don't look at past or current conf
                     target_point = target_path[index]
                     head_conf = inverse_visibility(robot, target_point) # TODO: this is slightly slow
-                    #print(index, target_point, head_conf)
                     if (head_conf is not None) and (head_conf[1] < max_tilt):
                         break
                 index += 1
             else:
                 head_conf = get_group_conf(robot, 'head')
             set_group_conf(robot, 'head', head_conf)
-            #print(i, index, conf.values, head_conf) #, get_pose(robot))
             waypoints.append(np.concatenate([conf.values, head_conf]))
     joints = tuple(base_path[0].joints) + tuple(get_group_joints(robot, 'head'))
-    #joints = get_group_joints(robot, 'base') + get_group_joints(robot, 'head')
-    #set_pose(robot, unit_pose())
-    #set_group_conf(robot, 'base', current_conf)
     path = plan_waypoints_joint_motion(robot, joints, waypoints,
                                        obstacles=obstacles, self_collisions=SELF_COLLISIONS)
     return create_trajectory(robot, joints, path)
-    #Pose(robot, pose_from_base_values(q, bq1.value))
-    #new_traj.path.append(Pose(...))
 
 #######################################################
 
@@ -235,14 +220,12 @@ class Scan(Command):
             head_joints = get_group_joints(self.robot, 'head')
             exclude_links = set(get_link_subtree(self.robot, child_link_from_joint(head_joints[-1])))
             detections = get_visual_detections(self.robot, camera_link=self.camera_frame, exclude_links=exclude_links,)
-                                               #color=apply_alpha(RED, 0.5))
             print('Detections:', detections)
             for body, dist in state.b_on.items():
                 obs = (body in detections) and (is_center_stable(body, self.surface))
                 if obs or (self.surface not in state.task.rooms):
                     # TODO: make a command for scanning a room instead?
                     dist.obsUpdate(get_observation_fn(self.surface), obs)
-            #state.localized.update(detections)
         # TODO: pose for each object that can be real or fake
         yield
 
@@ -263,11 +246,6 @@ class ScanRoom(Command):
         for body, dist in state.b_on.items():
             if 0 < dist.prob(self.surface):
                 dist.obsUpdate(obs_fn, True)
-        # detections = get_visual_detections(self.robot)
-        #print('Detections:', detections)
-        #for body, dist in state.b_on.items():
-        #    obs = (body in detections) and (is_center_stable(body, self.surface))
-        #    dist.obsUpdate(obs_fn, obs)
         yield
 
     def __repr__(self):
@@ -283,15 +261,6 @@ class Detect(Command):
 
     def apply(self, state, **kwargs):
         yield
-        # TODO: need to be careful that we don't move in between this...
-        # detections = get_visual_detections(self.robot)
-        # print('Detections:', detections)
-        # dist = state.b_on[self.body]
-        # obs = (self.body in detections)
-        # dist.obsUpdate(get_observation_fn(self.surface), obs)
-        # if obs:
-        #     state.localized.add(self.body)
-        # TODO: pose for each object that can be real or fake
 
     def __repr__(self):
         return '{}({},{})'.format(self.__class__.__name__, get_name(self.surface), get_name(self.body))

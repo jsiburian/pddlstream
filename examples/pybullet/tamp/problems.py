@@ -33,13 +33,9 @@ def packed(arm='left', grasp_type='top', num=5):
     base_limits = (-base_extent/2.*np.ones(2), base_extent/2.*np.ones(2))
     block_width = 0.07
     block_height = 0.1
-    #block_height = 2*block_width
     block_area = block_width*block_width
 
-    #plate_width = 2*math.sqrt(num*block_area)
     plate_width = 0.27
-    #plate_width = 0.28
-    #plate_width = 0.3
     print('Width:', plate_width)
     plate_width = min(plate_width, 0.6)
     plate_height = 0.001
@@ -69,7 +65,6 @@ def packed(arm='left', grasp_type='top', num=5):
     sample_placements(initial_surfaces, min_distances=min_distances)
 
     return Problem(robot=pr2, movable=blocks, arms=[arm], grasp_types=[grasp_type], surfaces=surfaces,
-                   #goal_holding=[(arm, block) for block in blocks])
                    goal_on=[(block, plate) for block in blocks], base_limits=base_limits)
 
 #######################################################
@@ -79,9 +74,7 @@ def blocked(arm='left', grasp_type='side', num=1):
 
     base_limits = (-x_extent/2.*np.ones(2), x_extent/2.*np.ones(2))
     block_width = 0.07
-    #block_height = 0.1
     block_height = 2*block_width
-    #block_height = 0.2
     plate_height = 0.001
     table_x = (x_extent - 1) / 2.
 
@@ -101,14 +94,11 @@ def blocked(arm='left', grasp_type='side', num=1):
     set_point(table1, Point(x=+table_x, y=0))
     table2 = create_table()
     set_point(table2, Point(x=-table_x, y=0))
-    #table3 = create_table()
-    #set_point(table3, Point(x=0, y=0))
 
     plate = create_box(0.6, 0.6, plate_height, color=GREEN)
     x, y, _ = get_point(table1)
     plate_z = stable_z(plate, table1)
     set_point(plate, Point(x=x, y=y-0.3, z=plate_z))
-    #surfaces = [table1, table2, table3, plate]
     surfaces = [table1, table2, plate]
 
     green1 = create_box(block_width, block_width, block_height, color=BLUE)
@@ -118,9 +108,7 @@ def blocked(arm='left', grasp_type='side', num=1):
 
     spacing = 0.15
 
-    #red_directions = [(-1, 0), (+1, 0), (0, -1), (0, +1)]
     red_directions = [(-1, 0)]
-    #red_directions = []
     red_bodies = []
     for red_direction in red_directions:
         red = create_box(block_width, block_width, block_height, color=RED)
@@ -146,9 +134,6 @@ def blocked(arm='left', grasp_type='side', num=1):
     sample_placements(initial_surfaces)
 
     return Problem(robot=pr2, movable=movable, arms=[arm], grasp_types=[grasp_type], surfaces=surfaces,
-                   #sinks=[table1],
-                   #goal_holding=[(arm, '?green')],
-                   #goal_cleaned=['?green'],
                    goal_on=[('?green', plate)],
                    body_types=body_types, base_limits=base_limits, costs=True)
 

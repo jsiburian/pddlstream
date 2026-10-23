@@ -53,7 +53,6 @@ def solve_pddlstream(debug=False):
 ##################################################
 
 def main():
-    #solve_pddl()
     solve_pddlstream()
 
 if __name__ == '__main__':

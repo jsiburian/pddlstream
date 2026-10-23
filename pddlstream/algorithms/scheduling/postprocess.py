@@ -10,9 +10,7 @@ from pddlstream.utils import flatten, INF
 
 # TODO: rename this to plan streams?
 
-#RESCHEDULE_PLANNER = 'ff-astar'
 RESCHEDULE_PLANNER = 'lmcut-astar'
-#RESCHEDULE_PLANNER = 'ff-lazy'
 
 def reschedule_stream_plan(evaluations, target_facts, domain, stream_results,
                            unique_binding=False, unsatisfiable=False, max_effort=INF,
@@ -26,7 +24,6 @@ def reschedule_stream_plan(evaluations, target_facts, domain, stream_results,
         goal_expression = add_unsatisfiable_to_goal(domain, goal_expression)
     reschedule_problem = get_problem(evaluations, goal_expression, domain, unit_costs=False)
     reschedule_task = task_from_domain_problem(domain, reschedule_problem)
-    #reschedule_task.axioms = [] # TODO: ensure that the constants are added in the event that axioms are needed?
     sas_task = sas_from_pddl(reschedule_task)
     stream_names, effort = solve_from_task(sas_task, planner=planner, max_planner_time=max_reschedule_time,
                                            max_cost=max_effort, debug=debug)

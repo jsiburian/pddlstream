@@ -16,7 +16,6 @@ from pddlstream.language.temporal import retime_plan
 from pddlstream.utils import Profiler, INF
 
 # Be careful about uniqueness here
-#CONF0 = array([-7.5, 5.])
 CONF0 = array([-5., 6.])
 POSE0 = array([0, 0])
 POSE1 = array([-3, 0])
@@ -34,8 +33,6 @@ INIT = [
     ('placeable', 'B', 'red'),
     ('pose', 'A', POSE0),
     ('pose', 'B', POSE1),
-    #('grasp', 'A', GRASP), # TODO: allow binding from init facts
-    #('grasp', 'B', GRASP),
     ('region', 'grey'),
     ('region', 'red'),
 ]
@@ -60,16 +57,6 @@ CONSTRAINTS = [
     ('motion', '?q1', '?t3', '?q3'),
     ('motion', '?q3', '?t2', '?q2'),
 
-    #('conf', '?q0'),
-    #('conf', '?q1'),
-    #('conf', '?q2'),
-    #('conf', '?q3'),
-    #('pose', 'A', '?p0'),
-    #('pose', 'B', '?p1'),
-    #('traj', '?t0'),
-    #('traj', '?t1'),
-    #('traj', '?t2'),
-    #('traj', '?t3'),
 ]
 
 OBJECTIVES = [
@@ -81,7 +68,6 @@ OBJECTIVES = [
 
 ##################################################
 
-# SKELETON = TIGHT_SKELETON
 SKELETON = [
     ('move', ['r0', CONF0, '?t0', '?q0']),
     ('pick', ['r0', 'A', POSE0, '?g0', '?q0']),
@@ -118,8 +104,6 @@ def main(success_cost=INF, use_costs=True): # 0 | INF
     _, _, stream_pddl, stream_map, _, _ = pddlstream_problem
     stream_info = {
         't-region': StreamInfo(eager=True, p_success=0), # bound_fn is None
-        #'t-cfree': StreamInfo(eager=False, negate=True),
-        #'distance': FunctionInfo(opt_fn=lambda q1, q2: MOVE_COST), # Doesn't make a difference
     }
 
     terms = CONSTRAINTS
@@ -132,8 +116,6 @@ def main(success_cost=INF, use_costs=True): # 0 | INF
     with Profiler():
         if args.algorithm == 'focused':
             solution = solve_pddlstream_satisfaction(satisfaction_problem, algorithm='adaptive', stream_info=stream_info,
-                                                     #search_sample_ratio=1,
-                                                     #max_skeletons=1,
                                                      success_cost=success_cost, max_time=args.max_time)
         elif args.algorithm == 'incremental':
             assert not args.gurobi
@@ -145,7 +127,6 @@ def main(success_cost=INF, use_costs=True): # 0 | INF
                                                costs=not args.unit, success_cost=success_cost,
                                                max_time=args.max_time, search_sample_ratio=1,
                                                debug=False)
-            #raise ValueError(args.algorithm)
 
     dump_assignment(solution)
     bindings, cost, evaluations = solution

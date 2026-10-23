@@ -42,7 +42,6 @@ def convert_negative_stream(negative, literal, step_from_atom, real_states, nega
     input_objects = tuple(map(obj_from_pddl, literal.args)) # Might be negative
     for fluent_facts in fluent_facts_list:
         result = get_negative_result(negative, input_objects, fluent_facts)
-        #if not result.instance.successful: # Doesn't work with reachieve=True
         step = min(step_from_atom[literal]) if result.is_deferrable() else 0
         negative_plan[result] = min(step, negative_plan.get(result, INF))
 
@@ -63,8 +62,6 @@ def convert_negative(negative_preimage, negative_from_name, step_from_atom, real
 def recover_negative_axioms(real_task, opt_task, axiom_plans, action_plan, negative_from_name):
     start_time = time.time()
     action_plan = reinstantiate_action_instances(opt_task, action_plan, negative_from_name=negative_from_name)
-    # https://github.com/caelan/pddlstream/commit/18b303e19bbab9f8e0016fbb2656f461067e1e94#diff-55454a85485551f9139e20a446b56a83L53
-    #simplify_conditional_effects(opt_task, action_plan, negative_from_name)
     axiom_plans = list(map(reinstantiate_axiom_instances, axiom_plans))
     axioms_from_name = get_derived_predicates(opt_task.axioms)
 
@@ -76,11 +73,9 @@ def recover_negative_axioms(real_task, opt_task, axiom_plans, action_plan, negat
     for axiom_plan, action_instance in safe_zip(axiom_plans, action_plan):
         preimage = [l for l in plan_preimage(axiom_plan + [action_instance])
                     if (l.predicate in axioms_from_name)]
-        #assert conditions_hold(opt_task.init, conditions)
         # TODO: only add derived facts and negative facts to fluent state to make normalizing easier
         negative_axiom_plan = extract_axiom_plan(opt_task, preimage, negative_from_name,
                                                  static_state=opt_task.init)
-                                                 #static_state=real_states[-1])
         assert negative_axiom_plan is not None
         num_negative += len(negative_axiom_plan)
         preimage_plan.extend(negative_axiom_plan + axiom_plan + [action_instance])
@@ -88,6 +83,4 @@ def recover_negative_axioms(real_task, opt_task, axiom_plans, action_plan, negat
             apply_action(opt_task.init, action_instance)
             real_states.append(set(real_states[-1]))
             apply_action(real_states[-1], action_instance)
-    #print('Steps: {} | Negative: {} | Preimage: {} | Time: {:.3f}'.format(
-    #    len(action_plan), num_negative, len(preimage_plan), elapsed_time(start_time)))
     return real_states, preimage_plan

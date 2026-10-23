@@ -20,16 +20,12 @@ def get_stream_actions(results, unique_binding=False, effort_scale=1, max_effort
     result_from_name = OrderedDict()
     stream_actions = []
     for result in results:
-        #if not isinstance(stream_result, StreamResult):
         if type(result) == FunctionResult:
             continue
         effort = result.get_effort(**kwargs)
         if not check_effort(effort, max_effort):
             continue
         name = '{}-{}'.format(result.external.name, len(result_from_name))
-        #name = '{}_{}_{}'.format(result.external.name, # No spaces & parens
-        #                        ','.join(map(pddl_from_object, result.instance.input_objects)),
-        #                        ','.join(map(pddl_from_object, result.output_objects)))
         assert name not in result_from_name
         result_from_name[name] = result
 
@@ -53,5 +49,4 @@ def add_stream_actions(domain, results, **kwargs):
     # to_untyped_strips, free_variables
     new_domain = make_domain(constants=new_constants, predicates=domain.predicates,
                              actions=domain.actions[:] + stream_actions, axioms=domain.axioms)
-    #new_domain = copy.copy(domain)
     return new_domain, result_from_name

@@ -45,9 +45,6 @@ def pddlstream_from_problem(problem, collisions=True, **kwargs):
 
     init = []
     goal_literals = [
-        #('Calibrated', camera, problem.rovers[0])
-        #('Analyzed', problem.rovers[0], problem.rocks[0])
-        #('ReceivedAnalysis', problem.rocks[0])
         Exists(['?rock'], And(('Type', '?rock', 'stone'),
                               ('ReceivedAnalysis', '?rock'))),
         Exists(['?soil'], And(('Type', '?soil', 'soil'),
@@ -92,7 +89,6 @@ def pddlstream_from_problem(problem, collisions=True, **kwargs):
         'sample-motion': from_fn(get_motion_fn(problem, custom_limits=custom_limits,
                                                collisions=collisions, **kwargs)),
     }
-    #stream_map = 'debug'
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal_formula)
 
@@ -171,7 +167,6 @@ def main():
     _, _, _, stream_map, init, goal = pddlstream_problem
     print('Init:', init)
     print('Goal:', goal)
-    #print('Streams:', stream_map.keys())
 
     success_cost = 0 if args.optimal else INF
     planner = 'ff-wastar3'

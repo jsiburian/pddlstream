@@ -29,7 +29,6 @@ class ContinuousTMPViewer(object):
     def __init__(self, suction_height, regions, tl_x=0, tl_y=0, width=400, height=200,
                  title='Grid', background=BACKGROUND_COLOR):
         self.tk = Tk()
-        # tk.geometry('%dx%d+%d+%d'%(width, height, 100, 0))
         self.tk.withdraw()
         self.top = Toplevel(self.tk)
         self.top.wm_title(title)
@@ -41,7 +40,6 @@ class ContinuousTMPViewer(object):
         self.height = height
         self.canvas = Canvas(self.top, width=self.width, height=self.height, background=background)
         self.canvas.pack()
-        # self.center()
         self.move_frame(tl_x, tl_y)
 
         min_x = min(x1 for x1, _ in regions.values())
@@ -85,12 +83,6 @@ class ContinuousTMPViewer(object):
             self.canvas.create_text(self.scale_x(x), self.scale_y(y + height / 2), text=name),
         ])
 
-    # def draw_holding(self, x, width, height, color='blue'):
-    #     self.holding = self.canvas.create_rectangle(self.scale_x(x - width / 2.),
-    #                                                 self.scale_y(self.robot_dist - SUCTION_HEIGHT / 2 - height),
-    #                                                 self.scale_x(x + width / 2.),
-    #                                                 self.scale_y(self.robot_dist - SUCTION_HEIGHT / 2),
-    #                                                 fill=color, outline='black', width=2)
 
     def draw_region(self, region, name=''):
         # TODO: draw table legs (with an offset)
@@ -109,7 +101,6 @@ class ContinuousTMPViewer(object):
             self.draw_region(region, name=name)
 
     def draw_robot(self, x, y, name='', color='yellow'):  # TODO - could also visualize as top grasps instead of side grasps
-        #y = self.robot_dist
         self.dynamic.extend([
             self.canvas.create_rectangle(self.scale_x(x - SUCTION_WIDTH / 2.),
                                          self.scale_y(y - self.suction_height / 2.),
@@ -135,8 +126,6 @@ class ContinuousTMPViewer(object):
     def save(self, filename):
         # TODO: screen recording based on location like I did before
         # TODO: only works on windows
-        # self.canvas.postscript(file='%s.ps'%filename, colormode='color')
-        #from PIL import ImageGrab
         try:
             import pyscreenshot as ImageGrab
         except ImportError:
@@ -149,5 +138,3 @@ class ContinuousTMPViewer(object):
         print('Saved', path)
         ImageGrab.grab((x, y, x+width, y+height)).save(path)
         return path
-        #os.system("screencapture -R {},{},{},{} {}".format(
-        #    225, 200, 600, 500, image_path))

@@ -22,15 +22,12 @@ def get_problem(optimize=True):
     initial_person = 2
 
     min_take = 1
-    #max_take = 10
     max_take = initial_atm
     target = 50 # 1 | 3 | 50
     num_atms = 2
 
     domain_pddl = read_pddl(__file__, 'domain0.pddl')
     constant_map = {
-        #'@min': min_take,
-        #'@max': max_take,
         '@amount': target,
     }
 
@@ -40,10 +37,7 @@ def get_problem(optimize=True):
         stream_pddl = read_pddl(__file__, 'stream.pddl')
 
     # TODO: store history of withdraws to ensure not taking too much
-    #stream_pddl = None
     stream_map = {
-        #'s-cash': from_gen((c,) for c in randomize(irange(min_take, max_take + 1))),
-        #'s-cash': from_gen((c,) for c in reversed(list(irange(min_take, max_take+1)))),
         's-cash': from_sampler(lambda: (round(uniform(min_take, max_take), 2),)),
         't-ge': from_test(lambda c1, c2: c1 >= c2),
         'add': from_fn(lambda c1, c2: (c1 + c2,)),
@@ -54,9 +48,6 @@ def get_problem(optimize=True):
     }
 
     person = 'Emre'
-    #initial_people = {'Emre': initial_person}
-    #initial_atms = {'Emre': initial_person}
-    #amounts = [min_take, max_take, target, initial_atm, initial_person]
 
     init = [
         ('person', person),
@@ -74,8 +65,6 @@ def get_problem(optimize=True):
             ('maxwithdraw', name, initial_atm),
         ])
 
-    #goal = Exists(['?c1'], And(('person', person), ('ge', '?c1', target),
-    #                           ('inpocket', person, '?c1')))
     goal = ('finished',) # TODO: focused bug when goal initially satisfied
 
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
@@ -114,7 +103,6 @@ def solve_pddl():
     dump_plan(plan, cost)
 
 def main():
-    #solve_pddl()
     solve_pddlstream()
 
 if __name__ == '__main__':

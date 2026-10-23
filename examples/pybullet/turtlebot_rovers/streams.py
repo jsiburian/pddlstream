@@ -27,7 +27,6 @@ class Ray(Command):
         with LockRenderer():
             visual_id = visual_shape_from_data(self.visual_data[0]) # TODO: TypeError: argument 5 must be str, not bytes
             cone = create_body(visual_id=visual_id)
-            #cone = create_mesh(mesh, color=(0, 1, 0, 0.5))
             set_pose(cone, self.pose)
         wait_for_duration(self._duration)
         with LockRenderer():
@@ -58,8 +57,6 @@ def get_cfree_ray_test(problem, collisions=True):
             return True
         conf.assign()
         collision = pairwise_collision(ray.body, rover)
-        #if collision:
-        #    wait_for_user()
         return not collision
     return test
 
@@ -115,7 +112,6 @@ def get_inv_vis_gen(problem, use_cone=True, max_attempts=25, max_range=VIS_RANGE
             print('Visibility attempts:', attempts)
             y = Ray(cone, rover, objective)
             yield Output(bq, y)
-            #break
     return gen
 
 
@@ -171,8 +167,6 @@ def get_motion_fn(problem, custom_limits={}, collisions=True, teleport=False, ho
                 assert b not in movable
                 p.assign()
                 movable.add(b)
-            # elif predicate == 'AtConf'.lower():
-            #     continue
             else:
                 raise NotImplementedError(predicate)
 

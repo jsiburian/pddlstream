@@ -138,15 +138,6 @@ def fact_from_evaluation(evaluation):
         return Not(fact)
     return Equal(fact, evaluation.value)
 
-# def state_from_evaluations(evaluations):
-#     # TODO: default value?
-#     # TODO: could also implement within predicates
-#     state = {}
-#     for evaluation in evaluations:
-#         if evaluation.head in state:
-#             assert(evaluation.value == state[evaluation.head])
-#         state[evaluation.head] = evaluation.value
-#     return state
 
 ##################################################
 
@@ -159,7 +150,6 @@ def obj_from_pddl(pddl):
 
 def values_from_objects(objects):
     return tuple(obj.value for obj in objects)
-    #return tuple(map(value_from_object, objects))
 
 def transform_action_args(action, fn):
     if isinstance(action, Action):
@@ -191,7 +181,6 @@ def obj_from_pddl_plan(pddl_plan):
 def param_from_object(obj):
     if isinstance(obj, OptimisticObject):
         return repr(obj)
-        #return obj.pddl
     if isinstance(obj, Object):
         return obj.value
     raise ValueError(obj)
@@ -201,8 +190,6 @@ def objects_from_values(values):
 
 ##################################################
 
-#def expression_holds(expression, evaluations):
-#    pass
 
 def revert_solution(plan, cost, evaluations):
     all_facts = list(map(value_from_evaluation, evaluations))
@@ -215,12 +202,6 @@ def revert_solution(plan, cost, evaluations):
     certificate = Certificate(all_facts, preimage_facts)
     return Solution(action_plan, cost, certificate)
 
-#def opt_obj_from_value(value):
-#    if Object.has_value(value):
-#        return Object.from_value(value)
-#    return OptimisticObject.from_opt(value)
-#    # TODO: better way of doing this?
-#    #return OptimisticObject._obj_from_inputs.get(value, Object.from_value(value))
 
 def str_from_head(head):
     return '{}{}'.format(get_prefix(head), str_from_object(get_args(head)))
