@@ -1,12 +1,12 @@
-from pddlstream.algorithms.downward import get_problem, task_from_domain_problem
-from pddlstream.algorithms.instantiate_task import sas_from_pddl
 from pddlstream.algorithms.scheduling.recover_streams import extract_stream_plan, get_achieving_streams
 from pddlstream.algorithms.scheduling.stream_action import get_stream_actions
 from pddlstream.algorithms.scheduling.utils import add_unsatisfiable_to_goal
-from pddlstream.algorithms.search import solve_from_task
-from pddlstream.language.constants import And
-from pddlstream.language.conversion import evaluation_from_fact
-from pddlstream.utils import INF, flatten
+from pddlstream.core.conversion import evaluation_from_fact
+from pddlstream.core.syntax import And
+from pddlstream.core.utils import INF, flatten
+from pddlstream.fastdownward.grounding import sas_from_pddl
+from pddlstream.fastdownward.search import solve_from_task
+from pddlstream.fastdownward.tasks import get_problem, task_from_domain_problem
 
 # TODO: rename this to plan streams?
 

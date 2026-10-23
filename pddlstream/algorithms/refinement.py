@@ -4,12 +4,12 @@ from itertools import product
 
 from pddlstream.algorithms.instantiation import Instantiator
 from pddlstream.algorithms.scheduling.plan_streams import OptSolution, plan_streams
-from pddlstream.language.constants import FAILED, INFEASIBLE, is_plan
-from pddlstream.language.conversion import evaluation_from_fact, substitute_expression
+from pddlstream.core.conversion import evaluation_from_fact, substitute_expression
+from pddlstream.core.problem import FAILED, INFEASIBLE, is_plan
+from pddlstream.core.utils import INF, elapsed_time, get_mapping, safe_zip
 from pddlstream.language.function import Function, FunctionResult
 from pddlstream.language.statistics import check_effort
 from pddlstream.language.stream import StreamResult
-from pddlstream.utils import INF, elapsed_time, get_mapping, safe_zip
 
 logger = logging.getLogger(__name__)
 

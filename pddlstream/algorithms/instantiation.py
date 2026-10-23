@@ -4,11 +4,11 @@ from collections.abc import Sized
 from heapq import heappop, heappush
 from itertools import product
 
-from pddlstream.algorithms.common import COMPLEXITY_OP
-from pddlstream.algorithms.relation import Relation, compute_order, solve_satisfaction
-from pddlstream.language.constants import is_parameter
-from pddlstream.language.conversion import head_from_fact, is_atom
-from pddlstream.utils import HeapElement, safe_apply_mapping, safe_zip
+from pddlstream.core.conversion import head_from_fact, is_atom
+from pddlstream.core.evaluations import COMPLEXITY_OP
+from pddlstream.core.relation import Relation, compute_order, solve_satisfaction
+from pddlstream.core.syntax import is_parameter
+from pddlstream.core.utils import HeapElement, safe_apply_mapping, safe_zip
 
 logger = logging.getLogger(__name__)
 

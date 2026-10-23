@@ -6,8 +6,9 @@ from examples.blocksworld.run import get_problem as get_blocksworld
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.validate import validate_solution
-from pddlstream.language.constants import And, Certificate, PDDLProblem, Solution, StreamAction
-from pddlstream.utils import INF
+from pddlstream.core.problem import Certificate, PDDLProblem, Solution, StreamAction
+from pddlstream.core.syntax import And
+from pddlstream.core.utils import INF
 
 
 @pytest.fixture(scope='module')

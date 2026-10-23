@@ -1,6 +1,6 @@
 """Helpers that give the actions of a sequential plan start times and durations (e.g. to animate the plan)."""
 
-from pddlstream.language.constants import DurativeAction
+from pddlstream.core.problem import DurativeAction
 
 
 def get_end(action):

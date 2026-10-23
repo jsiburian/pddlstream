@@ -5,25 +5,20 @@ from collections import Counter, namedtuple
 from pddlstream.algorithms.algorithm import evaluations_from_init, parse_stream_pddl
 from pddlstream.algorithms.common import SolutionStore
 from pddlstream.algorithms.disable_skeleton import create_disabled_axioms
-from pddlstream.algorithms.downward import add_predicate, make_domain, make_predicate
 from pddlstream.algorithms.recover_optimizers import combine_optimizers, retrace_instantiation
 from pddlstream.algorithms.reorder import reorder_stream_plan
 from pddlstream.algorithms.scheduling.postprocess import reschedule_stream_plan
 from pddlstream.algorithms.skeleton import SkeletonQueue
+from pddlstream.core.conversion import evaluation_from_fact, replace_expression, revert_solution
 from pddlstream.core.log import console_output
-from pddlstream.language.constants import Assignment, OptPlan, get_length, is_parameter, partition_facts
-from pddlstream.language.conversion import (
-    evaluation_from_fact,
-    get_args,
-    get_prefix,
-    replace_expression,
-    revert_solution,
-)
+from pddlstream.core.objects import Object, OptimisticObject
+from pddlstream.core.problem import Assignment, OptPlan, get_length
+from pddlstream.core.syntax import get_args, get_prefix, is_parameter, partition_facts
+from pddlstream.core.utils import INF, elapsed_time, get_mapping, safe_zip, str_from_object
+from pddlstream.fastdownward.tasks import add_predicate, make_domain, make_predicate
 from pddlstream.language.function import Function
-from pddlstream.language.object import Object, OptimisticObject
 from pddlstream.language.statistics import compute_plan_effort, write_stream_statistics
 from pddlstream.language.stream import Stream
-from pddlstream.utils import INF, elapsed_time, get_mapping, safe_zip, str_from_object
 
 logger = logging.getLogger(__name__)
 

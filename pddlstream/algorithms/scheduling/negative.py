@@ -1,11 +1,11 @@
-from pddlstream.algorithms.downward import GOAL_NAME, apply_action, fact_from_fd, get_derived_predicates, plan_preimage
 from pddlstream.algorithms.scheduling.recover_axioms import extract_axiom_plan
 from pddlstream.algorithms.scheduling.reinstantiate import reinstantiate_action_instances, reinstantiate_axiom_instances
+from pddlstream.core.conversion import obj_from_pddl
+from pddlstream.core.utils import INF, safe_zip
+from pddlstream.fastdownward.tasks import GOAL_NAME, apply_action, fact_from_fd, get_derived_predicates, plan_preimage
 from pddlstream.fastdownward.translator import pddl
-from pddlstream.language.conversion import obj_from_pddl
 from pddlstream.language.function import Predicate, PredicateResult
 from pddlstream.language.stream import Stream
-from pddlstream.utils import INF, safe_zip
 
 
 def convert_negative_predicate(negative, literal, step_from_atom, negative_plan):

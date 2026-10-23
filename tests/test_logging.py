@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 from pddlstream.algorithms.meta import solve
-from pddlstream.language.constants import PDDLProblem
+from pddlstream.core.problem import PDDLProblem
 
 # Without action costs, parsing warns and recommends unit_costs=True
 DOMAIN_PDDL = """(define (domain switch) (:requirements :strips) (:predicates (On))

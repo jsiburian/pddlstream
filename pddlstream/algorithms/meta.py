@@ -5,9 +5,22 @@ import time
 from collections import defaultdict
 
 from pddlstream.algorithms.algorithm import parse_problem, solve_scope
-from pddlstream.algorithms.common import evaluations_from_init
 from pddlstream.algorithms.constraints import PlanConstraints
-from pddlstream.algorithms.downward import (
+from pddlstream.algorithms.focused import get_negative_externals, solve_adaptive, solve_binding, solve_focused_original
+from pddlstream.algorithms.incremental import solve_incremental
+from pddlstream.algorithms.refinement import optimistic_process_streams
+from pddlstream.algorithms.scheduling.recover_streams import evaluations_from_stream_plan
+from pddlstream.algorithms.scheduling.reinstantiate import reinstantiate_axiom
+from pddlstream.core.config import ALGORITHMS, DEFAULT_ALGORITHM, FIELD_NAMES, SolverConfig
+from pddlstream.core.config import FOCUSED_ALGORITHMS as FOCUSED_ALGORITHMS  # Re-exported (name as name)
+from pddlstream.core.conversion import value_from_obj_expression
+from pddlstream.core.evaluations import evaluations_from_init
+from pddlstream.core.log import console_output
+from pddlstream.core.problem import Certificate, PDDLProblem, SolveResult, Status, is_plan
+from pddlstream.core.syntax import EQ, get_prefix
+from pddlstream.core.utils import INF, SEPARATOR, Verbose, elapsed_time, irange
+from pddlstream.fastdownward.grounding import convert_instantiated, instantiate_task
+from pddlstream.fastdownward.tasks import (
     INTERNAL_AXIOM,
     fact_from_fd,
     fd_from_evaluations,
@@ -15,19 +28,7 @@ from pddlstream.algorithms.downward import (
     get_problem,
     task_from_domain_problem,
 )
-from pddlstream.algorithms.focused import get_negative_externals, solve_adaptive, solve_binding, solve_focused_original
-from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.algorithms.instantiate_task import convert_instantiated, instantiate_task
-from pddlstream.algorithms.refinement import optimistic_process_streams
-from pddlstream.algorithms.scheduling.recover_streams import evaluations_from_stream_plan
-from pddlstream.algorithms.scheduling.reinstantiate import reinstantiate_axiom
-from pddlstream.core.config import ALGORITHMS, DEFAULT_ALGORITHM, FIELD_NAMES, SolverConfig
-from pddlstream.core.config import FOCUSED_ALGORITHMS as FOCUSED_ALGORITHMS  # Re-exported (name as name)
-from pddlstream.core.log import console_output
-from pddlstream.language.constants import Certificate, PDDLProblem, SolveResult, Status, get_prefix, is_plan
-from pddlstream.language.conversion import EQ, value_from_obj_expression
 from pddlstream.language.external import DEBUG, SHARED_DEBUG
-from pddlstream.utils import INF, SEPARATOR, Verbose, elapsed_time, irange
 
 logger = logging.getLogger(__name__)
 

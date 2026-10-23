@@ -2,11 +2,8 @@ import logging
 from collections import Counter
 from collections.abc import Sequence
 
-from pddlstream.algorithms.common import INTERNAL_EVALUATION, add_fact
-from pddlstream.algorithms.downward import make_axiom
 from pddlstream.core.context import get_clock
-from pddlstream.language.constants import AND, Fact, StreamAction, concatenate, get_args, get_prefix, is_parameter
-from pddlstream.language.conversion import (
+from pddlstream.core.conversion import (
     evaluation_from_fact,
     get_formula_operators,
     list_from_conjunction,
@@ -16,6 +13,19 @@ from pddlstream.language.conversion import (
     substitute_fact,
     values_from_objects,
 )
+from pddlstream.core.evaluations import INTERNAL_EVALUATION, add_fact
+from pddlstream.core.objects import (
+    DebugValue,
+    Object,
+    OptimisticObject,
+    SharedDebugValue,
+    SharedOptValue,
+    UniqueOptValue,
+)
+from pddlstream.core.problem import StreamAction
+from pddlstream.core.syntax import AND, Fact, concatenate, get_args, get_prefix, is_parameter
+from pddlstream.core.utils import apply_mapping, get_mapping, irange, str_from_object
+from pddlstream.fastdownward.tasks import make_axiom
 from pddlstream.language.external import (
     DEBUG,
     SHARED_DEBUG,
@@ -29,15 +39,6 @@ from pddlstream.language.external import (
     select_inputs,
 )
 from pddlstream.language.generator import BoundedGenerator, from_fn, get_next, universe_test
-from pddlstream.language.object import (
-    DebugValue,
-    Object,
-    OptimisticObject,
-    SharedDebugValue,
-    SharedOptValue,
-    UniqueOptValue,
-)
-from pddlstream.utils import apply_mapping, get_mapping, irange, str_from_object
 
 logger = logging.getLogger(__name__)
 

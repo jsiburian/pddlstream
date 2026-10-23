@@ -1,12 +1,12 @@
 from collections import OrderedDict
 
-from pddlstream.algorithms.downward import make_action, make_domain, make_parameters
-from pddlstream.language.constants import Not
-from pddlstream.language.conversion import pddl_from_object
+from pddlstream.core.conversion import pddl_from_object
+from pddlstream.core.syntax import Not
+from pddlstream.core.utils import INF
+from pddlstream.fastdownward.tasks import make_action, make_domain, make_parameters
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.statistics import check_effort
 from pddlstream.language.stream import StreamResult
-from pddlstream.utils import INF
 
 BOUND_PREDICATE = '_bound'
 

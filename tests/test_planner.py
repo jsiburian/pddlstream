@@ -5,7 +5,7 @@ import pathlib
 import subprocess
 import sys
 
-from pddlstream.algorithms.search import solve_from_pddl
+from pddlstream.fastdownward.search import solve_from_pddl
 
 DOMAIN_PDDL = """(define (domain line) (:requirements :strips)
   (:predicates (At ?l) (Adj ?a ?b))

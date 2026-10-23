@@ -2,18 +2,18 @@ import logging
 from collections import defaultdict
 from itertools import count
 
-from pddlstream.algorithms.common import INTERNAL_EVALUATION, add_fact
-from pddlstream.algorithms.downward import add_predicate, get_fluents, make_action, make_axiom, make_predicate
 from pddlstream.core.context import get_config
-from pddlstream.fastdownward.translator import pddl
-from pddlstream.language.constants import Evaluation, Head, get_args, get_prefix
-from pddlstream.language.conversion import (
+from pddlstream.core.conversion import (
     evaluation_from_fact,
     fact_from_evaluation,
     is_atom,
     objects_from_values,
     substitute_expression,
 )
+from pddlstream.core.evaluations import INTERNAL_EVALUATION, add_fact
+from pddlstream.core.syntax import Evaluation, Head, get_args, get_prefix
+from pddlstream.fastdownward.tasks import add_predicate, get_fluents, make_action, make_axiom, make_predicate
+from pddlstream.fastdownward.translator import pddl
 from pddlstream.language.external import get_domain_predicates
 from pddlstream.language.generator import from_fn
 from pddlstream.language.stream import Stream

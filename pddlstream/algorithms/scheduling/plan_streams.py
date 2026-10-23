@@ -2,20 +2,6 @@ import copy
 from collections import defaultdict, namedtuple
 
 from pddlstream.algorithms.advanced import UNIVERSAL_TO_CONDITIONAL
-from pddlstream.algorithms.downward import (
-    apply_action,
-    conditions_hold,
-    evaluation_from_fd,
-    fact_from_fd,
-    fd_from_fact,
-    get_problem,
-    make_domain,
-    make_predicate,
-    pddl_from_instance,
-    plan_preimage,
-    task_from_domain_problem,
-)
-from pddlstream.algorithms.instantiate_task import instantiate_task, sas_from_instantiated
 from pddlstream.algorithms.scheduling.add_optimizers import (
     add_optimizer_effects,
     recover_simultaneous,
@@ -33,24 +19,39 @@ from pddlstream.algorithms.scheduling.recover_streams import (
 )
 from pddlstream.algorithms.scheduling.stream_action import add_stream_actions
 from pddlstream.algorithms.scheduling.utils import add_unsatisfiable_to_goal, get_instance_facts, partition_results
-from pddlstream.algorithms.search import solve_from_task
 from pddlstream.core.context import get_config
-from pddlstream.fastdownward.translator import get_cost_scale, scale_cost
-from pddlstream.language.constants import EQ, FAILED, Not, OptPlan, get_prefix
-from pddlstream.language.conversion import (
+from pddlstream.core.conversion import (
     evaluation_from_fact,
     fact_from_evaluation,
     obj_from_pddl,
     transform_action_args,
     transform_plan_args,
 )
+from pddlstream.core.problem import FAILED, OptPlan
+from pddlstream.core.syntax import EQ, Not, get_prefix
+from pddlstream.core.utils import INF, Verbose, get_ancestors
+from pddlstream.fastdownward.grounding import instantiate_task, sas_from_instantiated
+from pddlstream.fastdownward.search import solve_from_task
+from pddlstream.fastdownward.tasks import (
+    apply_action,
+    conditions_hold,
+    evaluation_from_fd,
+    fact_from_fd,
+    fd_from_fact,
+    get_problem,
+    make_domain,
+    make_predicate,
+    pddl_from_instance,
+    plan_preimage,
+    task_from_domain_problem,
+)
+from pddlstream.fastdownward.translator import get_cost_scale, scale_cost
 from pddlstream.language.exogenous import get_fluent_domain
 from pddlstream.language.external import Result
 from pddlstream.language.function import Function
 from pddlstream.language.optimizer import UNSATISFIABLE
 from pddlstream.language.statistics import compute_plan_effort
 from pddlstream.language.stream import StreamResult
-from pddlstream.utils import INF, Verbose, get_ancestors
 
 RENAME_ACTIONS = True
 

@@ -2,7 +2,10 @@ import copy
 import logging
 from collections import defaultdict
 
-from pddlstream.algorithms.downward import (
+from pddlstream.core.syntax import is_parameter
+from pddlstream.core.utils import MockSet, Verbose, flatten, safe_zip
+from pddlstream.fastdownward.grounding import filter_negated, get_achieving_axioms, get_goal_instance
+from pddlstream.fastdownward.tasks import (
     GOAL_NAME,
     apply_action,
     get_derived_predicates,
@@ -10,10 +13,7 @@ from pddlstream.algorithms.downward import (
     get_precondition,
     literal_holds,
 )
-from pddlstream.algorithms.instantiate_task import filter_negated, get_achieving_axioms, get_goal_instance
 from pddlstream.fastdownward.translator import axiom_rules, build_model, instantiate, options, pddl, pddl_to_prolog
-from pddlstream.language.constants import is_parameter
-from pddlstream.utils import MockSet, Verbose, flatten, safe_zip
 
 logger = logging.getLogger(__name__)
 

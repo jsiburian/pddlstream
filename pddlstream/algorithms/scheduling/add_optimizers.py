@@ -1,8 +1,8 @@
-from pddlstream.algorithms.downward import fact_from_fd, fd_from_fact
 from pddlstream.algorithms.scheduling.negative import get_negative_result
 from pddlstream.algorithms.scheduling.recover_streams import extract_stream_plan
 from pddlstream.algorithms.scheduling.utils import get_instance_facts
-from pddlstream.language.constants import get_args, get_prefix
+from pddlstream.core.syntax import get_args, get_prefix
+from pddlstream.fastdownward.tasks import fact_from_fd, fd_from_fact
 from pddlstream.language.optimizer import ComponentStream
 from pddlstream.language.stream import Stream
 

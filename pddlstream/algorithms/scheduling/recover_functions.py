@@ -1,9 +1,9 @@
 from collections import defaultdict
 
+from pddlstream.core.conversion import obj_from_pddl
+from pddlstream.core.syntax import Head, is_parameter
+from pddlstream.core.utils import INF
 from pddlstream.fastdownward.translator import pddl
-from pddlstream.language.constants import Head, is_parameter
-from pddlstream.language.conversion import obj_from_pddl
-from pddlstream.utils import INF
 
 
 def extract_function_result(results_from_head, action, pddl_args):

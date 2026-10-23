@@ -3,7 +3,7 @@
 import pytest
 
 from pddlstream.algorithms.meta import solve
-from pddlstream.language.constants import PDDLProblem, Solution, SolveResult, Status
+from pddlstream.core.problem import PDDLProblem, Solution, SolveResult, Status
 
 DOMAIN_PDDL = """(define (domain line) (:requirements :strips)
   (:predicates (At ?l) (Adj ?a ?b))

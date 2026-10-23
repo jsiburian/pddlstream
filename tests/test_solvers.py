@@ -10,7 +10,7 @@ from pddlstream.algorithms.focused import solve_hierarchical
 from pddlstream.algorithms.incremental import solve_exhaustive, solve_immediate
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.serialized import solve_serialized
-from pddlstream.language.constants import is_plan, print_solution
+from pddlstream.core.problem import is_plan, print_solution
 from pddlstream.language.generator import compose_gen_fns, from_fn, gen_fn_from_wild_gen_fn
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]

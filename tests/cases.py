@@ -7,7 +7,7 @@ bounds for those that sample differently between runs.
 
 from typing import NamedTuple
 
-from pddlstream.utils import INF
+from pddlstream.core.utils import INF
 
 FOCUSED_TAMP_BUG = 'Pre-existing (also on the original code): reports infeasible / never binds on continuous_tamp'
 TURTLEBOT_REPLAY_BUG = 'Pre-existing: replay crashes in pybullet-planning visual_shape_from_data (bytes/str)'

@@ -1,12 +1,11 @@
 from collections import namedtuple
 from copy import deepcopy
 
-from pddlstream.algorithms.common import INTERNAL_EVALUATION, add_fact
-from pddlstream.algorithms.downward import add_predicate, fd_from_fact, make_effects, make_preconditions, make_predicate
-from pddlstream.fastdownward.translator import pddl
-from pddlstream.language.constants import EQ, And, Not, Or, is_parameter, str_from_plan
-from pddlstream.language.object import Object, OptimisticObject
-from pddlstream.utils import (
+from pddlstream.core.evaluations import INTERNAL_EVALUATION, add_fact
+from pddlstream.core.objects import Object, OptimisticObject
+from pddlstream.core.problem import str_from_plan
+from pddlstream.core.syntax import EQ, And, Not, Or, is_parameter
+from pddlstream.core.utils import (
     INF,
     find_unique,
     get_ancestors,
@@ -16,6 +15,8 @@ from pddlstream.utils import (
     safe_zip,
     str_from_object,
 )
+from pddlstream.fastdownward.tasks import add_predicate, fd_from_fact, make_effects, make_preconditions, make_predicate
+from pddlstream.fastdownward.translator import pddl
 
 OrderedSkeleton = namedtuple('OrderedSkeleton', ['actions', 'orders'])  # TODO: AND/OR tree
 

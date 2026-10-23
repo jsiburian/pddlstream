@@ -4,9 +4,9 @@ from pddlstream.algorithms.algorithm import solve_scope
 from pddlstream.algorithms.meta import solve
 from pddlstream.core.config import INF, SolverConfig
 from pddlstream.core.context import WallClock, WorkClock, get_clock, get_config
+from pddlstream.core.objects import Object
+from pddlstream.core.utils import CreationHash
 from pddlstream.fastdownward.translator import pddl
-from pddlstream.language.object import Object
-from pddlstream.utils import CreationHash
 
 
 def test_creation_hash():

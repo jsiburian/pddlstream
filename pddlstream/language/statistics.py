@@ -3,8 +3,8 @@ import os
 from collections import namedtuple
 
 from pddlstream.core.context import get_config
-from pddlstream.language.constants import is_plan
-from pddlstream.utils import INF, CreationHash, ensure_dir, read_pickle, write_pickle
+from pddlstream.core.problem import is_plan
+from pddlstream.core.utils import INF, CreationHash, ensure_dir, read_pickle, write_pickle
 
 logger = logging.getLogger(__name__)
 

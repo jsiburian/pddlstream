@@ -2,8 +2,8 @@
 
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.language.constants import Action, PDDLProblem, is_plan
-from pddlstream.utils import INF
+from pddlstream.core.problem import Action, PDDLProblem, is_plan
+from pddlstream.core.utils import INF
 
 
 def validate_solution(problem, solution, unit_costs=False, max_time=60, **search_kwargs):

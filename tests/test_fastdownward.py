@@ -4,12 +4,12 @@ import os
 import subprocess
 import sys
 
-from pddlstream.algorithms.common import evaluations_from_init
-from pddlstream.algorithms.downward import get_problem, parse_sequential_domain, task_from_domain_problem
-from pddlstream.algorithms.instantiate_task import instantiate_task
 from pddlstream.algorithms.scheduling.reinstantiate import instantiate_unsatisfiable
+from pddlstream.core.conversion import obj_from_value_expression
+from pddlstream.core.evaluations import evaluations_from_init
+from pddlstream.fastdownward.grounding import instantiate_task
+from pddlstream.fastdownward.tasks import get_problem, parse_sequential_domain, task_from_domain_problem
 from pddlstream.fastdownward.translator import pddl
-from pddlstream.language.conversion import obj_from_value_expression
 from pddlstream.language.optimizer import UNSATISFIABLE
 
 

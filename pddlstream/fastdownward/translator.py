@@ -11,7 +11,7 @@ import importlib
 import os
 import sys
 
-from pddlstream.utils import INF, int_ceil
+from pddlstream.core.utils import INF, int_ceil
 
 FD_PATH_VARIABLE = 'PDDLSTREAM_FD_PATH'
 DEFAULT_FD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, os.pardir, 'downward')

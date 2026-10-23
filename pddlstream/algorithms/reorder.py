@@ -2,65 +2,20 @@ import logging
 from collections import Counter, deque, namedtuple
 from itertools import combinations
 
-from pddlstream.language.statistics import EPSILON, Performance, Stats
-from pddlstream.language.stream import StreamResult
-from pddlstream.utils import (
+from pddlstream.core.utils import (
     Score,
-    get_connected_components,
-    is_acyclic,
     layer_sort,
     neighbors_from_orders,
     safe_zip,
     topological_sort,
 )
+from pddlstream.language.plans import get_partial_orders
+from pddlstream.language.statistics import EPSILON, Performance, Stats
 
 logger = logging.getLogger(__name__)
 
 
-def get_output_objects(result):
-    if isinstance(result, StreamResult):
-        return result.output_objects
-    return tuple()
-
-
-def get_object_orders(stream_plan):
-    # TODO: check that only one result per output object
-    partial_orders = set()
-    for i, stream1 in enumerate(stream_plan):
-        for stream2 in stream_plan[i + 1 :]:
-            if set(get_output_objects(stream1)) & stream2.instance.get_all_input_objects():
-                partial_orders.add((stream1, stream2))
-    return partial_orders
-
-
-def get_fact_orders(stream_plan, init_facts=set()):
-    # TODO: explicitly recover this from plan_streams
-    # TODO: init_facts isn't used in practice
-    achieved_facts = set(init_facts)
-    partial_orders = set()
-    for i, stream1 in enumerate(stream_plan):
-        new_facts = set(stream1.get_certified()) - achieved_facts
-        for stream2 in stream_plan[i + 1 :]:  # Prevents circular
-            if new_facts & set(stream2.get_domain()):
-                partial_orders.add((stream1, stream2))
-        achieved_facts.update(new_facts)
-    return partial_orders
-
-
-def get_partial_orders(stream_plan, use_facts=True, **kwargs):
-    partial_orders = get_object_orders(stream_plan)
-    if use_facts:
-        partial_orders.update(get_fact_orders(stream_plan, **kwargs))
-    assert is_acyclic(stream_plan, partial_orders)
-    return partial_orders
-
-
 ##################################################
-
-
-def get_stream_plan_components(external_plan, **kwargs):
-    partial_orders = get_partial_orders(external_plan, **kwargs)
-    return get_connected_components(external_plan, partial_orders)
 
 
 ##################################################

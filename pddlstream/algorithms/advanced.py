@@ -1,15 +1,15 @@
 import logging
 from collections import defaultdict
 
-from pddlstream.algorithms.downward import fd_from_fact, get_conjunctive_parts, get_disjunctive_parts
+from pddlstream.core.conversion import substitute_expression
+from pddlstream.core.syntax import get_args, get_prefix
+from pddlstream.core.utils import find_unique, get_mapping
+from pddlstream.fastdownward.tasks import fd_from_fact, get_conjunctive_parts, get_disjunctive_parts
 from pddlstream.fastdownward.translator import pddl
-from pddlstream.language.constants import get_args, get_prefix
-from pddlstream.language.conversion import substitute_expression
 from pddlstream.language.fluent import get_predicate_map
 from pddlstream.language.function import Function
 from pddlstream.language.optimizer import UNSATISFIABLE, ConstraintStream
 from pddlstream.language.stream import Stream
-from pddlstream.utils import find_unique, get_mapping
 
 logger = logging.getLogger(__name__)
 

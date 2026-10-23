@@ -6,12 +6,12 @@ import pytest
 
 from pddlstream.algorithms import meta
 from pddlstream.algorithms.algorithm import solve_scope
-from pddlstream.algorithms.common import evaluations_from_init
-from pddlstream.algorithms.downward import get_problem, parse_sequential_domain, task_from_domain_problem
 from pddlstream.algorithms.focused import solve_adaptive
 from pddlstream.core.config import SolverConfig
 from pddlstream.core.context import get_config
-from pddlstream.language.conversion import obj_from_value_expression
+from pddlstream.core.conversion import obj_from_value_expression
+from pddlstream.core.evaluations import evaluations_from_init
+from pddlstream.fastdownward.tasks import get_problem, parse_sequential_domain, task_from_domain_problem
 
 
 @pytest.fixture
@@ -68,12 +68,13 @@ def test_legacy_module_flags(monkeypatch):
 
 def test_fd_instantiate(monkeypatch):
     # Assigning instantiate_task.FD_INSTANTIATE used to have no effect, since it was bound as a default argument
-    from pddlstream.algorithms import instantiate_task as module
+    from pddlstream.algorithms import instantiate_task as legacy_module
+    from pddlstream.fastdownward import grounding
 
     calls = []
-    instantiate_domain = module.instantiate_domain
+    instantiate_domain = grounding.instantiate_domain
     monkeypatch.setattr(
-        module, 'instantiate_domain', lambda task, **kwargs: calls.append(task) or instantiate_domain(task)
+        grounding, 'instantiate_domain', lambda task, **kwargs: calls.append(task) or instantiate_domain(task)
     )
 
     def make_task():  # Instantiation normalizes the task in place
@@ -85,8 +86,8 @@ def test_fd_instantiate(monkeypatch):
         return task_from_domain_problem(domain, get_problem(evaluations, goal, domain))
 
     with solve_scope(SolverConfig(fd_instantiate=False)):
-        module.instantiate_task(make_task())
-    monkeypatch.setattr(module, 'FD_INSTANTIATE', False)
+        grounding.instantiate_task(make_task())
+    monkeypatch.setattr(legacy_module, 'FD_INSTANTIATE', False)
     with pytest.warns(FutureWarning, match='pass fd_instantiate=False'):
-        module.instantiate_task(make_task())
+        grounding.instantiate_task(make_task())
     assert len(calls) == 2

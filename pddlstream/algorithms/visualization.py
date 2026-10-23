@@ -1,20 +1,14 @@
 import logging
 import os
 
-from pddlstream.algorithms.reorder import get_partial_orders
-from pddlstream.language.constants import (
-    EQ,
-    get_args,
-    get_prefix,
-    is_parameter,
-    is_plan,
-    partition_facts,
-    str_from_plan,
-)
-from pddlstream.language.conversion import evaluation_from_fact, str_from_fact
+from pddlstream.core.conversion import evaluation_from_fact, str_from_fact
+from pddlstream.core.objects import OptimisticObject
+from pddlstream.core.problem import is_plan, str_from_plan
+from pddlstream.core.syntax import EQ, get_args, get_prefix, is_parameter, partition_facts
+from pddlstream.core.utils import clear_dir, ensure_dir, flatten, str_from_object
 from pddlstream.language.function import FunctionResult
-from pddlstream.language.object import OptimisticObject
-from pddlstream.utils import clear_dir, ensure_dir, flatten, str_from_object
+from pddlstream.language.optimizer import OptimizerResult
+from pddlstream.language.plans import get_partial_orders
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +51,6 @@ def reset_visualizations():
 
 def decompose_result(result):
     # An optimizer's result stands for the stream plan it was compiled from
-    from pddlstream.language.optimizer import OptimizerResult
-
     if isinstance(result, OptimizerResult):
         return result.external.stream_plan
     return [result]

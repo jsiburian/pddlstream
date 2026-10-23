@@ -14,13 +14,13 @@ from pddlstream.algorithms.reorder import reorder_stream_plan
 from pddlstream.algorithms.scheduling.plan_streams import OptSolution
 from pddlstream.algorithms.skeleton import SkeletonQueue
 from pddlstream.algorithms.visualization import create_visualizations, has_pygraphviz, log_plans, reset_visualizations
-from pddlstream.language.constants import INFEASIBLE, get_length, is_plan, str_from_plan
+from pddlstream.core.problem import INFEASIBLE, get_length, is_plan, str_from_plan
+from pddlstream.core.utils import INF, implies, str_from_object
 from pddlstream.language.fluent import compile_fluent_streams
 from pddlstream.language.function import Function, Predicate
 from pddlstream.language.optimizer import ComponentStream
 from pddlstream.language.statistics import compute_plan_effort, load_stream_statistics, write_stream_statistics
 from pddlstream.language.stream import Stream
-from pddlstream.utils import INF, implies, str_from_object
 
 logger = logging.getLogger(__name__)
 

@@ -2,8 +2,8 @@
 
 import os
 
+from pddlstream.core.utils import ensure_dir, write_pickle
 from pddlstream.language.statistics import LEGACY_DATA_DIR, get_data_path, load_data
-from pddlstream.utils import ensure_dir, write_pickle
 
 
 def test_cache_location(monkeypatch, tmp_path):

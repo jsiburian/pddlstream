@@ -5,16 +5,8 @@ import logging
 from collections import Counter
 from contextlib import contextmanager
 
-from pddlstream.algorithms.common import SOLUTIONS, evaluations_from_init
+from pddlstream.algorithms.common import SOLUTIONS
 from pddlstream.algorithms.constraints import add_plan_constraints
-from pddlstream.algorithms.downward import (
-    has_costs,
-    normalize_domain_goal,
-    parse_goal,
-    parse_lisp,
-    parse_sequential_domain,
-    set_unit_costs,
-)
 from pddlstream.core.config import FIELD_NAMES, SEARCH_FIELDS, check_keywords
 from pddlstream.core.context import (
     SolveContext,
@@ -25,17 +17,26 @@ from pddlstream.core.context import (
     get_config,
     get_context,
 )
+from pddlstream.core.conversion import obj_from_value_expression
+from pddlstream.core.evaluations import evaluations_from_init
 from pddlstream.core.log import console_output
-from pddlstream.language.constants import get_args, get_prefix
-from pddlstream.language.conversion import obj_from_value_expression
+from pddlstream.core.objects import DebugValue, Object, OptimisticObject
+from pddlstream.core.syntax import get_args, get_prefix
+from pddlstream.core.utils import INF, reset_creation_hashes
+from pddlstream.fastdownward.tasks import (
+    has_costs,
+    normalize_domain_goal,
+    parse_goal,
+    parse_lisp,
+    parse_sequential_domain,
+    set_unit_costs,
+)
 from pddlstream.language.exogenous import FutureValue, compile_to_exogenous
 from pddlstream.language.external import External
 from pddlstream.language.function import parse_function, parse_predicate
-from pddlstream.language.object import DebugValue, Object, OptimisticObject
 from pddlstream.language.optimizer import parse_optimizer
 from pddlstream.language.rule import RULES, apply_rules_to_streams, parse_rule
 from pddlstream.language.stream import Stream, StreamInstance, parse_stream
-from pddlstream.utils import INF, reset_creation_hashes
 
 logger = logging.getLogger(__name__)
 

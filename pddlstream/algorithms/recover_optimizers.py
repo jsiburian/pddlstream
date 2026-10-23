@@ -1,12 +1,12 @@
 import logging
 
-from pddlstream.algorithms.reorder import get_stream_plan_components
-from pddlstream.algorithms.scheduling.utils import partition_external_plan
-from pddlstream.language.constants import get_args, get_prefix, is_plan
-from pddlstream.language.conversion import evaluation_from_fact
+from pddlstream.core.conversion import evaluation_from_fact
+from pddlstream.core.problem import is_plan
+from pddlstream.core.syntax import get_args, get_prefix
+from pddlstream.core.utils import get_mapping, safe_apply_mapping
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.optimizer import ComponentStream, OptimizerStream
-from pddlstream.utils import get_mapping, safe_apply_mapping
+from pddlstream.language.plans import get_stream_plan_components, partition_external_plan
 
 logger = logging.getLogger(__name__)
 

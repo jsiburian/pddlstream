@@ -4,21 +4,23 @@ actions whose parameters are the cluster's variables, and any PDDLStream algorit
 from collections import namedtuple
 
 from pddlstream.algorithms.constraints import ASSIGNED_PREDICATE, ORDER_PREDICATE, to_constant
-from pddlstream.algorithms.downward import make_action, make_domain, make_predicate
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.satisfaction import SatisfactionSolution
-from pddlstream.language.constants import (
+from pddlstream.core.conversion import obj_from_value_expression
+from pddlstream.core.problem import PDDLProblem
+from pddlstream.core.syntax import (
     MINIMIZE,
     NOT,
     Not,
-    PDDLProblem,
+    get_args,
     get_constraints,
     get_costs,
+    get_prefix,
     is_parameter,
     partition_facts,
 )
-from pddlstream.language.conversion import get_args, get_prefix, obj_from_value_expression
-from pddlstream.utils import safe_zip
+from pddlstream.core.utils import safe_zip
+from pddlstream.fastdownward.tasks import make_action, make_domain, make_predicate
 
 Cluster = namedtuple('Cluster', ['constraints', 'parameters'])
 
