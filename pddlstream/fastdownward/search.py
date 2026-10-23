@@ -158,7 +158,7 @@ def add_subgoals(sas_task, subgoal_plan):
     sas_task.goal.pairs.append((subgoal_var, subgoal_range - 1))
 
     # TODO: make this a subroutine that depends on the length
-    for i, op in enumerate(sas_task.operators):
+    for op in sas_task.operators:
         if op.name not in subgoal_plan:
             continue
         subgoal = subgoal_plan.index(op.name) + 1

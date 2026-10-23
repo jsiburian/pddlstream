@@ -60,7 +60,7 @@ def process_conditional_effect(effect, negative_from_predicate):
                 if not isinstance(stream, ConstraintStream):
                     new_parts.append(literal)
                     continue
-                certified = find_unique(lambda f: get_prefix(f) == literal.predicate, stream.certified)
+                certified = find_unique(lambda f: get_prefix(f) == literal.predicate, stream.certified)  # noqa: B023
                 mapping = get_mapping(get_args(certified), literal.args)
                 stream_facts.append(fd_from_fact(substitute_expression(stream.stream_fact, mapping)))
                 # TODO: add the negated literal as precondition here?

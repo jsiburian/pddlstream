@@ -3,7 +3,7 @@
 try:
     import pybullet  # noqa: F401
 except ImportError:
-    raise ImportError('This example requires PyBullet (https://pypi.org/project/pybullet/)')
+    raise ImportError('This example requires PyBullet (https://pypi.org/project/pybullet/)') from None
 
 from examples.discrete_belief.run import MAX_COST, clip_cost, revisit_mdp_cost
 from examples.pybullet.pr2_belief.primitives import (
@@ -176,7 +176,7 @@ def post_process(state, plan, replan_obs=True, replan_base=False, look_move=Fals
     commands = []
     uncertain_base = False
     expecting_obs = False
-    for i, (name, args) in enumerate(plan):
+    for name, args in plan:
         if replan_obs and expecting_obs:
             break
         saved_world = WorldSaver()  # StateSaver()

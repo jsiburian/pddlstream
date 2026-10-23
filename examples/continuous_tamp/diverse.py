@@ -158,7 +158,7 @@ def main():
 
             # TODO: params not sufficient if no output stream or output not in plan
             streams = set()
-            for name, params in plan:
+            for _name, params in plan:
                 for param in params:
                     value = get_stream_value(param)
                     if isinstance(value, StreamValue):

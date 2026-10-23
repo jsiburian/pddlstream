@@ -166,7 +166,7 @@ def step_plan(tamp_problem, plan):
     for i, action in enumerate(plan):
         name, args = action
         print(i, name, args)
-        for state in apply_action(state, action):
+        for state in apply_action(state, action):  # noqa: B020 (the next action starts from the last state)
             print(state)
             draw_state(viewer, state, colors)
             user_input('Continue?')

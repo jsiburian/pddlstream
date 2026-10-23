@@ -228,7 +228,7 @@ def to_pddlstream(belief_problem, collisions=True):
     init = [('Obs', obs) for obs in observations] + [('Location', l) for l in locations]
     for o, d in initial_bel.items():
         init += [('Dist', o, d), ('BLoc', o, d)]
-    for o, l, p in belief_problem.goal:
+    for _, l, p in belief_problem.goal:
         init += [('Location', l), ('GoalProb', l, p)]
     goal_literals = [('BLocGE', o, l, p) for (o, l, p) in belief_problem.goal]
     goal = And(*goal_literals)

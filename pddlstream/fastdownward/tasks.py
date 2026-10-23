@@ -306,7 +306,7 @@ def get_action_instances(task, action_plan):
         # TODO: what if more than one action of the same name due to normalization?
         # Normalized actions have same effects, so I just have to pick one
         # TODO: conditional effects and internal parameters
-        action = find_unique(lambda a: a.name == name, task.actions)
+        action = find_unique(lambda a: a.name == name, task.actions)  # noqa: B023 (called right away)
         args = list(map(pddl_from_object, objects))
         variable_mapping = {p.name: a for p, a in safe_zip(action.parameters, args)}
         instance = action.instantiate(

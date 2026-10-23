@@ -17,7 +17,7 @@ def add_optimizer_effects(instantiated, node_from_atom):
     # TODO: bug! The FD instantiator prunes the result.external.stream_fact
     for instance in instantiated.actions:
         # TODO: need to handle case where a negative preconditions is used in an optimizer
-        for condition, effect in instance.add_effects + instance.del_effects:
+        for condition, _ in instance.add_effects + instance.del_effects:
             for literal in condition:
                 fact = fact_from_fd(literal)
                 if (fact in node_from_atom) and (node_from_atom[fact].result is not None):

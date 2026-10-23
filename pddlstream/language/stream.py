@@ -327,7 +327,7 @@ class StreamInstance(Instance):
         output_objects = []
         representative_outputs = self.get_representative_optimistic()
         assert representative_outputs is not None
-        for name, value, rep in zip(self.external.outputs, output_values, representative_outputs):
+        for _, value, rep in zip(self.external.outputs, output_values, representative_outputs):
             # TODO: retain the value from a custom opt_gen_fn but use unique
             param = value
             value = rep

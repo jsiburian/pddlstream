@@ -36,7 +36,7 @@ class BoundedGenerator(Iterator):
             self.history.append(next(self.generator))
         except StopIteration:
             self.stopped = True
-            raise StopIteration()
+            raise StopIteration() from None
         return self.history[-1]
 
 
@@ -142,7 +142,7 @@ def accelerate_list_gen_fn(list_gen_fn, num_elements=1, max_attempts=1, max_time
         while not terminated:
             start_time = time.time()
             elements = []
-            for i in range(max_attempts):
+            for _ in range(max_attempts):
                 if terminated or (num_elements <= len(elements)) or (max_time <= elapsed_time(start_time)):
                     break
                 new_elements, terminated = get_next(generator)

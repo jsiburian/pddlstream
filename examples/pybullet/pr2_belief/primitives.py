@@ -288,7 +288,7 @@ class ScanRoom(Command):
     def apply(self, state, **kwargs):
         assert self.surface in state.task.rooms
         obs_fn = get_observation_fn(self.surface)
-        for body, dist in state.b_on.items():
+        for dist in state.b_on.values():
             if 0 < dist.prob(self.surface):
                 dist.obsUpdate(obs_fn, True)
         yield
