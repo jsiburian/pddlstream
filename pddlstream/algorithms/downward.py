@@ -64,6 +64,44 @@ from pddl_parser.parsing_functions import parse_domain_pddl, parse_task_pddl, \
     parse_condition, check_for_duplicates
 sys.argv = original_argv
 
+def hash_conditions_by_class_name():
+    # The translator hashes conditions as hash((self.__class__, ...)), and classes hash by memory address, so sets of
+    # literals (which both the translator and pddlstream iterate over) were ordered differently on every run.
+    # These are the translator's constructors, except that they hash the class name.
+    def condition_init(self, parts):
+        unique_parts = []
+        for part in parts:
+            if part not in unique_parts:
+                unique_parts.append(part)
+        self.parts = tuple(unique_parts)
+        self.hash = hash((self.__class__.__name__, self.parts))
+
+    def constant_condition_init(self):
+        self.hash = hash(self.__class__.__name__)
+
+    def quantified_condition_init(self, parameters, parts):
+        self.parameters = tuple(parameters)
+        self.parts = tuple(parts)
+        self.hash = hash((self.__class__.__name__, self.parameters, self.parts))
+
+    def literal_init(self, predicate, args):
+        self.predicate = predicate
+        self.args = tuple(args)
+        self.hash = hash((self.__class__.__name__, self.predicate, self.args))
+
+    def numeric_expression_init(self, symbol, args):
+        self.symbol = symbol
+        self.args = tuple(args)
+        self.hash = hash((self.__class__.__name__, self.symbol, self.args))
+
+    pddl.conditions.Condition.__init__ = condition_init
+    pddl.conditions.ConstantCondition.__init__ = constant_condition_init
+    pddl.conditions.QuantifiedCondition.__init__ = quantified_condition_init
+    pddl.conditions.Literal.__init__ = literal_init
+    pddl.f_expression.PrimitiveNumericExpression.__init__ = numeric_expression_init
+
+hash_conditions_by_class_name()
+
 TEMP_DIR = 'temp/'
 TRANSLATE_OUTPUT = 'output.sas'
 SEARCH_OUTPUT = 'sas_plan'
