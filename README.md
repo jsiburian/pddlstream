@@ -57,7 +57,9 @@ Other tasks:
 * `pixi run build-fd`: rebuild FastDownward. It compiles on every core; add `-j4` to limit memory use.
 * `pixi run clean-fd`: delete the FastDownward build (needed after switching compilers).
 * `pixi run build-ikfast`: optionally compile the PR2 IKFast solver; PyBullet IK is used otherwise.
-* `pixi run test`: run the example test suite.
+* `pixi run test`: run the fast test suite. Every headless example must solve, and the validator must accept its plan.
+* `pixi run test-gui`: run the examples that open viewers (Tkinter and PyBullet) under `xvfb-run`.
+* `pixi run -e full test-gurobi`: run the optimizer examples. Add `-m slow` to any pytest run for the multi-minute examples.
 
 PDDLStream requires Python 3.11 or newer.
 A non-editable `pip install .` is not supported because FastDownward is located relative to the source checkout.

@@ -1,6 +1,5 @@
 """In-process tests of solver entry points and helpers."""
 import pathlib
-import sys
 
 import pytest
 
@@ -15,12 +14,6 @@ from pddlstream.language.generator import compose_gen_fns, from_fn, gen_fn_from_
 from examples.blocksworld.run import get_problem as get_blocksworld
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-
-
-@pytest.fixture(autouse=True)
-def in_tmp_dir(tmp_path, monkeypatch):
-    # Solvers write temp/ and statistics/ into the working directory
-    monkeypatch.chdir(tmp_path)
 
 
 @pytest.mark.parametrize('solver', [solve_serialized, solve_immediate, solve_exhaustive, solve_hierarchical])
@@ -64,13 +57,3 @@ def test_numpy_math_shim():
     import examples.pybullet  # Restores numpy.math for the pinned submodule
     from examples.pybullet.utils.pybullet_tools.utils import get_yaw
     assert get_yaw((1, 1)) == pytest.approx(0.785398, abs=1e-6)
-
-
-@pytest.mark.slow
-def test_discrete_belief(monkeypatch, capsys):
-    # The example caps itself at 30 s; adaptive needs a few minutes
-    import examples.discrete_belief.run as discrete_belief
-    monkeypatch.setattr(sys, 'argv', ['run'])
-    monkeypatch.setattr(discrete_belief, 'solve', lambda *args, **kwargs: solve(*args, **{**kwargs, 'max_time': 300}))
-    discrete_belief.main()
-    assert 'Solved: True' in capsys.readouterr().out

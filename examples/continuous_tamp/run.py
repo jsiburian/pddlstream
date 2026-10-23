@@ -185,6 +185,19 @@ MUTEXES = [
 
 ##################################################
 
+def get_stream_info(defer_fn=defer_shared):
+    """Stream settings used by main(): when each stream may be deferred, eagerness and success estimates."""
+    return {
+        's-region': StreamInfo(defer_fn=defer_fn),
+        's-grasp': StreamInfo(defer_fn=defer_fn),
+        's-ik': StreamInfo(defer_fn=get_defer_all_unbound(inputs='?g')),
+        's-motion': StreamInfo(defer_fn=get_defer_any_unbound()),
+        't-cfree': StreamInfo(defer_fn=get_defer_any_unbound(), eager=False, verbose=False),
+        't-region': StreamInfo(eager=True, p_success=0),
+        'dist': FunctionInfo(eager=False, defer_fn=get_defer_any_unbound(), opt_fn=lambda q1, q2: MOVE_COST),
+        'gurobi-cfree': StreamInfo(eager=False, negate=True),
+    }
+
 def set_deterministic(seed=0):
     random.seed(seed)
     np.random.seed(seed=seed)
@@ -227,21 +240,7 @@ def main():
     parser.add_argument('-s', '--skeleton', action='store_true', help='Enforces skeleton plan constraints')
     tamp_problem, args = initialize(parser)
 
-    # TODO: test if placed in the same region
-    defer_fn = defer_shared # never_defer | defer_unique | defer_shared
-    stream_info = {
-        's-region': StreamInfo(defer_fn=defer_fn),
-        's-grasp': StreamInfo(defer_fn=defer_fn),
-        's-ik': StreamInfo(defer_fn=get_defer_all_unbound(inputs='?g')), # defer_fn | defer_unbound
-        's-motion': StreamInfo(defer_fn=get_defer_any_unbound()),
-        't-cfree': StreamInfo(defer_fn=get_defer_any_unbound(), eager=False, verbose=False), # defer_fn |  defer_unbound
-        't-region': StreamInfo(eager=True, p_success=0),  # bound_fn is None
-        'dist': FunctionInfo(eager=False, defer_fn=get_defer_any_unbound(), opt_fn=lambda q1, q2: MOVE_COST),
-        'gurobi-cfree': StreamInfo(eager=False, negate=True), # TODO: AttributeError: 'tuple' object has no attribute 'instance'
-        #'gurobi': OptimizerInfo(p_success=0),
-        #'rrt': OptimizerInfo(p_success=0),
-    }
-    #stream_info = {}
+    stream_info = get_stream_info()
 
     hierarchy = [
         #ABSTRIPSLayer(pos_pre=['atconf']), #, horizon=1),

@@ -24,8 +24,12 @@ include = ["pddlstream*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."] # The examples package is not installed
-markers = ["slow: takes several minutes (deselected by default; run with -m slow)"]
-addopts = "-m 'not slow'"
+markers = [
+    "slow: takes several minutes (run with -m slow)",
+    "gui: opens a viewer, so it runs under xvfb-run (run with pixi run test-gui)",
+    "gurobi: needs gurobipy (run with pixi run -e full test-gurobi)",
+]
+addopts = "-m 'not slow and not gui and not gurobi'"
 
 ##################################################
 
@@ -70,6 +74,9 @@ pyscreenshot = "*"
 [tool.pixi.feature.gurobi.pypi-dependencies]
 gurobipy = ">=13"
 
+[tool.pixi.feature.gurobi.tasks]
+test-gurobi = { cmd = "pytest -m gurobi", description = "Run the optimizer examples" }
+
 [tool.pixi.feature.test.dependencies]
 pytest = "*"
 
@@ -94,4 +101,5 @@ build-fd = { cmd = "python build.py", cwd = "downward", env = { CMAKE_POLICY_VER
 clean-fd = { cmd = "rm -rf downward/builds", description = "Delete the FastDownward build (needed after switching compilers)" }
 setup = { depends-on = ["submodules", "build-fd"], description = "Fetch submodules and compile FastDownward" }
 build-ikfast = { cmd = "python setup.py", cwd = "examples/pybullet/utils/pybullet_tools/ikfast/pr2", description = "Optional: compile the PR2 IKFast solver (otherwise pybullet IK is used)" }
-test = { cmd = "pytest", description = "Run the example test suite" }
+test = { cmd = "pytest", description = "Run the fast test suite" }
+test-gui = { cmd = "pytest -m 'gui and not slow and not gurobi'", description = "Run the examples that open viewers, under xvfb-run" }

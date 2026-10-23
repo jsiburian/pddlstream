@@ -264,6 +264,7 @@ def to_pddlstream(belief_problem, collisions=True):
 
 def main(deterministic=False, observable=False, collisions=True, factor=True):
     parser = create_parser()
+    parser.add_argument('-t', '--max_time', default=30, type=int, help='The max time')
     args = parser.parse_args()
     print('Arguments:', args)
 
@@ -285,7 +286,7 @@ def main(deterministic=False, observable=False, collisions=True, factor=True):
     with Profiler(field='tottime', num=10):
         solution = solve(pddlstream_problem, algorithm=args.algorithm, unit_costs=args.unit,
                          stream_info=stream_info, planner=planner, debug=False,
-                         success_cost=success_cost, max_time=30)
+                         success_cost=success_cost, max_time=args.max_time)
     print_solution(solution)
 
 if __name__ == '__main__':
