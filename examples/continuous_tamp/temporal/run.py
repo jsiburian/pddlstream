@@ -30,7 +30,7 @@ def pddlstream_from_tamp(tamp_problem, use_stream=True, use_optimizer=False, col
     external_pddl = [read(path) for path in external_paths]
 
     constant_map = {'{}'.format(name).lower(): name
-                    for name in initial.block_poses.keys() + tamp_problem.regions.keys()}
+                    for name in list(initial.block_poses) + list(tamp_problem.regions)}
     #constant_map = {}
     init = [
         ('Safe',),

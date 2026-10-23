@@ -39,7 +39,7 @@ def create_problem(goal, obstacles=(), regions={}, max_distance=.5):
     samples = []
     def region_gen(region):
         lower, upper = regions[region]
-        area = np.product(upper - lower)
+        area = np.prod(upper - lower)
         # TODO: sample proportional to area
         while True:
             q = ARRAY(sample_box(regions[region]))

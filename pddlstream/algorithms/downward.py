@@ -609,8 +609,8 @@ def get_action_instances(task, action_plan):
         action = find_unique(lambda a: a.name == name, task.actions)
         args = list(map(pddl_from_object, objects))
         variable_mapping = {p.name: a for p, a in safe_zip(action.parameters, args)}
-        instance = action.instantiate(variable_mapping, init_facts, fluent_facts, type_to_objects,
-                                      task.use_min_cost_metric, function_assignments, predicate_to_atoms)
+        instance = action.instantiate(variable_mapping, init_facts, function_assignments, fluent_facts,
+                                      type_to_objects, task.use_min_cost_metric, predicate_to_atoms)
         assert (instance is not None)
         action_instances.append(instance)
     return action_instances

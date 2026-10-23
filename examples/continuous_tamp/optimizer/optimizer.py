@@ -68,30 +68,30 @@ def collision_constraint(model, name, b1, p1, b2, p2):
     from gurobipy import GRB
     dist = unbounded_var(model)
     abs_dist = unbounded_var(model)
-    model.addConstr(dist, GRB.EQUAL, p2[0] - p1[0], name=name)
-    model.addConstr(BLOCK_WIDTH + MIN_CLEARANCE, GRB.LESS_EQUAL, abs_dist, name=name)
+    model.addLConstr(dist, GRB.EQUAL, p2[0] - p1[0], name=name)
+    model.addLConstr(BLOCK_WIDTH + MIN_CLEARANCE, GRB.LESS_EQUAL, abs_dist, name=name)
     model.addGenConstrAbs(abs_dist, dist, name=name)  # abs_
 
 def kinematics_constraint(model, name, b, q, p, g):
     from gurobipy import GRB
     for i in range(len(q)):
-        model.addConstr(q[i] + g[i], GRB.EQUAL, p[i], name=name)
+        model.addLConstr(q[i] + g[i], GRB.EQUAL, p[i], name=name)
     #model.addConstr(p[1], GRB.EQUAL, 0, name=name)  # IK vs pick/place semantics
 
 def contained_constraint(model, regions, name, b, p, r):
     from gurobipy import GRB
     px, py = p
     x1, x2 = regions[r]
-    model.addConstr(x1, GRB.LESS_EQUAL, px - BLOCK_WIDTH / 2, name=name)
-    model.addConstr(px + BLOCK_WIDTH / 2, GRB.LESS_EQUAL, x2, name=name)
-    model.addConstr(py, GRB.EQUAL, 0, name=name)
+    model.addLConstr(x1, GRB.LESS_EQUAL, px - BLOCK_WIDTH / 2, name=name)
+    model.addLConstr(px + BLOCK_WIDTH / 2, GRB.LESS_EQUAL, x2, name=name)
+    model.addLConstr(py, GRB.EQUAL, 0, name=name)
 
 def motion_constraint(model, name, q1, t, q2):
     from gurobipy import GRB
     for i in range(len(q1)):
-        model.addConstr(t[0][i], GRB.EQUAL, q1[i], name=name)
+        model.addLConstr(t[0][i], GRB.EQUAL, q1[i], name=name)
     for i in range(len(q2)):
-        model.addConstr(t[1][i], GRB.EQUAL, q2[i], name=name)
+        model.addLConstr(t[1][i], GRB.EQUAL, q2[i], name=name)
 
 def distance_cost(model, q1, q2, norm=1):
     from gurobipy import GRB

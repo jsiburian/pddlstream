@@ -5,7 +5,7 @@ from . import miscUtil
 
 from functools import reduce
 from itertools import product
-from numpy import exp, linalg, complex128, identity, mat, prod, zeros, mod
+from numpy import exp, linalg, complex128, identity, asmatrix as mat, prod, zeros, mod
 import random
 import operator as op
 import copy
@@ -550,7 +550,7 @@ class GaussianDistribution(Distribution):
 
 
 class LogNormalDistribution(Distribution):
-    """
+    r"""
     log d ~ Normal(mu, sigma)
     Note that in some references we use \rho = 1/\sigma^2
     """
@@ -628,7 +628,7 @@ class MultivariateGaussianDistribution(Distribution):
     def prob(self, v):
         d = len(v)
         if type(v) in (tuple, list):
-            v = np.mat(v).T
+            v = np.asmatrix(v).T
         norm = math.sqrt((2 * math.pi) ** d * linalg.det(self.sigma))
         diff = v - self.mu
         if diff.shape == (1, 4):
@@ -773,7 +773,7 @@ class MultivariateGaussianDistribution(Distribution):
 
     def kalmanTransUpdate(self, u, transSigma):
         if type(u) in (list, tuple):
-            u = np.mat(u).T
+            u = np.asmatrix(u).T
         mu = self.mu + u
         if self.pose4:
             mu[3, 0] = fixAnglePlusMinusPi(mu[3, 0])
@@ -782,7 +782,7 @@ class MultivariateGaussianDistribution(Distribution):
 
     def kalmanObsUpdate(self, obs, obsSigma):
         if type(obs) in (list, tuple):
-            obs = np.mat(obs).T
+            obs = np.asmatrix(obs).T
         innovation = np.transpose(obs - self.mu)
         if self.pose4:
             innovation[0, 3] = fixAnglePlusMinusPi(innovation[0, 3])

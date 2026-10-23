@@ -71,7 +71,7 @@ def get_stream_value(value):
     return StreamValue(value.stream, tuple(map(get_stream_value, value.input_values)), value.output_parameter)
 
 def p_conjunction(stream_plans, stats_from_stream):
-    return np.product([stats_from_stream[stream].p_success
+    return np.prod([stats_from_stream[stream].p_success
                        for stream, _ in set.union(*stream_plans)])
 
 def p_disjunction(stream_plans, stats_from_stream):

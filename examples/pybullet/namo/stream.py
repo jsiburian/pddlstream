@@ -201,7 +201,7 @@ def get_cost_fn(problem, constant=0., coefficient=1.):
 
 def create_vertices(problem, robot, samples, samples_per_ft2=8, **kwargs):
     lower, upper = problem.limits
-    area = np.product(upper - lower)
+    area = np.prod(upper - lower)
     print('Area:', area)
     num_samples = int(samples_per_ft2 * area)
 

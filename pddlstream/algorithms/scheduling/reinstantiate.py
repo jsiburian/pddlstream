@@ -25,7 +25,7 @@ def instantiate_unsatisfiable(state, action, var_mapping, negative_from_name={})
             predicate_to_atoms = instantiate.get_atoms_by_predicate(state)
             result = []
             normal_effect.instantiate(var_mapping, state, {effect.literal},
-                                      objects_by_type, predicate_to_atoms, result)
+                                      objects_by_type, result, predicate_to_atoms)
             for _, _, _, mapping in result:
                 for literal in negative:
                     new_literal = literal.rename_variables(mapping).negate()
