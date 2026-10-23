@@ -64,6 +64,13 @@ class SolverConfig:
 
     # Advanced
     fd_instantiate: bool = True  # Instantiate actions with FastDownward rather than pddlstream's own instantiator
+    # The adaptive algorithm's skeleton queue: whether bindings are ordered by complexity, visits and remaining streams
+    # (otherwise by visits), how many visits a binding is sampled greedily for, whether only a skeleton's most
+    # advanced binding is, and whether a binding is sampled only while its downstream streams can still succeed
+    skeleton_priorities: bool = True
+    greedy_visits: int = 0
+    greedy_best: bool = True
+    require_downstream: bool = True
     exogenous_axioms: bool = True  # Compile exogenous streams into axioms rather than actions
     exogenous_future_values: bool = True  # Plan with placeholder values until an exogenous stream can be called
 

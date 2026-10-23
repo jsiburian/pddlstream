@@ -8,7 +8,7 @@ from itertools import count
 from pddlstream.algorithms.common import stream_plan_preimage
 from pddlstream.algorithms.disabled import bind_action_plan, process_instance, update_bindings, update_cost
 from pddlstream.algorithms.visualization import visualize_stream_orders
-from pddlstream.core.context import BINDING_WORK, get_clock
+from pddlstream.core.context import BINDING_WORK, get_clock, get_config
 from pddlstream.core.conversion import evaluation_from_fact
 from pddlstream.core.evaluations import COMPLEXITY_OP, add_certified
 from pddlstream.core.problem import FAILED, INFEASIBLE, is_plan
@@ -26,11 +26,8 @@ from pddlstream.language.plans import get_output_objects, get_partial_orders
 
 logger = logging.getLogger(__name__)
 
-# TODO: the bias away from solved things is actually due to USE_PRIORITIES+timed_process not REQUIRE_DOWNSTREAM
-USE_PRIORITIES = True
-GREEDY_VISITS = 0
-GREEDY_BEST = True
-REQUIRE_DOWNSTREAM = True
+# The queue's options are SolverConfig fields: skeleton_priorities, greedy_visits, greedy_best and require_downstream
+# TODO: the bias away from solved things is actually due to skeleton_priorities+timed_process not require_downstream
 
 Priority = namedtuple('Priority', ['not_greedy', 'complexity', 'visits', 'remaining', 'cost'])  # TODO: FIFO
 Affected = namedtuple('Affected', ['indices', 'has_cost'])
@@ -182,7 +179,8 @@ class Binding(CreationHash):
         return not self.children
 
     def is_greedy(self):
-        return (self.visits <= GREEDY_VISITS) and (not GREEDY_BEST or self.is_best())
+        config = get_config()
+        return (self.visits <= config.greedy_visits) and (not config.greedy_best or self.is_best())
 
     def up_to_date(self):
         if self.is_fully_bound:
@@ -233,7 +231,7 @@ class Binding(CreationHash):
         return self.check_downstream_helper(self.skeleton.affected_indices[self.index])
 
     def get_priority(self):
-        if not USE_PRIORITIES:
+        if not get_config().skeleton_priorities:
             return Priority(not_greedy=True, complexity=0, visits=self.visits, remaining=0, cost=0.0)
         # TODO: use effort instead
         # TODO: instead of remaining, use the index in the queue to reprocess earlier ones
@@ -355,7 +353,7 @@ class SkeletonQueue(Sized):
             return readd, is_new
         binding.visits += 1
         instance = binding.result.instance
-        if REQUIRE_DOWNSTREAM and not binding.check_downstream():  # TODO: move check_complexity here
+        if get_config().require_downstream and not binding.check_downstream():  # TODO: move check_complexity here
             # TODO: causes redundant plan skeletons to be identified
             # (along with complexity using visits instead of calls)
             # Do I need to re-enable this stream in case another skeleton needs it?
