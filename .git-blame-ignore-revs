@@ -1,3 +1,5 @@
 # Formatting-only commits, skipped by git blame (git config blame.ignoreRevsFile .git-blame-ignore-revs)
 # Format with ruff
 34dbae8b87399afa37f7bfb1f9807bcea76aaf02
+# Sort imports with ruff
+e360567bcb64c6cf90de565c78f1e797847b4703
