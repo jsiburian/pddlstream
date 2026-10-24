@@ -13,7 +13,7 @@ from benchmarks.common.goals import goal_from_task, goal_literals
 from benchmarks.common.primitives import Conf, Pose, get_procedures, get_stream_info, seed
 from benchmarks.common.protocol import condition_key, pose_from_state
 from benchmarks.common.skills import SKILLS, SkillStep, compile_skills
-from benchmarks.common.world import World
+from benchmarks.common.world import World, pbu
 from pddlstream.algorithms.session import PlannerSession, WorldPatch
 from pddlstream.algorithms.validate import verify_certificate
 from pddlstream.core.problem import PDDLProblem
@@ -26,6 +26,14 @@ OPEN, CLOSED = 0.0, 1.0
 MAX_JOINT_STEP = 0.05  # Radians between consecutive actions
 GRIPPER_STEPS = 5  # Actions that hold the arm still while the gripper opens or closes
 TOLERANCE = 0.03  # Meters an object may be from where the plan expects it before replanning
+
+
+def lowest_point(spec, state):
+    """The height of an object's lowest point: its box's bottom, or its lowest surface point."""
+    if not spec.points:
+        return state.position[2] - spec.size[2] / 2
+    rotation = pbu.matrix_from_quat(pose_from_state(state)[1])
+    return state.position[2] + (np.asarray(spec.points) @ rotation.T)[:, 2].min()
 
 
 class TampPolicy:
@@ -64,7 +72,7 @@ class TampPolicy:
         }
         self.poses[TABLE] = Pose(self.world, TABLE, ((0, 0, 0), (0, 0, 0, 1)))
         bottoms = [
-            state.position[2] - self.world.specs[name].size[2] / 2
+            lowest_point(self.world.specs[name], state)
             for name, state in observation.objects.items()
             if name in self.world.specs
         ]

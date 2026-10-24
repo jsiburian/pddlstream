@@ -36,22 +36,37 @@ from robolab.registrations.droid.auto_env_registrations_jointpos import auto_reg
 
 from benchmarks.common.protocol import ObjectSpec  # noqa: E402
 from benchmarks.robolab.client import TampInferenceClient, task_spec_from_robolab  # noqa: E402
+from benchmarks.robolab.meshes import object_points  # noqa: E402
 
 FIXTURES = {'table', 'robot'}  # The planner models the robot and the table itself
 
 auto_register_droid_envs(task_dirs=args.task_dirs, task=args.task)
 
 
+def scene_points(env_cfg, names):
+    """The objects' surface points from the task's scene file, or {} when it can't be read (the planner then uses
+    their bounding boxes)."""
+    try:
+        return object_points(env_cfg.scene.scene.spawn.usd_path, names)
+    except Exception:  # Any failure falls back to boxes
+        traceback.print_exc()
+        return {}
+
+
 def scene_from_env(env, env_cfg, task):
-    """The task's objects as ObjectSpecs: boxes of their bounding boxes. Objects that the success conditionals put
-    things in or on are containers, which the planner keeps fixed; the others are movable."""
+    """The task's objects as ObjectSpecs: their bounding boxes, and their surface points from the scene file. Objects
+    that the success conditionals put things in or on are containers, which the planner keeps fixed; the others are
+    movable."""
     world = get_world(env)
     supports = {c.params.get('container') or c.params.get('reference_object') for c in task.success} - {None}
+    names = [name for name in env_cfg.contact_object_list or [] if name not in FIXTURES]
+    points = scene_points(env_cfg, names)
     specs = []
-    for name in env_cfg.contact_object_list or []:
-        if name not in FIXTURES:
-            size = tuple(float(x) for x in world.get_dimensions(name))
-            specs.append(ObjectSpec(name, size, 'container' if name in supports else 'movable'))
+    for name in names:
+        size = tuple(float(x) for x in world.get_dimensions(name))
+        shape = tuple(map(tuple, points[name].round(5).tolist())) if name in points else ()
+        specs.append(ObjectSpec(name, size, 'container' if name in supports else 'movable', shape))
+    print(f'Scene: {[(spec.name, spec.kind, len(spec.points)) for spec in specs]}', flush=True)
     return specs
 
 

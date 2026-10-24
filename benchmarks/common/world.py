@@ -35,6 +35,14 @@ GRIPPERS = {
 }
 
 
+def create_body(spec):
+    """A static PyBullet body for an object: its box, or the convex hull of its points."""
+    if not spec.points:
+        return pbu.create_box(*spec.size, color=COLORS[spec.kind])
+    collision = pbu.p.createCollisionShape(pbu.p.GEOM_MESH, vertices=list(spec.points), physicsClientId=pbu.CLIENT)
+    return pbu.create_body(collision)  # Without a visual shape: the mirror has no viewer
+
+
 class World:
     """The PyBullet bodies of a scene (in this process's PyBullet client)."""
 
@@ -52,7 +60,7 @@ class World:
         self.table = pbu.create_box(*TABLE_SIZE, color=pbu.TAN)
         self.set_table_top(TABLE_TOP)
         self.specs = {spec.name: spec for spec in specs}
-        self.bodies = {spec.name: pbu.create_box(*spec.size, color=COLORS[spec.kind]) for spec in specs}
+        self.bodies = {spec.name: create_body(spec) for spec in specs}
         self.names = {body: name for name, body in self.bodies.items()}
         self.set_arm(HOME_CONF)
         self.open_gripper()

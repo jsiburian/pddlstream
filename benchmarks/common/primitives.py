@@ -11,6 +11,9 @@ from pddlstream.language.stream import StreamInfo
 
 APPROACH = pbu.Pose(point=pbu.Point(z=-0.1))  # The gripper approaches 10 cm along its axis
 CENTER_MARGIN = 0.02  # With 'center' containment, object centers stay this far inside a container's footprint
+PAD_HALF_WIDTH = 0.011  # Half a finger pad's width, across the direction the fingers close in
+GRASP_DEPTH = 0.02  # How far below an object's top the tool frame goes
+FINGER_CLEARANCE = 0.01  # Room left between the object and each open finger, and above the table
 SELF_COLLISIONS = False  # PyBullet's Panda model reports contacts between the hand and its fingers
 IK_ATTEMPTS = 10
 
@@ -89,10 +92,13 @@ def get_procedures(world, teleport=False):
             yield (Pose(world, name, value),)
 
     def sample_grasp(name):
-        body = world.bodies[name]
-        grasps = get_top_grasps(
-            body, under=True, tool_pose=pbu.Pose(), max_width=world.gripper.max_width, grasp_length=0.02
-        )
+        body, points = world.bodies[name], world.specs[name].points
+        if points:
+            grasps = point_grasps(points, world.gripper.max_width)
+        else:
+            grasps = get_top_grasps(
+                body, under=True, tool_pose=pbu.Pose(), max_width=world.gripper.max_width, grasp_length=0.02
+            )
         for value in grasps:
             yield (Grasp(name, value),)
 
@@ -215,6 +221,41 @@ def solve_ik(world, target_pose):
     world.set_arm(conf)
     lower, upper = zip(*(pbu.get_joint_limits(world.robot, joint) for joint in world.arm))
     return conf if pbu.all_between(lower, conf, upper) else None
+
+
+def point_grasps(points, max_width, yaws=16, num_centers=24, max_grasps=16):
+    """Top grasps (tool from object poses) of an object given by surface points in its frame, assumed upright. The
+    fingers close across a slice of the object (the points under the finger pads) narrower than max_width, centered
+    on it; grasps nearest the object's middle come first. Unlike box grasps, they fit curved objects such as a
+    banana, whose bounding box is wider than the gripper opens."""
+    points = np.asarray(points, dtype=float)
+    xy, middle = points[:, :2], points[:, :2].mean(axis=0)
+    # The middle, then points spread over the object, nearest the middle first
+    order = np.argsort(np.linalg.norm(xy - middle, axis=1), kind='stable')
+    centers = [middle] + [xy[i] for i in order[:: max(1, len(order) // num_centers)]]
+    bottom, candidates = points[:, 2].min(), []
+    for center in centers:
+        for k in range(yaws):  # Over a full turn: a grasp and its mirror image need different wrist angles
+            theta = 2 * np.pi * k / yaws
+            close, across = np.array([np.cos(theta), np.sin(theta)]), np.array([-np.sin(theta), np.cos(theta)])
+            offsets = xy - center
+            under_pads = np.abs(offsets @ across) <= PAD_HALF_WIDTH
+            if not under_pads.any():
+                continue
+            spans = offsets[under_pads] @ close
+            low, high = spans.min(), spans.max()
+            if (high - low) > (max_width - 2 * FINGER_CLEARANCE) or not (low <= 0 <= high):
+                continue
+            point = center + close * (low + high) / 2  # The middle of the slice
+            top = points[under_pads, 2].max()
+            z = max(top - GRASP_DEPTH, bottom + FINGER_CLEARANCE + 0.01)  # The fingertips are 1 cm below the tool
+            # The tool approaches down (-z) and its fingers close along its y axis
+            rotation = np.array([[across[0], close[0], 0.0], [across[1], close[1], 0.0], [0.0, 0.0, -1.0]])
+            object_from_tool = ((point[0], point[1], z), pbu.quat_from_matrix(rotation))
+            distance = round(float(np.linalg.norm(point - middle)), 3)
+            candidates.append((distance, round(float(high - low), 3), k, pbu.invert(object_from_tool)))
+    candidates.sort(key=lambda candidate: candidate[:3])
+    return [grasp for *_, grasp in candidates[:max_grasps]]
 
 
 def center_region(aabb, margin=CENTER_MARGIN):

@@ -30,15 +30,19 @@ class TaskSpec:
 @dataclass(frozen=True)
 class ObjectSpec:
     """An object of the scene: a box of size (x, y, z) in meters; kind is 'movable', 'container' (a flat tray objects
-    can be put in), 'surface' (fixed, objects can be put on it) or 'button' (fixed, pressed by a skill)."""
+    can be put in), 'surface' (fixed, objects can be put on it) or 'button' (fixed, pressed by a skill). points, when
+    given, are its surface in its own frame ((x, y, z) in meters), and the planner uses their shape instead of the
+    box."""
 
     name: str
     size: tuple
     kind: str = 'movable'
+    points: tuple = ()
 
 
 def object_spec_from_json(data):
-    return ObjectSpec(data['name'], tuple(data['size']), data.get('kind', 'movable'))
+    points = tuple(tuple(point) for point in data.get('points', ()))
+    return ObjectSpec(data['name'], tuple(data['size']), data.get('kind', 'movable'), points)
 
 
 @dataclass(frozen=True)

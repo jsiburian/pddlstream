@@ -11,10 +11,11 @@ import pytest
 from benchmarks.common.goals import UnsupportedTask, coverage, goal_from_task, goal_literals
 from benchmarks.common.language import ScriptedAgent, score, symbolic_problem
 from benchmarks.common.policy import TampPolicy
+from benchmarks.common.primitives import point_grasps
 from benchmarks.common.protocol import Conditional, ObjectSpec, TaskSpec, observation_from_json, task_from_json, to_json
 from benchmarks.common.remote import start_server
 from benchmarks.common.skills import PRESS, compile_skills
-from benchmarks.common.world import World
+from benchmarks.common.world import GRIPPERS, World
 from benchmarks.standin.env import SCENARIOS, StandinEnv
 from benchmarks.standin.episodes import generate, load, replay, run_episode
 from examples.pybullet.utils.pybullet_tools import utils as pbu
@@ -65,12 +66,42 @@ def test_robolab_gripper_calibration():
         world.close()
 
 
+def banana_points(radius=0.1, sweep=np.radians(75), thickness=0.036):
+    """A curved tube, centered on its frame, whose bounding box (10 x 23 cm) is wider than the Robotiq opens
+    (8.5 cm)."""
+    points = []
+    for angle in np.linspace(-sweep, sweep, 40):
+        center = radius * np.array([1 - np.cos(angle), np.sin(angle)])
+        outward = np.array([-np.cos(angle), np.sin(angle)])  # From the center of the curve
+        for around in np.linspace(0, 2 * np.pi, 12, endpoint=False):
+            x, y = center + thickness / 2 * np.cos(around) * outward
+            points.append((x, y, thickness / 2 * np.sin(around)))
+    points = np.array(points)
+    return points - (points.min(axis=0) + points.max(axis=0)) / 2
+
+
+def test_point_grasps():
+    points = banana_points()
+    assert (points.max(axis=0) - points.min(axis=0))[0] > GRIPPERS['robotiq'].max_width
+    grasps = point_grasps(points, GRIPPERS['robotiq'].max_width)
+    assert grasps
+    for grasp in grasps:
+        tool = pbu.invert(grasp)
+        distances = np.linalg.norm(points[:, :2] - np.array(tool[0][:2]), axis=1)
+        assert distances.min() < 0.02  # On the banana, not in the middle of its curve
+        assert np.allclose(pbu.matrix_from_quat(tool[1])[:, 2], [0, 0, -1], atol=1e-6)  # From above
+
+
 def test_robolab_scene():
-    # RoboLab's table is level with the robot's base, and a banana longer than the bowl is wide is in the bowl when
-    # its center is (object_in_container)
+    # RoboLab's table is level with the robot's base, the banana is curved, and a banana longer than the bowl is wide
+    # is in the bowl when its center is (object_in_container)
     probe = json.loads(LIVE_PROBE.read_text())
     task = next(task_from_json(data) for data in json.loads(FIXTURES.read_text()) if data['name'] == probe['task'])
-    scene = [ObjectSpec('banana', (0.06, 0.18, 0.04)), ObjectSpec('bowl', (0.16, 0.16, 0.06), 'container')]
+    banana = tuple(map(tuple, banana_points()))
+    scene = [
+        ObjectSpec('banana', (0.1, 0.23, 0.036), points=banana),
+        ObjectSpec('bowl', (0.16, 0.16, 0.06), 'container'),
+    ]
     observation = observation_from_json({'arm': probe['arm'], 'gripper': 0.0, 'objects': probe['objects']})
     policy = TampPolicy(scene, gripper='robotiq', containment='center')
     try:
@@ -187,10 +218,20 @@ def test_propose_goal_checks():
     workspace.close()
 
 
-CLIENT_MODULES = ['benchmarks/common/protocol.py', 'benchmarks/common/remote.py', 'benchmarks/robolab/client.py']
+CLIENT_MODULES = [
+    'benchmarks/common/protocol.py',
+    'benchmarks/common/remote.py',
+    'benchmarks/robolab/client.py',
+    'benchmarks/robolab/meshes.py',
+]
 # The client's own imports: RoboLab's environment has neither pybullet nor this repository's examples (its own
 # examples/ package shadows them), and pddlstream only through PYTHONPATH
-CLIENT_IMPORTS = {'benchmarks.common.protocol', 'benchmarks.common.remote', 'benchmarks.robolab.client'}
+CLIENT_IMPORTS = {
+    'benchmarks.common.protocol',
+    'benchmarks.common.remote',
+    'benchmarks.robolab.client',
+    'benchmarks.robolab.meshes',
+}
 
 
 def imported_modules(path):

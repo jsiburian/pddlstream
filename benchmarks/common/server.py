@@ -30,17 +30,24 @@ def reset(request):
     scene = [object_spec_from_json(spec) for spec in request['scene']]
     policy = TampPolicy(scene, **request.get('options', {}))
     POLICIES[env_id] = policy
+    task = task_from_json(request['task'])
+    print(f'Reset {task.name}: scene {[(spec.name, spec.kind, len(spec.points)) for spec in scene]}', flush=True)
     try:
-        policy.reset(task_from_json(request['task']), observation_from_json(request['observation']))
+        policy.reset(task, observation_from_json(request['observation']))
     except UnsupportedTask as error:
         policy.status = 'unsupported'
+        print(f'  unsupported: {error}', flush=True)
         return {'status': policy.status, 'reason': str(error)}
+    print(f'  {policy.status}: {policy.plans[-1] if policy.plans else None}', flush=True)
     return {'status': policy.status, 'plans': policy.plans}
 
 
 def act(request):
     policy = POLICIES[request.get('env_id', 0)]
+    replans = len(policy.plans)
     actions = policy.act(observation_from_json(request['observation']))
+    if len(policy.plans) > replans:
+        print(f'  replanned ({policy.status}): {policy.plans[-1]}', flush=True)
     return {'actions': to_json(actions), 'status': policy.status, 'replans': policy.replans, 'plans': policy.plans}
 
 
