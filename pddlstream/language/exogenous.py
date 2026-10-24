@@ -88,6 +88,7 @@ def create_static_stream(stream, evaluations, fluent_predicates, future_fn):
     if get_config().exogenous_future_values:
         static_stream.gen_fn = from_fn(static_fn)
         static_stream.opt_gen_fn = static_opt_gen_fn
+        static_stream.inline = True  # static_fn reads the solve's evaluations, so it runs on the solver's thread
     return static_stream
 
 

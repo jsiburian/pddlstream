@@ -129,3 +129,26 @@ def test_deterministic_needs_serial():
 def test_example(capsys):
     main()
     assert 'Processes' in capsys.readouterr().out
+
+
+def test_exogenous_static_procedures_stay_inline():
+    # An exogenous stream's static procedure reads the solve's evaluations, so it must not run on a thread
+    from examples.advanced.exogenous.run import pddlstream_from_belief
+
+    class Recording(ThreadExecutor):
+        def __init__(self):
+            super().__init__(workers=2)
+            self.offloaded = []
+
+        def submit_elsewhere(self, instance):
+            self.offloaded.append(instance.external)
+            return super().submit_elsewhere(instance)
+
+    with Recording() as executor:
+        result = solve(
+            pddlstream_from_belief(), algorithm='adaptive', planner='max-astar', exogenous_future_values=True,
+            executor=executor, verbose=False, max_time=60,
+        )  # fmt: skip
+    assert result.plan is not None
+    assert result.stats['resources']['default']['calls'] > 0  # The future streams' static procedures ran
+    assert executor.offloaded == []
