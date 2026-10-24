@@ -16,6 +16,7 @@ from benchmarks.common.protocol import Conditional, ObjectSpec, TaskSpec, observ
 from benchmarks.common.remote import start_server
 from benchmarks.common.skills import PRESS, compile_skills
 from benchmarks.common.world import GRIPPERS, World
+from benchmarks.robolab.baseline import shard, summarize, supported_tasks
 from benchmarks.standin.env import SCENARIOS, StandinEnv
 from benchmarks.standin.episodes import generate, load, replay, run_episode
 from examples.pybullet.utils.pybullet_tools import utils as pbu
@@ -49,6 +50,22 @@ def test_robolab_coverage():
         if task.name in supported:
             for literal in goal_literals(goal_from_task(task)):
                 assert literal[0] in ('On', 'Holding') and all(isinstance(arg, str) for arg in literal[1:]), literal
+
+
+def test_robolab_baseline():
+    names = supported_tasks(FIXTURES)
+    shards = [shard(names, index, 3) for index in (1, 2, 3)]
+    assert len(names) == 97 and sorted(sum(shards, [])) == names
+    results = [
+        {'task_name': 'A', 'success': True},
+        {
+            'task_name': 'B',
+            'success': False,
+            'reason': 'Condition not satisfied: object_grabbed(object=banana) (step 1/2)',
+        },
+    ]
+    summary = summarize(results)
+    assert (summary['success_rate'], summary['failures'], summary['succeeded']) == (0.5, {'object_grabbed': 1}, ['A'])
 
 
 def test_robolab_gripper_calibration():
