@@ -178,6 +178,28 @@ def test_tilted_object_frame():
         policy.close()
 
 
+def test_tumbled_object():
+    # The banana lands on its side (e.g. after a drop): the replan plans it in a new upright frame
+    probe = json.loads(LIVE_PROBE.read_text())
+    task = next(task_from_json(data) for data in json.loads(FIXTURES.read_text()) if data['name'] == probe['task'])
+    scene = [ObjectSpec('banana', (0.1, 0.23, 0.036), points=tuple(map(tuple, banana_points(sweep=np.radians(30)))))]
+    scene.append(ObjectSpec('bowl', (0.16, 0.16, 0.06), 'container'))
+    observation = observation_from_json({'arm': probe['arm'], 'gripper': 0.0, 'objects': probe['objects']})
+    policy = TampPolicy(scene, gripper='robotiq', containment='center')
+    try:
+        policy.reset(task, observation)
+        assert 'banana' not in policy.frames
+        tilt = pbu.quat_from_euler((np.pi / 2, 0, 0))
+        banana = {'position': [0.5, -0.12, 0.05], 'quaternion': [tilt[3], *tilt[:3]]}
+        tumbled = observation_from_json(
+            {'arm': probe['arm'], 'gripper': 0.0, 'objects': dict(probe['objects'], banana=banana)}
+        )
+        policy.replan(tumbled)
+        assert 'banana' in policy.frames and policy.status == 'executing'
+    finally:
+        policy.close()
+
+
 def test_focus():
     # Clutter that the goal does not mention is fixed for a first, smaller solve
     probe = json.loads(LIVE_PROBE.read_text())

@@ -16,6 +16,7 @@ from benchmarks.common.skills import SKILLS, SkillStep, compile_skills
 from benchmarks.common.world import World, pbu
 from pddlstream.algorithms.session import PlannerSession, WorldPatch
 from pddlstream.algorithms.validate import verify_certificate
+from pddlstream.core.conversion import values_from_objects
 from pddlstream.core.problem import PDDLProblem
 from pddlstream.core.utils import read
 
@@ -88,7 +89,8 @@ class TampPolicy:
         self.prefix = []  # Actions that precede the next plan's (see retreat)
         self.held = None  # The object and grasp that the session's world holds
         self.result = None  # The last solve's SolveResult
-        self.frames = {}  # The orientations at reset of objects with an upright planning frame (see align)
+        self.frames = {}  # The orientations (of their own frames) of objects planned in an upright frame (see align)
+        self.own_points = {}  # The surface points of objects given by points, in their own frames
         self.delegate = None  # The instruction of the skill step that the client performs now
 
     def reset(self, task, observation):
@@ -266,15 +268,32 @@ class TampPolicy:
     def align(self, observation):
         """Gives each object given by points whose frame is not upright (e.g. a figurine whose mesh lies on its side
         in its own frame) an upright planning frame at the same origin, with its points turned into it: grasps
-        approach from above in the object's frame. self.frames holds each such object's orientation at reset."""
+        approach from above in the object's frame. self.frames holds the orientation of each such object's own frame
+        when it got its planning frame; objects that tumble later get a new one (reframe)."""
         self.frames = {}
-        for name, spec in list(self.world.specs.items()):
-            if spec.points and (name in observation.objects):
-                orientation = pose_from_state(observation.objects[name])[1]
-                rotation = pbu.matrix_from_quat(orientation)
-                if rotation[2, 2] < UPRIGHT:
-                    self.frames[name] = orientation
-                    self.world.set_points(name, np.asarray(spec.points) @ rotation.T)
+        self.own_points = {name: np.asarray(spec.points) for name, spec in self.world.specs.items() if spec.points}
+        for name in self.own_points:
+            if name in observation.objects:
+                self.reframe(name, pose_from_state(observation.objects[name])[1])
+
+    def reframe(self, name, orientation):
+        """Gives an object an upright planning frame, from its own frame's orientation in the world, if its current
+        planning frame is not upright. Returns whether it did."""
+        current = self.frames.get(name, (0.0, 0.0, 0.0, 1.0))
+        relative = pbu.multiply(((0, 0, 0), orientation), pbu.invert(((0, 0, 0), current)))[1]
+        if pbu.matrix_from_quat(relative)[2, 2] >= UPRIGHT:
+            return False
+        self.frames[name] = orientation
+        self.world.set_points(name, self.own_points[name] @ pbu.matrix_from_quat(orientation).T)
+        return True
+
+    def forget(self, name):
+        """Drops the session's stream results that involve an object, e.g. after its shape changed (reframe)."""
+        for external in self.session.externals:
+            for instance in list(external.instances.values()):
+                inputs = values_from_objects(instance.input_objects)
+                if name in inputs:
+                    self.session.invalidate(external.name, inputs)
 
     def object_pose(self, name, state):
         """An observed object's pose (an ObjectState), in its planning frame (see align)."""
@@ -330,7 +349,11 @@ class TampPolicy:
             if name == holding:
                 continue
             old = self.poses[name]
-            if np.linalg.norm(np.array(state.position) - np.array(old.value[0])) > TOLERANCE:
+            tumbled = (name in self.own_points) and self.reframe(name, pose_from_state(state)[1])
+            if tumbled:  # E.g. after a drop: its grasps and placements were for its old frame
+                logger.info(f'{name} tumbled: planning in a new upright frame of it')
+                self.forget(name)
+            if tumbled or (np.linalg.norm(np.array(state.position) - np.array(old.value[0])) > TOLERANCE):
                 new = Pose(self.world, name, self.object_pose(name, state))
                 patch_remove += [('AtPose', name, old)]
                 patch_add += [('Pose', name, new), ('AtPose', name, new)]
