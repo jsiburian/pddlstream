@@ -2,6 +2,7 @@
 (containers) and box-shaped objects. Both the planner's mirror of the scene and the stand-in simulator use it.
 """
 
+import dataclasses
 from dataclasses import dataclass
 
 import numpy as np
@@ -14,7 +15,7 @@ FINGER_JOINTS = ['panda_finger_joint1', 'panda_finger_joint2']
 HOME_CONF = (0.0, -0.4, 0.0, -2.0, 0.0, 1.6, 0.8)  # Arm raised in front of the robot
 TABLE_SIZE = (1.6, 1.6, 0.02)
 TABLE_TOP = -0.01  # Just below the robot's base, which would otherwise touch the table
-COLORS = {'movable': pbu.RED, 'container': pbu.GREY, 'surface': pbu.TAN, 'button': pbu.BLUE}
+COLORS = {'movable': pbu.RED, 'container': pbu.GREY, 'surface': pbu.TAN, 'button': pbu.BLUE, 'obstacle': pbu.GREY}
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,17 @@ class World:
 
     def open_gripper(self):
         pbu.set_joint_positions(self.robot, self.fingers, [0.04, 0.04])
+
+    def set_kind(self, name, kind):
+        """Changes an object's kind, e.g. 'movable' to 'obstacle' (fixed, and nothing is put on it)."""
+        self.specs[name] = dataclasses.replace(self.specs[name], kind=kind)
+
+    def set_points(self, name, points):
+        """Replaces an object's surface points (and its body), e.g. to plan in another frame of it."""
+        pbu.remove_body(self.bodies.pop(name))
+        spec = self.specs[name] = dataclasses.replace(self.specs[name], points=tuple(map(tuple, np.round(points, 6))))
+        self.bodies[name] = create_body(spec)
+        self.names = {body: other for other, body in self.bodies.items()}
 
     def container_aabb(self, name):
         """The AABB of a container at its pose: of its points, which its body (only its base) does not span."""

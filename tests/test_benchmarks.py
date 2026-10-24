@@ -157,6 +157,50 @@ def test_container_points():
         policy.close()
 
 
+def test_tilted_object_frame():
+    # A mesh whose frame lies on its side (as some of RoboLab's do): the policy plans in an upright frame of it
+    probe = json.loads(LIVE_PROBE.read_text())
+    task = next(task_from_json(data) for data in json.loads(FIXTURES.read_text()) if data['name'] == probe['task'])
+    tilt = pbu.quat_from_euler((np.pi / 2, 0, 0))  # The object's frame, in the world
+    points = banana_points() @ pbu.matrix_from_quat(tilt)  # Upright in the world, so on its side in its frame
+    objects = dict(probe['objects'])
+    objects['banana'] = dict(objects['banana'], quaternion=[tilt[3], *tilt[:3]])  # (w, x, y, z)
+    scene = [ObjectSpec('banana', (0.1, 0.036, 0.23), points=tuple(map(tuple, points)))]
+    scene.append(ObjectSpec('bowl', (0.16, 0.16, 0.06), 'container'))
+    observation = observation_from_json({'arm': probe['arm'], 'gripper': 0.0, 'objects': objects})
+    policy = TampPolicy(scene, gripper='robotiq', containment='center')
+    try:
+        policy.reset(task, observation)
+        assert 'banana' in policy.frames and policy.status == 'executing'
+        assert np.allclose(policy.poses['banana'].value[1], [0, 0, 0, 1], atol=1e-6)  # Upright at reset
+    finally:
+        policy.close()
+
+
+def test_focus():
+    # Clutter that the goal does not mention is fixed for a first, smaller solve
+    probe = json.loads(LIVE_PROBE.read_text())
+    task = next(task_from_json(data) for data in json.loads(FIXTURES.read_text()) if data['name'] == probe['task'])
+    scene = [ObjectSpec('banana', (0.1, 0.23, 0.036), points=tuple(map(tuple, banana_points())))]
+    scene.append(ObjectSpec('bowl', (0.16, 0.16, 0.06), 'container'))
+    objects = dict(probe['objects'])
+    for index, (x, y) in enumerate([(0.35, -0.3), (0.65, 0.3), (0.3, 0.3)]):
+        scene.append(ObjectSpec(f'block{index}', (0.05, 0.05, 0.05)))
+        objects[f'block{index}'] = {'position': [x, y, 0.028], 'quaternion': [1, 0, 0, 0]}
+    observation = observation_from_json({'arm': probe['arm'], 'gripper': 0.0, 'objects': objects})
+    policy = TampPolicy(scene, gripper='robotiq', containment='center', focus=True)
+    try:
+        policy.reset(task, observation)
+        assert policy.status == 'executing'
+        assert {name for name, spec in policy.world.specs.items() if spec.kind == 'obstacle'} == {
+            'block0',
+            'block1',
+            'block2',
+        }
+    finally:
+        policy.close()
+
+
 def test_retreat_from_contact():
     # After a slipped grasp the gripper may still touch the object: the next plan starts after raising the tool
     probe = json.loads(LIVE_PROBE.read_text())
@@ -268,6 +312,15 @@ def test_reobserved_grasp(client):
     assert result['success'], result
     lift, rest = result['plans']
     assert lift['plan'][1].startswith('pick(a') and rest['plan'][0].startswith('move_holding(')
+
+
+@pytest.mark.benchmarks
+def test_focus_fallback(client):
+    # Block b, which the goal does not mention, is in the way: fixed, it allows no plan, so it becomes movable
+    scenario = next(s for s in SCENARIOS if s.task.name == 'ClearTheTray')
+    result = run_episode(client, scenario, focus=True)
+    assert result['success'], result
+    assert any(step.startswith('pick(b') for step in result['plans'][-1]['plan'])
 
 
 @pytest.mark.benchmarks

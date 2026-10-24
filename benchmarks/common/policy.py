@@ -29,6 +29,8 @@ RETREAT = 0.1  # Meters the tool rises before replanning when the arm touches an
 HELD_TOLERANCE = 0.08  # Meters a held object may be from where the gripper should carry it before it counts as dropped
 LIFT = 0.03  # Meters above the table that a picked-up object's lowest point rises
 NEAR_GRIPPER = 0.15  # Meters from the tool point to the center of an object the gripper holds
+UPRIGHT = 0.99  # The least cosine between an object's z axis and the vertical for its frame to count as upright
+FOCUS_TIME = 20  # Seconds for the solve with the objects the goal does not mention fixed (see focus)
 
 
 class Reobserve:
@@ -41,12 +43,12 @@ class Reobserve:
         return f'Reobserve({self.name})'
 
 
-def lowest_point(spec, state):
-    """The height of an object's lowest point: its box's bottom, or its lowest surface point."""
+def lowest_point(spec, pose):
+    """The height of an object's lowest point at pose: its box's bottom, or its lowest surface point."""
     if not spec.points:
-        return state.position[2] - spec.size[2] / 2
-    rotation = pbu.matrix_from_quat(pose_from_state(state)[1])
-    return state.position[2] + (np.asarray(spec.points) @ rotation.T)[:, 2].min()
+        return pose[0][2] - spec.size[2] / 2
+    rotation = pbu.matrix_from_quat(pose[1])
+    return pose[0][2] + (np.asarray(spec.points) @ rotation.T)[:, 2].min()
 
 
 class TampPolicy:
@@ -64,8 +66,12 @@ class TampPolicy:
         gripper='panda',
         containment='full',
         reobserve=None,
+        focus=False,
     ):
-        """reobserve: whether to replan from the observed grasp after lifting an object (by default, the gripper's)."""
+        """reobserve: whether to replan from the observed grasp after lifting an object (by default, the gripper's).
+        focus: whether to plan first with the movable objects that the goal does not mention fixed (as obstacles),
+        which cluttered scenes need, and with all of them movable only if that finds no plan."""
+        self.focus = focus
         self.world = World(scene, gripper=gripper, containment=containment)
         self.reobserve = self.world.gripper.reobserve if reobserve is None else reobserve
         self.horizon, self.max_time, self.max_replans = horizon, max_time, max_replans
@@ -81,18 +87,21 @@ class TampPolicy:
         self.plans = []  # A report of each plan (see report_plan)
         self.prefix = []  # Actions that precede the next plan's (see retreat)
         self.held = None  # The object and grasp that the session's world holds
+        self.result = None  # The last solve's SolveResult
+        self.frames = {}  # The orientations at reset of objects with an upright planning frame (see align)
         self.delegate = None  # The instruction of the skill step that the client performs now
 
     def reset(self, task, observation):
         seed(0)
         self.goal = goal_from_task(task, skills=self.skills.values())
+        self.align(observation)
         self.poses = {
-            name: Pose(self.world, name, pose_from_state(state)) for name, state in observation.objects.items()
+            name: Pose(self.world, name, self.object_pose(name, state)) for name, state in observation.objects.items()
         }
         self.poses[TABLE] = Pose(self.world, TABLE, ((0, 0, 0), (0, 0, 0, 1)))
         bottoms = [
-            lowest_point(self.world.specs[name], state)
-            for name, state in observation.objects.items()
+            lowest_point(self.world.specs[name], self.poses[name].value)
+            for name in observation.objects
             if name in self.world.specs
         ]
         if bottoms:  # The table is where the lowest object rests
@@ -101,6 +110,25 @@ class TampPolicy:
             pose.assign()
         self.conf = Conf(observation.arm)
         self.domain_pddl = compile_skills(read(os.path.join(DIRECTORY, 'domain.pddl')), self.skills.values())
+        self.replans, self.skill_run, self.plans, self.prefix, self.held = 0, None, [], [], None
+        obstacles = self.obstacles() if self.focus else []
+        for name in obstacles:  # Fixed for a first, smaller solve
+            self.world.set_kind(name, 'obstacle')
+        self.start(max_time=min(self.max_time, FOCUS_TIME) if obstacles else self.max_time)
+        if obstacles and (self.status == 'failed'):  # Maybe one is in the way: solve again with them all movable
+            logger.info(f'No plan with {obstacles} fixed: planning with them movable')
+            for name in obstacles:
+                self.world.set_kind(name, 'movable')
+            self.session.close()
+            self.start()
+
+    def obstacles(self):
+        """The movable objects that the goal does not mention."""
+        mentioned = {argument for literal in goal_literals(self.goal) for argument in literal[1:]}
+        return [name for name in self.world.movables if (name in self.poses) and (name not in mentioned)]
+
+    def start(self, max_time=None):
+        """Starts a planner session for the current world and goal, and plans."""
         problem = PDDLProblem(
             self.domain_pddl,
             {},
@@ -112,14 +140,14 @@ class TampPolicy:
         self.session = PlannerSession(
             problem, stream_info=get_stream_info(), unit_costs=not self.skills, deterministic=True, verbose=False
         )
-        self.replans, self.skill_run, self.plans, self.prefix, self.held = 0, None, [], [], None
-        self.plan()
+        self.plan(max_time)
 
     def get_init(self):
         movables = set(self.world.movables) & set(self.poses)
         literals = goal_literals(self.goal)
         supports = {support for name, _, support in filter(lambda literal: literal[0] == 'On', literals)}
         buttons = {name for name, spec in self.world.specs.items() if spec.kind == 'button'}
+        obstacles = {name for name, spec in self.world.specs.items() if spec.kind == 'obstacle'}
         init = [('Conf', self.conf), ('AtConf', self.conf), ('HandEmpty',), ('CanMove',)]
         for name, pose in self.poses.items():
             kind = 'Movable' if name in movables else 'Button' if name in buttons else 'Surface'
@@ -128,13 +156,13 @@ class TampPolicy:
             surfaces = [
                 other
                 for other in self.poses
-                if ((other not in movables) and (other not in buttons)) or (other in supports - {name})
+                if ((other not in movables) and (other not in buttons | obstacles)) or (other in supports - {name})
             ]
             init += [('Stackable', name, surface) for surface in surfaces]
         return init
 
-    def plan(self):
-        result = self.session.solve(max_time=self.max_time)
+    def plan(self, max_time=None):
+        result = self.result = self.session.solve(max_time=self.max_time if max_time is None else max_time)
         self.plans.append(self.report_plan(result))
         if result.plan is None:
             self.status, self.actions, self.expected = 'failed', [], []
@@ -155,7 +183,7 @@ class TampPolicy:
         world = self.world
         for name, state in observation.objects.items():
             if name in world.bodies:
-                world.set_pose(name, pose_from_state(state))
+                world.set_pose(name, self.object_pose(name, state))
         world.set_arm(observation.arm)
         if not collides(world, world.fixed + [world.bodies[name] for name in world.movables]):
             return []
@@ -235,6 +263,26 @@ class TampPolicy:
                     break
         return actions, expected
 
+    def align(self, observation):
+        """Gives each object given by points whose frame is not upright (e.g. a figurine whose mesh lies on its side
+        in its own frame) an upright planning frame at the same origin, with its points turned into it: grasps
+        approach from above in the object's frame. self.frames holds each such object's orientation at reset."""
+        self.frames = {}
+        for name, spec in list(self.world.specs.items()):
+            if spec.points and (name in observation.objects):
+                orientation = pose_from_state(observation.objects[name])[1]
+                rotation = pbu.matrix_from_quat(orientation)
+                if rotation[2, 2] < UPRIGHT:
+                    self.frames[name] = orientation
+                    self.world.set_points(name, np.asarray(spec.points) @ rotation.T)
+
+    def object_pose(self, name, state):
+        """An observed object's pose (an ObjectState), in its planning frame (see align)."""
+        pose = pose_from_state(state)
+        if name in self.frames:
+            pose = pbu.multiply(pose, pbu.invert(((0.0, 0.0, 0.0), self.frames[name])))
+        return pose
+
     def containing(self, name, pose):
         """With 'center' containment, the containers that an object at pose is in, by RoboLab's object_in_container:
         its center inside the container's footprint, at most a container's height above it."""
@@ -275,7 +323,7 @@ class TampPolicy:
             name, grasp = self.held
             patch_remove += [('AtGrasp', name, grasp)]
             patch_add += [('HandEmpty',)]
-            self.poses[name] = Pose(self.world, name, pose_from_state(observation.objects[name]))
+            self.poses[name] = Pose(self.world, name, self.object_pose(name, observation.objects[name]))
             patch_add += [('Pose', name, self.poses[name]), ('AtPose', name, self.poses[name])]
             self.held = None
         for name, state in observation.objects.items():
@@ -283,7 +331,7 @@ class TampPolicy:
                 continue
             old = self.poses[name]
             if np.linalg.norm(np.array(state.position) - np.array(old.value[0])) > TOLERANCE:
-                new = Pose(self.world, name, pose_from_state(state))
+                new = Pose(self.world, name, self.object_pose(name, state))
                 patch_remove += [('AtPose', name, old)]
                 patch_add += [('Pose', name, new), ('AtPose', name, new)]
                 patch_add += [
@@ -292,7 +340,8 @@ class TampPolicy:
                 self.poses[name] = new
         if holding is not None and not self.held:
             self.world.set_arm(observation.arm)
-            value = pbu.multiply(pbu.invert(self.world.tool_pose()), pose_from_state(observation.objects[holding]))
+            pose = self.object_pose(holding, observation.objects[holding])
+            value = pbu.multiply(pbu.invert(self.world.tool_pose()), pose)
             grasp = Grasp(holding, value)
             patch_remove += [('HandEmpty',), ('AtPose', holding, self.poses[holding])]
             patch_add += [('Grasp', holding, grasp), ('AtGrasp', holding, grasp)]
@@ -387,7 +436,7 @@ class TampPolicy:
         if (name not in observation.objects) or (name not in self.world.specs):
             return False
         state = observation.objects[name]
-        lifted = lowest_point(self.world.specs[name], state) > self.world.table_top + LIFT
+        lifted = lowest_point(self.world.specs[name], self.object_pose(name, state)) > self.world.table_top + LIFT
         self.world.set_arm(observation.arm)
         near = np.linalg.norm(np.array(state.position) - np.array(self.world.tool_pose()[0])) < NEAR_GRIPPER
         return bool(lifted and near)

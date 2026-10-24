@@ -115,7 +115,7 @@ class TampInferenceClient(InferenceClient):
             return np.array([[*observation.arm, observation.gripper]] * self.open_loop_horizon)
         try:
             if env_id not in self.started:
-                options = {'gripper': 'robotiq', 'containment': 'center', 'skills': self.skills}
+                options = {'gripper': 'robotiq', 'containment': 'center', 'focus': True, 'skills': self.skills}
                 self.planner.reset(self.task, self.scene, observation, env_id=env_id, **options)
                 self.started.add(env_id)
             actions, _ = self.planner.act(observation, env_id=env_id)  # An unsupported task holds the arm still
