@@ -1,6 +1,6 @@
 from pddlstream.algorithms.algorithm import remove_blocked
 from pddlstream.core.conversion import replace_expression, transform_action_args
-from pddlstream.core.evaluations import UNKNOWN_EVALUATION, add_facts, is_instance_ready
+from pddlstream.core.evaluations import add_facts, is_instance_ready
 from pddlstream.core.problem import OptPlan, is_plan
 from pddlstream.core.utils import INF, flatten, safe_zip
 from pddlstream.language.function import FunctionResult, PredicateResult
@@ -76,7 +76,7 @@ def process_instance(store, domain, instance, disable=False):
         add_facts(evaluations, result.get_certified(), result=result, complexity=complexity)
     if disable:
         remove_blocked(evaluations, domain, instance, new_results)
-    add_facts(evaluations, new_facts, result=UNKNOWN_EVALUATION, complexity=0)  # TODO: record the instance
+    add_facts(evaluations, new_facts, result=instance, complexity=0)  # Wild facts are supported by their instance
     return new_results, new_facts
 
 

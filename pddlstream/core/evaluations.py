@@ -12,9 +12,10 @@ from pddlstream.core.conversion import evaluation_from_fact, obj_from_value_expr
 # Effort relates to future expected time while complexity refers to past time
 
 COMPLEXITY_OP = max  # max | sum
-INIT_EVALUATION = None
-INTERNAL_EVALUATION = False
-UNKNOWN_EVALUATION = 'unknown'
+# What supports a fact (EvaluationNode.result): a stream Result, the Instance whose call produced a wild fact, or
+INIT_EVALUATION = None  # an initial fact
+INTERNAL_EVALUATION = False  # or a fact the solver adds itself (plan constraints, exogenous and blocked facts)
+UNKNOWN_EVALUATION = 'unknown'  # No longer used: wild facts now record their instance
 
 EvaluationNode = namedtuple('EvaluationNode', ['complexity', 'result'])
 

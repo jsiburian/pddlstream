@@ -6,7 +6,7 @@ from pddlstream.algorithms.common import SolutionStore
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.instantiation import Instantiator
 from pddlstream.core.conversion import obj_from_pddl_plan
-from pddlstream.core.evaluations import UNKNOWN_EVALUATION, add_certified, add_facts
+from pddlstream.core.evaluations import add_certified, add_facts
 from pddlstream.core.problem import is_plan
 from pddlstream.core.utils import INF, str_from_object
 from pddlstream.fastdownward.grounding import sas_from_pddl
@@ -42,8 +42,8 @@ def process_instance(instantiator, store, instance, verbose=False):
         complexity = result.compute_complexity(evaluations)
         for evaluation in add_certified(evaluations, result):
             instantiator.add_atom(evaluation, complexity)
-    fact_complexity = 0  # TODO: record the instance or treat as initial?
-    for evaluation in add_facts(evaluations, new_facts, result=UNKNOWN_EVALUATION, complexity=fact_complexity):
+    fact_complexity = 0  # Wild facts are supported by the instance that produced them
+    for evaluation in add_facts(evaluations, new_facts, result=instance, complexity=fact_complexity):
         instantiator.add_atom(evaluation, fact_complexity)
     if not instance.enumerated:
         instantiator.push_instance(instance)
