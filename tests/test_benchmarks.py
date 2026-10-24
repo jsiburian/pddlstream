@@ -11,7 +11,7 @@ import pytest
 from benchmarks.common.goals import UnsupportedTask, coverage, goal_from_task, goal_literals
 from benchmarks.common.language import ScriptedAgent, score, symbolic_problem
 from benchmarks.common.policy import TampPolicy
-from benchmarks.common.primitives import point_grasps
+from benchmarks.common.primitives import Pose, point_grasps
 from benchmarks.common.protocol import Conditional, ObjectSpec, TaskSpec, observation_from_json, task_from_json, to_json
 from benchmarks.common.remote import start_server
 from benchmarks.common.skills import PRESS, compile_skills
@@ -129,6 +129,34 @@ def test_robolab_scene():
         policy.close()
 
 
+def bowl_points(radius=0.08, height=0.055):
+    """A bowl's surface, centered on its frame: rings widening from its base to its rim."""
+    points = [(0.0, 0.0, 0.0)]
+    for z in np.linspace(0, height, 8):
+        ring = radius * (0.5 + 0.5 * z / height)
+        points += [(ring * np.cos(a), ring * np.sin(a), z) for a in np.linspace(0, 2 * np.pi, 24, endpoint=False)]
+    points = np.array(points)
+    return points - (points.min(axis=0) + points.max(axis=0)) / 2
+
+
+def test_container_points():
+    # A bowl given by points keeps only its base: an object in it doesn't collide with it, and is in it
+    bowl = ObjectSpec('bowl', (0.16, 0.16, 0.055), 'container', tuple(map(tuple, bowl_points())))
+    policy = TampPolicy([bowl, ObjectSpec('a', (0.04, 0.04, 0.04))], gripper='robotiq', containment='center')
+    try:
+        world = policy.world
+        policy.poses = {'bowl': Pose(world, 'bowl', ((0.5, 0.0, 0.0275), (0, 0, 0, 1)))}
+        policy.poses['bowl'].assign()
+        inside = Pose(world, 'a', ((0.5, 0.01, 0.03), (0, 0, 0, 1)))
+        inside.assign()
+        assert not pbu.pairwise_collision(world.bodies['a'], world.bodies['bowl'])
+        assert np.isclose(world.container_aabb('bowl')[1][2], 0.055, atol=1e-3)  # Its rim
+        assert policy.containing('a', inside) == ['bowl']
+        assert policy.containing('a', Pose(world, 'a', ((0.3, 0.0, 0.02), (0, 0, 0, 1)))) == []
+    finally:
+        policy.close()
+
+
 def test_retreat_from_contact():
     # After a slipped grasp the gripper may still touch the object: the next plan starts after raising the tool
     probe = json.loads(LIVE_PROBE.read_text())
@@ -218,6 +246,18 @@ def test_hybrid_task(client):
     first, second = result['plans']
     assert first['plan'][0].startswith('press(') and first['assumptions'] == ['(Pressed button)']
     assert not any(step.startswith('press(') for step in second['plan'])
+
+
+@pytest.mark.benchmarks
+def test_slipped_grasp(client):
+    # The planned grasp slips; the planner hands the pick to the client's VLA, then plans from the grasp it observes
+    scenario = next(s for s in SCENARIOS if s.task.name == 'SlipperyBlock')
+    result = run_episode(client, scenario)
+    assert result['success'], result
+    planned, delegated, rest = result['plans']
+    assert any(step.startswith('pick(a') for step in planned['plan'])
+    assert delegated['plan'][0].startswith('vla_pick(a') and delegated['assumptions'] == ['(Holding a)']
+    assert rest['plan'][0].startswith('move_holding(') and rest['verified']
 
 
 @pytest.mark.benchmarks

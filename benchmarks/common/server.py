@@ -44,11 +44,19 @@ def reset(request):
 
 def act(request):
     policy = POLICIES[request.get('env_id', 0)]
-    replans = len(policy.plans)
+    replans, delegated = len(policy.plans), policy.delegate
     actions = policy.act(observation_from_json(request['observation']))
     if len(policy.plans) > replans:
         print(f'  replanned ({policy.status}): {policy.plans[-1]}', flush=True)
-    return {'actions': to_json(actions), 'status': policy.status, 'replans': policy.replans, 'plans': policy.plans}
+    if policy.delegate and (policy.delegate != delegated):
+        print(f'  client performs: {policy.delegate}', flush=True)
+    return {
+        'actions': None if actions is None else to_json(actions),
+        'delegate': policy.delegate,  # The instruction of a skill step the client performs, instead of actions
+        'status': policy.status,
+        'replans': policy.replans,
+        'plans': policy.plans,
+    }
 
 
 def close(request):

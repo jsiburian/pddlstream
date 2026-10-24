@@ -21,6 +21,8 @@ parser = argparse.ArgumentParser(description='Evaluate pddlstream as a RoboLab p
 parser.add_argument('--remote-host', default='localhost', help='The planner server (benchmarks/common/server.py)')
 parser.add_argument('--remote-port', type=int, default=8765)
 parser.add_argument('--skills', nargs='*', default=[], help='Learned skills the planner may use')
+parser.add_argument('--vla-host', default='localhost', help="openpi's policy server, for the VLA skills")
+parser.add_argument('--vla-port', type=int, default=None, help='With a port, the planner may hand picks to the VLA')
 from robolab.eval.runner import add_common_eval_args, run_evaluation  # noqa: E402
 
 add_common_eval_args(parser)
@@ -35,7 +37,7 @@ from robolab.eval.episode import run_episode  # noqa: E402
 from robolab.registrations.droid.auto_env_registrations_jointpos import auto_register_droid_envs  # noqa: E402
 
 from benchmarks.common.protocol import ObjectSpec  # noqa: E402
-from benchmarks.robolab.client import TampInferenceClient, task_spec_from_robolab  # noqa: E402
+from benchmarks.robolab.client import OpenpiVLA, TampInferenceClient, task_spec_from_robolab  # noqa: E402
 from benchmarks.robolab.meshes import object_points  # noqa: E402
 
 FIXTURES = {'table', 'robot'}  # The planner models the robot and the table itself
@@ -71,7 +73,11 @@ def scene_from_env(env, env_cfg, task):
 
 
 def make_client(args):
-    return TampInferenceClient(args.remote_host, args.remote_port, args.skills)
+    if args.vla_port is None:
+        return TampInferenceClient(args.remote_host, args.remote_port, args.skills)
+    vla = OpenpiVLA(args.vla_host, args.vla_port)  # Waits until the server answers
+    skills = list(dict.fromkeys([*args.skills, 'vla_pick']))
+    return TampInferenceClient(args.remote_host, args.remote_port, skills, vla=vla)
 
 
 def episode_runner(*, env, env_cfg, client, **kwargs):

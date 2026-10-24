@@ -10,7 +10,7 @@ import os
 import numpy as np
 
 from benchmarks.common.goals import goal_from_task, goal_literals
-from benchmarks.common.primitives import Conf, Pose, collides, get_procedures, get_stream_info, seed, solve_ik
+from benchmarks.common.primitives import Conf, Grasp, Pose, collides, get_procedures, get_stream_info, seed, solve_ik
 from benchmarks.common.protocol import condition_key, pose_from_state
 from benchmarks.common.skills import SKILLS, SkillStep, compile_skills
 from benchmarks.common.world import World, pbu
@@ -26,6 +26,9 @@ OPEN, CLOSED = 0.0, 1.0
 MAX_JOINT_STEP = 0.05  # Radians between consecutive actions
 TOLERANCE = 0.03  # Meters an object may be from where the plan expects it before replanning
 RETREAT = 0.1  # Meters the tool rises before replanning when the arm touches an object (e.g. after a slipped grasp)
+HELD_TOLERANCE = 0.08  # Meters a held object may be from where the gripper should carry it before it counts as dropped
+LIFT = 0.03  # Meters above the table that a picked-up object's lowest point rises
+NEAR_GRIPPER = 0.15  # Meters from the tool point to the center of an object the gripper holds
 
 
 def lowest_point(spec, state):
@@ -64,6 +67,8 @@ class TampPolicy:
         self.skill_run = None  # The SkillStep being performed, its policy and the actions it took
         self.plans = []  # A report of each plan (see report_plan)
         self.prefix = []  # Actions that precede the next plan's (see retreat)
+        self.held = None  # The object and grasp that the session's world holds
+        self.delegate = None  # The instruction of the skill step that the client performs now
 
     def reset(self, task, observation):
         seed(0)
@@ -94,7 +99,7 @@ class TampPolicy:
         self.session = PlannerSession(
             problem, stream_info=get_stream_info(), unit_costs=not self.skills, deterministic=True, verbose=False
         )
-        self.replans, self.skill_run, self.plans, self.prefix = 0, None, [], []
+        self.replans, self.skill_run, self.plans, self.prefix, self.held = 0, None, [], [], None
         self.plan()
 
     def get_init(self):
@@ -158,9 +163,11 @@ class TampPolicy:
         supports = [
             (s.stream, tuple(map(str, s.inputs)), tuple(map(str, s.outputs))) for s in result.certificate.supports
         ]
-        assumptions = [
-            fact for name, args in result.plan if name in self.skills for fact in self.skills[name].confirms(args)
-        ]
+        assumptions = []
+        for name, args in result.plan:
+            if name in self.skills:
+                skill = self.skills[name]
+                assumptions += skill.confirms(args) + ([('Holding', skill.holds(args))] if skill.holds else [])
         return {
             'plan': [f'{name}({", ".join(map(str, args))})' for name, args in result.plan],
             'certificate': hashlib.sha256(repr(supports).encode()).hexdigest()[:16],
@@ -170,15 +177,23 @@ class TampPolicy:
         }
 
     def compile(self, plan):
-        """The plan as actions [7 joint positions, gripper], with the object poses expected after each."""
+        """The plan as actions [7 joint positions, gripper], with where each object is expected after each: {name:
+        (position, kind)}, where kind is 'rest', 'held' (expected where the gripper carries it) or 'placed' (released
+        by the plan, and free to settle)."""
         actions, expected = [], []
-        positions = {name: pose.value[0] for name, pose in self.poses.items()}
-        gripper = OPEN
+        held = self.held  # (name, Grasp) that the plan starts holding
+        positions = {
+            name: (pose.value[0], 'rest') for name, pose in self.poses.items() if not (held and name == held[0])
+        }
+        gripper = CLOSED if held else OPEN
 
         def add(path):
             for conf in interpolate(path):
                 actions.append(np.array([*conf, gripper]))
-                expected.append(dict(positions))
+                entry = dict(positions)
+                if held is not None:
+                    entry[held[0]] = (self.carried(conf, held[1]), 'held')
+                expected.append(entry)
 
         for action in plan:
             name, args = action
@@ -189,36 +204,82 @@ class TampPolicy:
             if name in ('move_free', 'move_holding'):
                 add(args[-1].path)
             elif name in ('pick', 'place'):
-                obj, pose, _, _, trajectory = args
+                obj, pose, grasp, _, trajectory = args
                 add(trajectory.path)
                 add([trajectory.path[-1]] * self.world.gripper.arrive_steps)
                 gripper = CLOSED if name == 'pick' else OPEN
                 if name == 'pick':
-                    positions.pop(obj, None)  # Held objects are not monitored
+                    positions.pop(obj, None)
+                    held = (obj, grasp)
                 else:
-                    positions[obj] = pose.value[0]
+                    positions[obj] = (pose.value[0], 'placed')
+                    held = None
                 add([trajectory.path[-1]] * self.world.gripper.settle_steps)
                 add(trajectory.path[::-1])
         return actions, expected
 
+    def containing(self, name, pose):
+        """With 'center' containment, the containers that an object at pose is in, by RoboLab's object_in_container:
+        its center inside the container's footprint, at most a container's height above it."""
+        if (self.world.containment != 'center') or (self.world.specs[name].kind != 'movable'):
+            return []
+        position, containers = np.array(pose.value[0]), []
+        for other, spec in self.world.specs.items():
+            if (spec.kind == 'container') and (other != name):
+                self.poses[other].assign()
+                lower, upper = map(np.array, self.world.container_aabb(other))
+                height = upper[2] - lower[2]
+                if np.all(lower[:2] <= position[:2]) and np.all(position[:2] <= upper[:2]):
+                    if lower[2] <= position[2] <= upper[2] + height:
+                        containers.append(other)
+        return containers
+
+    def carried(self, conf, grasp):
+        """Where a held object is when the arm is at conf."""
+        self.world.set_arm(conf)
+        return pbu.multiply(self.world.tool_pose(), grasp.value)[0]
+
     def deviation(self, observation, expected):
-        for name, position in expected.items():
+        """The first object that is not where the plan expects it, and whether the plan holds it then; or None. A held
+        object may shift in the gripper and a placed one settle (e.g. drop into a bowl), so only a drop counts."""
+        for name, (position, kind) in expected.items():
             if name in observation.objects:
-                if np.linalg.norm(np.array(observation.objects[name].position) - np.array(position)) > TOLERANCE:
-                    return name
+                distance = np.linalg.norm(np.array(observation.objects[name].position) - np.array(position))
+                if distance > (TOLERANCE if kind == 'rest' else HELD_TOLERANCE):
+                    return name, kind == 'held'
         return None
 
-    def replan(self, observation, confirmed=()):
-        """Updates the session's world from the observation (and the facts that a skill confirmed) and plans again."""
+    def replan(self, observation, confirmed=(), holding=None):
+        """Updates the session's world from the observation (and the facts that a skill confirmed) and plans again.
+        holding is the object the robot holds now, if any: its grasp is the one observed."""
         patch_add, patch_remove = list(confirmed), []
+        if self.held and (holding != self.held[0]):  # The session's world holds an object the robot no longer holds
+            name, grasp = self.held
+            patch_remove += [('AtGrasp', name, grasp)]
+            patch_add += [('HandEmpty',)]
+            self.poses[name] = Pose(self.world, name, pose_from_state(observation.objects[name]))
+            patch_add += [('Pose', name, self.poses[name]), ('AtPose', name, self.poses[name])]
+            self.held = None
         for name, state in observation.objects.items():
+            if name == holding:
+                continue
             old = self.poses[name]
             if np.linalg.norm(np.array(state.position) - np.array(old.value[0])) > TOLERANCE:
                 new = Pose(self.world, name, pose_from_state(state))
                 patch_remove += [('AtPose', name, old)]
                 patch_add += [('Pose', name, new), ('AtPose', name, new)]
+                patch_add += [
+                    ('Supported', name, new, other, self.poses[other]) for other in self.containing(name, new)
+                ]
                 self.poses[name] = new
-        self.prefix = self.retreat(observation)
+        if holding is not None and not self.held:
+            self.world.set_arm(observation.arm)
+            value = pbu.multiply(pbu.invert(self.world.tool_pose()), pose_from_state(observation.objects[holding]))
+            grasp = Grasp(holding, value)
+            patch_remove += [('HandEmpty',), ('AtPose', holding, self.poses[holding])]
+            patch_add += [('Grasp', holding, grasp), ('AtGrasp', holding, grasp)]
+            self.held = (holding, grasp)
+        self.prefix = [] if self.held else self.retreat(observation)
         conf = Conf(self.prefix[-1][:7] if self.prefix else observation.arm)
         patch_remove += [('AtConf', self.conf)]
         patch_add += [('Conf', conf), ('AtConf', conf)]
@@ -228,15 +289,25 @@ class TampPolicy:
         return self.plan()
 
     def act(self, observation):
-        """The next chunk of actions, of shape (horizon, 8)."""
+        """The next chunk of actions, of shape (horizon, 8), or None when the client performs a skill's step (its
+        instruction is in self.delegate)."""
+        self.delegate = None
         if self.skill_run is not None:
             return self.act_skill(observation)
-        if self.actions and self.expected and (self.deviation(observation, self.expected[0]) is not None):
+        moved = self.deviation(observation, self.expected[0]) if (self.actions and self.expected) else None
+        if moved is not None:
             if self.replans >= self.max_replans:
                 self.status, self.actions = 'failed', []
             else:
-                logger.info('An object moved: replanning')
-                self.replan(observation)
+                name, held = moved
+                carrying = [other for other, (_, kind) in self.expected[0].items() if kind == 'held']
+                if held:  # The planned grasp slipped: skills that replace it may pick the object up instead
+                    logger.info(f'{name} slipped out of the gripper: replanning')
+                    fumbled = [('Fumbled', name)] if any('pick' in s.restricts for s in self.skills.values()) else []
+                    self.replan(observation, confirmed=fumbled)
+                else:
+                    logger.info(f'{name} moved: replanning')
+                    self.replan(observation, holding=carrying[0] if carrying else None)
         if self.actions and isinstance(self.actions[0], SkillStep):
             step = self.actions.pop(0)
             self.expected.pop(0)
@@ -255,24 +326,49 @@ class TampPolicy:
         return np.array(chunk)
 
     def act_skill(self, observation):
-        """Runs the current skill until the environment confirms its success condition, or it times out; then adds
-        what it confirmed to the session's world and replans."""
+        """Runs the current skill until its success condition holds (as the environment reports it, or as the
+        planner observes it), or it times out; then adds what it confirmed to the session's world and replans."""
         step, policy, num_actions = self.skill_run
         skill = step.skill
-        succeeded = observation.conditions.get(condition_key(skill.success(step.args)), False)
+        conditional = skill.success(step.args)
+        succeeded = observation.conditions.get(condition_key(conditional), False) or self.observed(
+            conditional, observation
+        )
         if succeeded or (num_actions >= skill.timeout):
             self.skill_run = None
             if not succeeded:
                 logger.warning(f'{step} did not succeed within {skill.timeout} actions')
             if self.replans >= self.max_replans:
                 self.status, self.actions = 'failed', []
+            elif succeeded:
+                holding = skill.holds(step.args) if skill.holds else None
+                self.replan(observation, confirmed=skill.confirms(step.args), holding=holding)
             else:
-                self.replan(observation, confirmed=skill.confirms(step.args) if succeeded else ())
+                self.replan(observation)
             return self.act(observation)
-        chunk = list(policy.act(observation, step.args, skill.instruction(step.args)))
+        actions = policy.act(observation, step.args, skill.instruction(step.args))
+        if actions is None:  # The client performs it
+            self.delegate = skill.instruction(step.args)
+            self.skill_run[2] += self.horizon
+            return None
+        chunk = list(actions)
         chunk = chunk[: self.horizon] + [chunk[-1]] * max(0, self.horizon - len(chunk))
         self.skill_run[2] += len(chunk)
         return np.array(chunk)
+
+    def observed(self, conditional, observation):
+        """Whether a skill's success conditional holds, as far as the planner can tell from the objects' poses:
+        object_picked_up holds when the object is off the table, next to the gripper."""
+        if conditional.func != 'object_picked_up':
+            return False
+        name = conditional.params['object']
+        if (name not in observation.objects) or (name not in self.world.specs):
+            return False
+        state = observation.objects[name]
+        lifted = lowest_point(self.world.specs[name], state) > self.world.table_top + LIFT
+        self.world.set_arm(observation.arm)
+        near = np.linalg.norm(np.array(state.position) - np.array(self.world.tool_pose()[0])) < NEAR_GRIPPER
+        return bool(lifted and near)
 
     def close(self):
         if self.session is not None:

@@ -15,15 +15,54 @@ import time
 
 import numpy as np
 
+from benchmarks.common.policy import CLOSED, OPEN, interpolate
+from benchmarks.common.primitives import APPROACH, solve_ik
+from benchmarks.common.protocol import pose_from_state
 from benchmarks.standin.env import SCENARIOS, StandinEnv
+from examples.pybullet.utils.pybullet_tools import utils as pbu
+from examples.pybullet.utils.pybullet_tools.pr2_utils import get_top_grasps
 
 PERTURB_STEP = 16  # Actions before the perturbation, which moves the last object the robot has not moved 5 cm in -x
+
+
+class ScriptedVLA:
+    """Stands in for a VLA that the client runs (on RoboLab, pi0.5 through openpi): performs 'pick up the <object>'
+    from the observation, with inverse kinematics in the simulator's world (whose arm it puts back)."""
+
+    def __init__(self, env):
+        self.env, self.instruction, self.queue = env, None, []
+
+    def act(self, observation, instruction):
+        if instruction != self.instruction:
+            self.instruction, self.queue = instruction, self.plan(observation, instruction.split()[-1])
+        chunk, self.queue = self.queue[:8], self.queue[8:]
+        return np.array(chunk if chunk else [[*observation.arm, observation.gripper]])
+
+    def plan(self, observation, name):
+        world, saved = self.env.world, self.env.world.get_arm()
+        try:
+            body = world.bodies[name]
+            grasp = get_top_grasps(body, under=True, tool_pose=pbu.Pose(), max_width=pbu.INF, grasp_length=0.02)[0]
+            gripper_pose = pbu.end_effector_from_body(pose_from_state(observation.objects[name]), grasp)
+            confs = [tuple(observation.arm)]
+            for target in [pbu.multiply(gripper_pose, APPROACH), gripper_pose]:
+                world.set_arm(confs[-1])
+                conf = solve_ik(world, target)
+                if conf is None:
+                    return []
+                confs.append(conf)
+        finally:
+            world.set_arm(saved)
+        actions = [[*conf, OPEN] for conf in interpolate(confs)]
+        actions += [[*confs[-1], CLOSED]] * world.gripper.settle_steps
+        return actions + [[*conf, CLOSED] for conf in interpolate(confs[-1:-3:-1])]  # Lift back to the approach
 
 
 def run_episode(client, scenario, max_steps=3000, perturb=False, record=False):
     """Runs scenario with the planner behind client. Returns the episode's result, with its recording (arrays) under
     'recording' if record."""
     env = StandinEnv(scenario)
+    vla = ScriptedVLA(env)
     start = time.time()
     options = {'skills': list(scenario.skills)} if scenario.skills else {}
     try:
@@ -40,6 +79,8 @@ def run_episode(client, scenario, max_steps=3000, perturb=False, record=False):
                 env.move(name, perturbation['point'])
                 observation = observations[-1] = env.observe()
             chunk, status = client.act(observation)
+            if chunk is None:  # The planner hands a skill's step to the client's policy
+                chunk = vla.act(observation, client.delegate)
             for action in chunk:
                 observation = env.step(action)
                 observations.append(observation)

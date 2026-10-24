@@ -18,6 +18,7 @@ class PlannerClient:
     def __init__(self, host='localhost', port=8765, timeout=600):
         self.url, self.timeout = f'http://{host}:{port}', timeout
         self.last_response = None  # The planner's last response, with its plan reports
+        self.delegate = None  # The instruction of the skill step the client performs now (see act)
 
     def post(self, path, request):
         data = json.dumps(to_json(request)).encode()
@@ -35,9 +36,12 @@ class PlannerClient:
         return self.post('/reset', request)
 
     def act(self, observation, env_id=0):
-        """The next chunk of actions (horizon, 8) and the planner's status."""
+        """The next chunk of actions (horizon, 8) and the planner's status. The actions are None when the client is
+        to perform a skill's step itself (e.g. with a VLA); its instruction is then in self.delegate."""
         response = self.post('/act', {'env_id': env_id, 'observation': observation})
-        return np.array(response['actions']), response['status']
+        self.delegate = response.get('delegate')
+        actions = response['actions']
+        return (None if actions is None else np.array(actions)), response['status']
 
     def close(self, env_id=0):
         return self.post('/close', {'env_id': env_id})
@@ -55,7 +59,9 @@ def start_server(port=None, timeout=120):
     command = [sys.executable, '-m', 'benchmarks.common.server', '--port', str(port)]
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # The pddlstream checkout
     path = os.pathsep.join(filter(None, [root, os.environ.get('PYTHONPATH')]))
-    process = subprocess.Popen(command, env=dict(os.environ, PYTHONPATH=path), stdout=subprocess.PIPE, text=True)
+    # Plans repeat only under a fixed hash seed (FastDownward's translator iterates string-keyed sets)
+    env = dict(os.environ, PYTHONPATH=path, PYTHONHASHSEED=os.environ.get('PYTHONHASHSEED', '0'))
+    process = subprocess.Popen(command, env=env, stdout=subprocess.PIPE, text=True)
     process.stdout.readline()  # 'Listening on ...'
     start = time.time()
     while time.time() - start < timeout:

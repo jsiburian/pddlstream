@@ -6,7 +6,9 @@ effect), the condition that confirms it succeeded, and its prior success probabi
 When the policy reaches the skill, it runs the skill's policy until the success condition is observed (or a timeout),
 then adds the confirmed facts to the session's world and replans from what it observes.
 
-ScriptedPress stands in for a learned button-pressing policy on the stand-in simulator.
+ScriptedPress stands in for a learned button-pressing policy on the stand-in simulator. A Delegated skill's policy runs
+in the benchmark's client instead (e.g. a VLA served by openpi, which needs the client's camera images): the planner
+only decides when it starts and whether it succeeded. VLA_PICK picks up an object whose planned grasp slipped.
 """
 
 import math
@@ -38,7 +40,10 @@ class SkillSpec:
     :param p_success: the prior probability that the skill succeeds
     :param timeout: actions before the skill counts as failed
     :param make_policy: the skill's policy, from the planner's World: act(observation, args, instruction) returns an
-        (n, 8) array of actions
+        (n, 8) array of actions, or None when the client acts (Delegated)
+    :param restricts: extra preconditions of the domain's actions, by action name: e.g. the planned pick of an
+        object whose grasp slipped is left out, so that the planner uses the skill instead
+    :param holds: the object the robot holds once the skill succeeded, from the action's arguments, or None
     """
 
     name: str
@@ -53,6 +58,8 @@ class SkillSpec:
     goals: dict = field(default_factory=dict)
     p_success: float = 0.9
     timeout: int = 200
+    restricts: dict = field(default_factory=dict)
+    holds: object = None
 
     @property
     def cost(self):
@@ -73,6 +80,11 @@ def compile_skills(domain_pddl, skills):
         return domain_pddl
     predicates = ' '.join(declaration for skill in skills for declaration in skill.predicates)
     domain_pddl = domain_pddl.replace('(:predicates', f'(:predicates {predicates}', 1)
+    for skill in skills:
+        for action, literal in skill.restricts.items():
+            start = domain_pddl.index(f'(:action {action}\n')
+            at = domain_pddl.index(':precondition (and ', start) + len(':precondition (and ')
+            domain_pddl = domain_pddl[:at] + f'{literal} ' + domain_pddl[at:]
     domain_pddl = domain_pddl.replace(':effect (and ', ':effect (and (increase (total-cost) 1) ')
     end = domain_pddl.rstrip().rindex(')')
     return domain_pddl[:end] + ''.join(skill.to_pddl() for skill in skills) + domain_pddl[end:]
@@ -155,4 +167,32 @@ PRESS = SkillSpec(
     timeout=150,
 )
 
-SKILLS = {skill.name: skill for skill in [PRESS]}
+
+class Delegated:
+    """The policy of a skill that the benchmark's client performs: the planner only asks for it."""
+
+    def __init__(self, world):
+        pass
+
+    def act(self, observation, args, instruction):
+        return None
+
+
+VLA_PICK = SkillSpec(
+    name='vla_pick',
+    parameters='?o - movable ?p ?g ?q',
+    precondition='(and (AtPose ?o ?p) (Grasp ?o ?g) (HandEmpty) (AtConf ?q))',
+    # The planner assumes one of its own grasps; it plans the rest from the grasp it observes
+    effect='(AtGrasp ?o ?g) (CanMove) (not (AtPose ?o ?p)) (not (HandEmpty))',
+    predicates=('(Fumbled ?o - movable)',),
+    restricts={'pick': '(not (Fumbled ?o))'},  # Objects whose planned grasp slipped
+    success=lambda args: Conditional('object_picked_up', {'object': args[0]}),
+    confirms=lambda args: [],
+    holds=lambda args: args[0],
+    instruction=lambda args: f'pick up the {args[0]}',
+    make_policy=Delegated,
+    p_success=0.5,
+    timeout=300,  # 20 s at RoboLab's 15 Hz
+)
+
+SKILLS = {skill.name: skill for skill in [PRESS, VLA_PICK]}

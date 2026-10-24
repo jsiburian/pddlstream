@@ -43,11 +43,19 @@ GRIPPERS = {
 }
 
 
+CONTAINER_BASE = 0.01  # Meters of a container given by points that its body keeps: its base (see create_body)
+
+
 def create_body(spec):
-    """A static PyBullet body for an object: its box, or the convex hull of its points."""
+    """A static PyBullet body for an object: its box, or the convex hull of its points. A container given by points
+    (e.g. a bowl) keeps only its base, since its hull would be solid and anything in it would collide with it;
+    objects are placed in it at its rim (container_aabb)."""
     if not spec.points:
         return pbu.create_box(*spec.size, color=COLORS[spec.kind])
-    collision = pbu.p.createCollisionShape(pbu.p.GEOM_MESH, vertices=list(spec.points), physicsClientId=pbu.CLIENT)
+    points = np.asarray(spec.points)
+    if spec.kind == 'container':
+        points = points[points[:, 2] <= points[:, 2].min() + CONTAINER_BASE]
+    collision = pbu.p.createCollisionShape(pbu.p.GEOM_MESH, vertices=points.tolist(), physicsClientId=pbu.CLIENT)
     return pbu.create_body(collision)  # Without a visual shape: the mirror has no viewer
 
 
@@ -90,6 +98,14 @@ class World:
 
     def open_gripper(self):
         pbu.set_joint_positions(self.robot, self.fingers, [0.04, 0.04])
+
+    def container_aabb(self, name):
+        """The AABB of a container at its pose: of its points, which its body (only its base) does not span."""
+        spec = self.specs[name]
+        if not spec.points:
+            return pbu.get_aabb(self.bodies[name])
+        points = pbu.tform_points(self.get_pose(name), spec.points)
+        return pbu.AABB(np.min(points, axis=0), np.max(points, axis=0))
 
     def tool_pose(self):
         return pbu.multiply(pbu.get_link_pose(self.robot, self.tool), self.gripper.offset)

@@ -82,7 +82,7 @@ def get_procedures(world, teleport=False):
         container = world.specs[surface].kind == 'container' if surface in world.specs else False
         while True:
             if container and world.containment == 'center':
-                value = pbu.sample_placement_on_aabb(body, center_region(pbu.get_aabb(support)), percent=0.0)
+                value = pbu.sample_placement_on_aabb(body, center_region(world.container_aabb(surface)), percent=0.0)
             else:
                 value = pbu.sample_placement(body, support)
             obstacles = [b for b in world.fixed if b != support]

@@ -40,6 +40,7 @@ class Scenario:
     objects: tuple
     positions: dict = field(default_factory=dict)
     skills: tuple = ()  # Names of the skills (benchmarks.common.skills) the planner may use
+    slippery: tuple = ()  # Objects that slip out of the gripper's first grasp of them
 
 
 class StandinEnv:
@@ -55,6 +56,7 @@ class StandinEnv:
         self.initial = {name: self.world.get_pose(name)[0] for name in self.world.bodies}
         self.held, self.grasp, self.gripper = None, None, 0.0
         self.pressed = set()
+        self.slips = set(self.scenario.slippery)
         self.world.set_arm(HOME_CONF)
 
     def observe(self):
@@ -99,7 +101,9 @@ class StandinEnv:
         }
         if distances:
             name = min(distances, key=distances.get)
-            if distances[name] <= GRASP_DISTANCE:
+            if name in self.slips:  # It slips out
+                self.slips.discard(name)
+            elif distances[name] <= GRASP_DISTANCE:
                 self.held = name
                 self.grasp = pbu.multiply(pbu.invert(tool_pose), self.world.get_pose(name))
 
@@ -215,5 +219,16 @@ SCENARIOS = [
         (block('a'), tray('tray'), button('button')),
         {'a': (0.5, -0.15), 'tray': (0.45, 0.2), 'button': (0.4, -0.35)},
         skills=('press',),
+    ),
+    Scenario(  # The planned grasp slips: a VLA that the client runs picks the block up instead (the second hybrid task)
+        task(
+            'SlipperyBlock',
+            'Put the slippery block in the tray',
+            Conditional('object_in_container', {'object': 'a', 'container': 'tray'}),
+        ),
+        (block('a'), tray('tray')),
+        {'a': (0.5, -0.15), 'tray': (0.45, 0.2)},
+        skills=('vla_pick',),
+        slippery=('a',),
     ),
 ]

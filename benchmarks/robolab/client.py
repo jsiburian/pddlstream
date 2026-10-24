@@ -52,16 +52,32 @@ def task_spec_from_robolab(task):
     return TaskSpec(name, instruction, tuple(success), tuple(task.contact_object_list or ()))
 
 
+class OpenpiVLA:
+    """A VLA served by openpi (pi0.5 by default), through RoboLab's own pi0-family client (policies/pi0_family, run
+    from RoboLab's directory): performs a skill's step from the camera images, the arm's state and an instruction."""
+
+    def __init__(self, host='localhost', port=8000, variant='pi05'):
+        from policies.pi0_family.client import Pi0DroidJointposClient
+
+        self.client = Pi0DroidJointposClient(remote_host=host, remote_port=port, policy_variant=variant)
+
+    def act(self, raw_obs, instruction, env_id=0):
+        """An action chunk (n, 8) of joint positions and the gripper (0 open, 1 closed)."""
+        request = self.client._pack_request(self.client._extract_observation(raw_obs, env_id=env_id), instruction)
+        return self.client._postprocess_chunk(self.client._unpack_response(self.client._query_server(request)))
+
+
 class TampInferenceClient(InferenceClient):
     """Plans each episode with the planner server and plays back its joint-position action chunks. The runner sets
     the task and its scene (set_task) before a task's episodes; RoboLab's runner creates one client per task."""
 
     open_loop_horizon = 8
 
-    def __init__(self, remote_host='localhost', remote_port=8765, skills=()):
+    def __init__(self, remote_host='localhost', remote_port=8765, skills=(), vla=None):
         super().__init__()
         self.planner = PlannerClient(remote_host, remote_port)
         self.skills = list(skills)  # Names of learned skills (benchmarks.common.skills) the planner may use
+        self.vla = vla  # The VLA that performs the skill steps the planner hands over (OpenpiVLA), or None
         self.task, self.scene = None, None
         self.started = set()  # Environments whose episode has been planned
 
@@ -84,6 +100,7 @@ class TampInferenceClient(InferenceClient):
         return {
             'env_id': env_id,
             'observation': Observation(arm, gripper, objects, conditions_from_gt_state(state, self.task)),
+            'raw': raw_obs,  # For the VLA (its camera images); not sent to the planner
         }
 
     def _pack_request(self, extracted_obs, instruction):
@@ -96,6 +113,10 @@ class TampInferenceClient(InferenceClient):
             self.planner.reset(self.task, self.scene, observation, env_id=env_id, **options)
             self.started.add(env_id)
         actions, _ = self.planner.act(observation, env_id=env_id)  # An unsupported task holds the arm still
+        if actions is None:  # The planner hands a skill's step (e.g. picking up an object) to the VLA
+            if self.vla is None:
+                raise RuntimeError(f'The planner asked for a VLA step ({self.planner.delegate}), but there is no VLA')
+            actions = self.vla.act(request['raw'], self.planner.delegate, env_id=env_id)
         return actions
 
     def _unpack_response(self, response):
