@@ -31,7 +31,9 @@ def get_fluent_instance(external, input_objects, state):
 
 
 def convert_fluent_streams(stream_plan, real_states, action_plan, step_from_fact, node_from_atom):
-
+    """The stream plan with each fluent stream result replaced by a result per step that uses it, called with that
+    step's state (and new output objects, which the actions of those steps now use); and the output objects that were
+    replaced."""
     assert len(real_states) == len(action_plan) + 1
     steps_from_stream = get_steps_from_stream(stream_plan, step_from_fact, node_from_atom)
 
@@ -44,6 +46,7 @@ def convert_fluent_streams(stream_plan, real_states, action_plan, step_from_fact
     )
     static_plan = []
     fluent_plan = []
+    replaced = set()
     for result in stream_plan:
         external = result.external
         if isinstance(result, FunctionResult) or (result.opt_index != 0) or (not external.is_fluent):
@@ -69,4 +72,5 @@ def convert_fluent_streams(stream_plan, real_states, action_plan, step_from_fact
             # TODO: handle optimistic here
             new_result = new_instance.get_result(new_output_objects, opt_index=result.opt_index)
             fluent_plan.append(new_result)
-    return static_plan + fluent_plan
+            replaced.update(result.output_objects)
+    return static_plan + fluent_plan, replaced

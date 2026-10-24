@@ -29,7 +29,7 @@ from pddlstream.core.conversion import (
     transform_plan_args,
 )
 from pddlstream.core.problem import FAILED, OptPlan
-from pddlstream.core.syntax import EQ, Not, get_prefix
+from pddlstream.core.syntax import EQ, Not, get_args, get_prefix
 from pddlstream.core.utils import INF, Verbose, get_ancestors
 from pddlstream.fastdownward.grounding import instantiate_task, sas_from_instantiated
 from pddlstream.fastdownward.search import solve_from_task
@@ -192,12 +192,12 @@ def recover_stream_plan(
 
     # TODO: some sort of obj side-effect bug that requires obj_from_pddl to be applied last
     # (likely due to fluent streams)
-    eager_plan = convert_fluent_streams(eager_plan, real_states, action_plan, steps_from_fact, node_from_atom)
+    eager_plan, replaced = convert_fluent_streams(eager_plan, real_states, action_plan, steps_from_fact, node_from_atom)
     combined_plan = []
     for step, action in enumerate(action_plan):
         combined_plan.extend(result.get_action() for result in results_from_step[step])
         combined_plan.append(transform_action_args(pddl_from_instance(action), obj_from_pddl))
-    preimage_facts = get_preimage_facts(full_preimage, negative_plan, eager_plan)
+    preimage_facts = get_preimage_facts(full_preimage, negative_plan, eager_plan, replaced)
     return eager_plan, OptPlan(combined_plan, preimage_facts)
 
 
@@ -314,11 +314,14 @@ def schedule_results(stream_plan, first_from_stream, last_from_stream, replan_st
     return eager_plan, results_from_step
 
 
-def get_preimage_facts(full_preimage, negative_plan, eager_plan):
-    """The facts that support the plan: its preimage, plus what the negated and eager results use and certify."""
+def get_preimage_facts(full_preimage, negative_plan, eager_plan, replaced=frozenset()):
+    """The facts that support the plan: its preimage, plus what the negated and eager results use and certify. Facts
+    about replaced objects (the outputs of fluent stream results, which a result per step replaced) are left out: the
+    new results certify the facts the plan uses instead."""
     # TODO: the returned facts have the same side-effect bug as above
     # TODO: annotate when each preimage fact is used
     preimage_facts = {fact_from_fd(l) for l in full_preimage if (l.predicate != EQ) and not l.negated}
+    preimage_facts = {fact for fact in preimage_facts if not any(arg in replaced for arg in get_args(fact))}
     for negative_result in negative_plan:  # TODO: function_plan
         preimage_facts.update(negative_result.get_certified())
     for result in eager_plan:

@@ -44,3 +44,26 @@ def test_tampered_certificate():
         False,
         [f'Preimage fact {("good", 1)} is neither initial nor certified by a support'],
     )
+
+
+ROOMS_PDDL = """(define (domain rooms) (:requirements :strips)
+  (:predicates (Room ?r) (At ?r) (Path ?r1 ?r2 ?t) (Visited ?r))
+  (:action go :parameters (?r1 ?r2 ?t) :precondition (and (At ?r1) (Path ?r1 ?r2 ?t))
+    :effect (and (At ?r2) (Visited ?r2) (not (At ?r1)))))"""
+
+ROUTE_STREAMS = """(define (stream rooms)
+  (:stream route :inputs (?r1 ?r2) :domain (and (Room ?r1) (Room ?r2)) :fluents (At) :outputs (?t)
+    :certified (Path ?r1 ?r2 ?t)))"""
+
+
+@pytest.mark.parametrize('algorithm', ['adaptive', 'binding'])
+def test_fluent_supports(algorithm):
+    # A fluent stream result is called again with each step's state; the certificate refers to those calls
+    route = from_fn(lambda r1, r2, fluents=[]: (f'{r1}-{r2}',))
+    init = [('Room', 'a'), ('Room', 'b'), ('At', 'a')]
+    problem = PDDLProblem(ROOMS_PDDL, {}, ROUTE_STREAMS, {'route': route}, init, ('Visited', 'b'))
+    result = solve(problem, algorithm=algorithm, unit_costs=True, verbose=False)
+    assert result.certificate.complete
+    [support] = result.certificate.supports
+    assert (support.outputs, support.fluents) == (('a-b',), [('at', 'a')])
+    assert verify_certificate(problem, result, unit_costs=True) == (True, [])
