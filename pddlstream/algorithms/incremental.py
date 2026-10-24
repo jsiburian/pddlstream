@@ -84,6 +84,7 @@ def process_stream_queue(instantiator, store, complexity_limit=INF, verbose=Fals
 def solve_incremental(
     problem,
     constraints=PlanConstraints(),
+    stream_info={},
     unit_costs=False,
     success_cost=INF,
     max_iterations=INF,
@@ -102,6 +103,8 @@ def solve_incremental(
 
     :param problem: a PDDLProblem
     :param constraints: PlanConstraints that plans must satisfy, such as plan skeletons
+    :param stream_info: a StreamInfo, FunctionInfo or PredicateInfo by stream or function name (incremental uses
+        their complete and reads options)
     The other parameters are SolverConfig fields, documented there (max_complexity=0 uses only the initial facts,
     complexity_step=INF calls everything at once); search_kwargs are its search options (planner, debug, ...).
     Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
@@ -110,7 +113,7 @@ def solve_incremental(
     # complexity_step = INF => exhaustive
     # TODO: warning if optimizers are present
     evaluations, goal_expression, domain, externals = parse_problem(
-        problem, constraints=constraints, unit_costs=unit_costs
+        problem, stream_info=stream_info, constraints=constraints, unit_costs=unit_costs
     )
     store = SolutionStore(
         evaluations, max_time, success_cost, verbose, max_memory=max_memory

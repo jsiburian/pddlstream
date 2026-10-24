@@ -149,12 +149,13 @@ def test_infeasible_without_gaps():
     assert (result.stats['termination'] == 'exhausted') and (result.stats['gaps'] == [])
 
 
-def test_strict_needs_complete_streams():
+@pytest.mark.parametrize('algorithm', ['adaptive', 'incremental'])
+def test_strict_needs_complete_streams(algorithm):
     problem = make_problem(from_fn(lambda: (1,)), test=from_test(lambda x: False))
-    result = solve(problem, algorithm='adaptive', strict=True, verbose=False)
+    result = solve(problem, algorithm=algorithm, strict=True, verbose=False)
     assert_gap(result, 'incomplete_streams')
     complete = {name: StreamInfo(complete=True) for name in ['sample', 'test']}
-    result = solve(problem, algorithm='adaptive', stream_info=complete, strict=True, verbose=False)
+    result = solve(problem, algorithm=algorithm, stream_info=complete, strict=True, verbose=False)
     assert result.status is Status.INFEASIBLE
 
 

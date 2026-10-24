@@ -71,6 +71,8 @@ exhausted instead of stopping the solve.
   the adaptive algorithm) raise `CapabilityError`, a `NotImplementedError`, instead of an `AssertionError` or a bare
   `NotImplementedError`. The strategies declare these combinations (see [strategies](strategies.md)), so the message
   for optimizers now also names the streams.
+- `solve(..., algorithm='incremental')` now passes `stream_info` to the incremental algorithm, which used to ignore
+  it, so its `complete` and `reads` options apply.
 - `pddlstream.algorithms.focused.compile_problem` moved to `pddlstream.algorithms.strategies`. The algorithms are
   compositions of strategies, and `pddlstream.strategy.solve_with` runs your own.
 

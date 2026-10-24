@@ -128,7 +128,7 @@ def solve(
     options.update(config.search_kwargs())
     with solve_scope(config):  # The solver's options also reach the context, but not, e.g., load_statistics
         if config.algorithm == 'incremental':
-            return solve_incremental(problem, constraints=constraints, **options)
+            return solve_incremental(problem, constraints=constraints, stream_info=stream_info, **options)
         options.update(stream_info=stream_info, replan_actions=replan_actions)
         if config.algorithm == 'adaptive':
             return solve_adaptive(problem, constraints=constraints, **options)
