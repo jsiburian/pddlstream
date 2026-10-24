@@ -58,13 +58,13 @@ class ScriptedVLA:
         return actions + [[*conf, CLOSED] for conf in interpolate(confs[-1:-3:-1])]  # Lift back to the approach
 
 
-def run_episode(client, scenario, max_steps=3000, perturb=False, record=False):
+def run_episode(client, scenario, max_steps=3000, perturb=False, record=False, **options):
     """Runs scenario with the planner behind client. Returns the episode's result, with its recording (arrays) under
     'recording' if record."""
     env = StandinEnv(scenario)
     vla = ScriptedVLA(env)
     start = time.time()
-    options = {'skills': list(scenario.skills)} if scenario.skills else {}
+    options = dict(options, skills=list(scenario.skills)) if scenario.skills else options
     try:
         observation = env.observe()
         observations, actions, perturbation = [observation], [], None

@@ -31,6 +31,16 @@ LIFT = 0.03  # Meters above the table that a picked-up object's lowest point ris
 NEAR_GRIPPER = 0.15  # Meters from the tool point to the center of an object the gripper holds
 
 
+class Reobserve:
+    """A step of the policy's actions: plan the rest from the grasp of the object it holds, as observed."""
+
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return f'Reobserve({self.name})'
+
+
 def lowest_point(spec, state):
     """The height of an object's lowest point: its box's bottom, or its lowest surface point."""
     if not spec.points:
@@ -53,8 +63,11 @@ class TampPolicy:
         skills=(),
         gripper='panda',
         containment='full',
+        reobserve=None,
     ):
+        """reobserve: whether to replan from the observed grasp after lifting an object (by default, the gripper's)."""
         self.world = World(scene, gripper=gripper, containment=containment)
+        self.reobserve = self.world.gripper.reobserve if reobserve is None else reobserve
         self.horizon, self.max_time, self.max_replans = horizon, max_time, max_replans
         self.teleport = teleport
         self.skills = {skill.name: skill for skill in (SKILLS[s] if isinstance(s, str) else s for s in skills)}
@@ -216,6 +229,10 @@ class TampPolicy:
                     held = None
                 add([trajectory.path[-1]] * self.world.gripper.settle_steps)
                 add(trajectory.path[::-1])
+                if (name == 'pick') and self.reobserve:  # Plan the rest from the observed grasp
+                    actions.append(Reobserve(obj))
+                    expected.append(dict(expected[-1]))
+                    break
         return actions, expected
 
     def containing(self, name, pose):
@@ -249,9 +266,10 @@ class TampPolicy:
                     return name, kind == 'held'
         return None
 
-    def replan(self, observation, confirmed=(), holding=None):
+    def replan(self, observation, confirmed=(), holding=None, count=True):
         """Updates the session's world from the observation (and the facts that a skill confirmed) and plans again.
-        holding is the object the robot holds now, if any: its grasp is the one observed."""
+        holding is the object the robot holds now, if any: its grasp is the one observed. Replans that count are
+        limited to max_replans."""
         patch_add, patch_remove = list(confirmed), []
         if self.held and (holding != self.held[0]):  # The session's world holds an object the robot no longer holds
             name, grasp = self.held
@@ -285,7 +303,7 @@ class TampPolicy:
         patch_add += [('Conf', conf), ('AtConf', conf)]
         self.conf = conf
         self.session.apply(WorldPatch(add=patch_add, remove=patch_remove))
-        self.replans += 1
+        self.replans += int(count)
         return self.plan()
 
     def act(self, observation):
@@ -308,6 +326,10 @@ class TampPolicy:
                 else:
                     logger.info(f'{name} moved: replanning')
                     self.replan(observation, holding=carrying[0] if carrying else None)
+        if self.actions and isinstance(self.actions[0], Reobserve):
+            step = self.actions.pop(0)
+            self.expected.pop(0)
+            self.replan(observation, holding=step.name, count=False)
         if self.actions and isinstance(self.actions[0], SkillStep):
             step = self.actions.pop(0)
             self.expected.pop(0)
@@ -319,7 +341,7 @@ class TampPolicy:
                 self.status = 'done'
             return np.array([hold] * self.horizon)
         chunk = []
-        while self.actions and (len(chunk) < self.horizon) and not isinstance(self.actions[0], SkillStep):
+        while self.actions and (len(chunk) < self.horizon) and not isinstance(self.actions[0], (SkillStep, Reobserve)):
             chunk.append(self.actions.pop(0))
             self.expected.pop(0)
         chunk += [chunk[-1]] * (self.horizon - len(chunk))

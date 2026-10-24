@@ -261,6 +261,16 @@ def test_slipped_grasp(client):
 
 
 @pytest.mark.benchmarks
+def test_reobserved_grasp(client):
+    # After lifting the block, the policy plans the rest from the grasp it observes
+    scenario = next(s for s in SCENARIOS if s.task.name == 'BlockInTray')
+    result = run_episode(client, scenario, reobserve=True)
+    assert result['success'], result
+    lift, rest = result['plans']
+    assert lift['plan'][1].startswith('pick(a') and rest['plan'][0].startswith('move_holding(')
+
+
+@pytest.mark.benchmarks
 def test_demonstrations(client, tmp_path):
     scenarios = [s for s in SCENARIOS if s.task.name == 'BlockInTray']
     results = generate(client, tmp_path, scenarios, seeds=(1,), perturb=(False, True))

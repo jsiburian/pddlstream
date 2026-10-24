@@ -22,13 +22,15 @@ class Gripper:
     """Where the gripper's tool frame is: a pose in one of the arm's links. The tool approaches along its z axis and
     the fingers close along its y axis (pybullet_tools' top grasps); max_width is the widest object they close on.
     At a grasp or placement, the arm holds still for arrive_steps actions before the fingers move (so that a lagging
-    controller reaches the pose first), then for settle_steps actions while they open or close."""
+    controller reaches the pose first), then for settle_steps actions while they open or close. With reobserve, the
+    policy replans after lifting an object, from the grasp it observes (objects shift in a real gripper)."""
 
     link: str
     offset: tuple = pbu.unit_pose()
     max_width: float = pbu.INF
     settle_steps: int = 5
     arrive_steps: int = 0
+    reobserve: bool = False
 
 
 GRIPPERS = {
@@ -38,7 +40,12 @@ GRIPPERS = {
     # Isaac Sim the arm's joint controller lags 1-2 cm behind a descent, and the gripper takes about a second (15
     # actions) to close on an object
     'robotiq': Gripper(
-        'panda_link8', pbu.Pose(point=pbu.Point(z=0.0181 + 0.1628 - 0.01)), 0.085, settle_steps=15, arrive_steps=10
+        'panda_link8',
+        pbu.Pose(point=pbu.Point(z=0.0181 + 0.1628 - 0.01)),
+        0.085,
+        settle_steps=15,
+        arrive_steps=10,
+        reobserve=True,  # A banana held off its middle swings down
     ),
 }
 

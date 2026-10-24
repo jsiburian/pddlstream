@@ -30,10 +30,13 @@ pddlstream checkout on `PYTHONPATH`. It uses RoboLab's own evaluation loop and o
 `--num-envs`, `--num-runs`, `--video-mode`, ...), and writes results to RoboLab's output folder.
 
 ```bash
-pixi run python -m benchmarks.common.server --port 8765 &
+PYTHONHASHSEED=0 pixi run python -m benchmarks.common.server --port 8765 &  # Plans repeat under a fixed hash seed
 cd benchmarks/robolab/RoboLab
 PYTHONPATH=../../.. .venv/bin/python -m benchmarks.robolab.run --task BananaInBowlTask --headless --num-envs 1
 ```
+
+A planner error fails only its episode (the arm holds still); restarting on the same `--output-folder-name` skips
+the runs RoboLab already finished.
 
 On a SLURM cluster, `evaluate.sbatch` does both on one GPU node:
 
@@ -43,9 +46,16 @@ sbatch --account=<account> --constraint=<rtx nodes> --output=robolab-%j.out \
     benchmarks/robolab/evaluate.sbatch --task BananaInBowlTask --num-envs 1
 ```
 
-The planner's scene comes from the running environment, as boxes of the objects' bounding boxes. Objects that the
-success conditionals put things in or on (bowls, bins, plates) are containers, which the planner keeps fixed. The
-table's height comes from where the objects rest.
+The planner's scene comes from the running environment: each object's bounding box (RoboLab's `WorldState`) and its
+surface points, which `meshes.py` reads from the task's USD scene in the rigid body's frame. Objects that the success
+conditionals put things in or on (bowls, bins, plates) are containers, which the planner keeps fixed:
+- movable objects are their points' convex hulls, and grasps close across a slice of the object narrower than the
+  gripper opens, so curved objects such as a banana fit;
+- a container keeps only its base as a body (its hull would be solid), and objects are placed in it at its rim;
+- an object counts as in a container when its center is inside the container's footprint, as RoboLab's
+  `object_in_container` checks, so an object placed in a bowl may settle without a replan.
+
+The table's height comes from where the objects rest: level with the robot's base.
 
 ## Tasks
 
@@ -66,17 +76,51 @@ poses.
 
 ## The robot
 
-RoboLab's robot is DROID's Franka arm with a Robotiq 2F-85 gripper. The planner's PyBullet mirror models the
-Franka arm, whose kinematics match, but with the Panda gripper. The Robotiq fingertips are 162.8 mm from its mounting
-flange, so the mirror's tool frame needs calibrating from a live probe (the gripper's pose against the arm's joint
-positions). Until then, grasps are expected to miss.
+RoboLab's robot is DROID's Franka arm with a Robotiq 2F-85 gripper. A live probe
+(`tests/fixtures/robolab_live_probe.json`) calibrated the planner's PyBullet mirror:
+- its Franka arm matches RoboLab's to 0.001 mm at the home configuration;
+- the Robotiq sits 18.1 mm past the flange, without the Panda hand's 45 degree turn, and its fingertips are 162.8 mm
+  further; the client asks for `gripper='robotiq'`, whose tool frame is 1 cm above the fingertips and whose
+  grasps fit its 85 mm opening;
+- the arm's joint controller lags 1-2 cm behind a descent and the gripper takes about a second to close, so the arm
+  holds still before and after the fingers move;
+- when a replan starts with the gripper touching an object (after a slipped grasp), the tool first rises 10 cm.
+
+## pi0.5 as a skill
+
+When a planned grasp slips (a held object is not where the gripper should carry it), the planner leaves out its own
+pick of that object and uses the `vla_pick` skill instead: the server answers with the skill's instruction ("pick up
+the banana") rather than actions, the client runs a VLA, and once the object is off the table next to the gripper,
+the planner plans the rest from the grasp it observes. On RoboLab the VLA is pi0.5 (DROID, joint positions), served
+by [openpi](https://github.com/Physical-Intelligence/openpi) in its own environment and queried through RoboLab's
+pi0-family client (`policies/pi0_family`), as RoboLab documents:
+
+```bash
+git clone https://github.com/xuningy/openpi.git ~/openpi && cd ~/openpi  # The fork RoboLab's docs use
+GIT_LFS_SKIP_SMUDGE=1 uv sync && GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
+cd <pddlstream>/benchmarks/robolab/RoboLab && uv pip install -e ~/openpi/packages/openpi-client
+# On the GPU node (the checkpoint, 12 GB, downloads on first use):
+XLA_PYTHON_CLIENT_MEM_FRACTION=0.5 ~/openpi/.venv/bin/python ~/openpi/scripts/serve_policy.py --port 8000 \
+    policy:checkpoint --policy.config=pi05_droid_jointpos --policy.dir=gs://openpi-assets-simeval/pi05_droid_jointpos
+PYTHONPATH=../../.. .venv/bin/python -m benchmarks.robolab.run --task BananaInBowlTask --headless --vla-port 8000
+```
+
+The stand-in's `SlipperyBlock` task tests the same loop on a CPU, with a scripted picker as the VLA.
+
+## Baseline
+
+```bash
+python -m benchmarks.robolab.baseline list --shard 1/2   # The supported tasks, in shards for parallel jobs
+python -m benchmarks.robolab.baseline summarize benchmarks/robolab/RoboLab/output/<folders>
+```
 
 ## Files
 
 | File | Contents |
 |---|---|
-| `client.py` | `TampInferenceClient`, RoboLab's `InferenceClient` for the planner server |
+| `client.py` | `TampInferenceClient`, RoboLab's `InferenceClient` for the planner server; `OpenpiVLA` |
 | `run.py` | Evaluates the planner with RoboLab's evaluation loop |
 | `evaluate.sbatch` | The same on one SLURM GPU node, with the planner server |
 | `probe.py` | Task fixtures and coverage (static), or observation layouts (live) |
-| `export_assets.py` | Box approximations of a scene's objects from its USD file, offline (needs usd-core) |
+| `meshes.py` | The objects' surface points from a scene's USD file (needs pxr: Isaac Sim, or usd-core on a CPU) |
+| `baseline.py` | The supported tasks in shards, and a summary of RoboLab's episode results |

@@ -8,7 +8,8 @@ The planner needs grasps, placements, inverse kinematics, motions and collision 
 ways to provide them:
 
 1. **A PyBullet mirror** (implemented): the planner process rebuilds the scene from ground-truth poses and box
-   approximations of the objects (`benchmarks/robolab/export_assets.py`) and samples with pybullet-planning on a CPU.
+   approximations of the objects (`benchmarks/robolab/export_assets.py`, since replaced by the meshes in
+   `benchmarks/robolab/meshes.py`) and samples with pybullet-planning on a CPU.
 2. **cuRobo** in the RoboLab process or a GPU worker: batched IK and collision-free motion generation against the
    real meshes.
 
