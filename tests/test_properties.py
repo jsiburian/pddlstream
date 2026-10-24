@@ -72,6 +72,7 @@ def test_example(case, tmp_path, record):
     for call in result['calls']:
         assert call['solved'], call['summary']
         if call['kind'] == 'pddlstream':
+            assert not call['violations'], call['violations']
             assert call['valid'] == case.valid, call['validation_error']
         if call['valid']:
             assert float(call['replay_cost']) == pytest.approx(float(call['cost']), **TOLERANCE)

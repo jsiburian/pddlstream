@@ -5,10 +5,10 @@ e.g.   python tests/harness.py continuous_tamp.run -p blocked -n 3
 
 The harness wraps the solver entry points before the example is imported. Each outermost PDDLStream solve runs with
 deterministic=True (unless --wall-clock) inside its own solve scope, and its plan is checked with
-pddlstream.algorithms.validate within that scope, before the object registries are cleared. Plain PDDL plans and
-constraint-satisfaction assignments are only recorded. Every stream and function call is logged by stream name and
-input object names, so the digest of the log identifies a run. The last stdout line starting with RESULT_PREFIX holds
-the JSON result.
+pddlstream.algorithms.validate within that scope, before the object registries are cleared, and checked against
+invariants (check_solution). Plain PDDL plans and constraint-satisfaction assignments are only recorded. Every stream
+and function call is logged by stream name and input object names, so the digest of the log identifies a run. The
+last stdout line starting with RESULT_PREFIX holds the JSON result.
 """
 
 import argparse
@@ -29,6 +29,8 @@ from pddlstream.algorithms.algorithm import solve_scope
 from pddlstream.algorithms.common import SolutionStore
 from pddlstream.algorithms.validate import validate_solution
 from pddlstream.core.config import SolverConfig
+from pddlstream.core.objects import OPT_PREFIX
+from pddlstream.core.problem import Status, StreamAction
 from pddlstream.language.constants import Action, is_plan
 from pddlstream.language.external import Instance
 from pddlstream.utils import INF
@@ -72,6 +74,22 @@ def to_json(value):
     return str(value)
 
 
+def check_solution(solution):
+    """Violations of what every returned solution must satisfy: its status matches whether it has a plan, and a
+    placeholder (optimistic object) in an action is an output of an earlier deferred stream step."""
+    plan, violations, bound = solution[0], [], set()
+    if (solution.status is Status.SUCCEEDED) != is_plan(plan):
+        violations.append(f'Status {solution.status} with plan {plan}')
+    for step in plan if is_plan(plan) else []:
+        args = step.inputs if isinstance(step, StreamAction) else getattr(step, 'args', ())
+        unbound = [arg for arg in args if isinstance(arg, str) and arg.startswith(OPT_PREFIX) and arg not in bound]
+        if unbound:
+            violations.append(f'{step.name} uses placeholders {unbound} before a stream binds them')
+        if isinstance(step, StreamAction):
+            bound.update(step.outputs)
+    return violations
+
+
 class Recorder:
     def __init__(self, deterministic):
         self.deterministic = deterministic
@@ -106,8 +124,9 @@ class Recorder:
         summary = self.summaries[-1] if len(self.summaries) > num_summaries else None
         stream_calls = self.stream_calls[first_stream_call:]
         plan, cost = solution[:2]
-        valid, replay_cost, validation_error = None, INF, None
+        valid, replay_cost, validation_error, violations = None, INF, None, []
         if kind == PDDLSTREAM:
+            violations = check_solution(solution)
             try:
                 valid, replay_cost = validate_solution(problem, solution, unit_costs=kwargs.get('unit_costs', False))
             except Exception:
@@ -123,6 +142,7 @@ class Recorder:
                 'valid': valid,
                 'replay_cost': to_json(replay_cost),
                 'validation_error': validation_error,
+                'violations': violations,
                 'elapsed': elapsed,
                 'summary': to_json(summary) if summary else None,
                 'stream_calls': dict(sorted(Counter(name for name, _ in stream_calls).items())),
