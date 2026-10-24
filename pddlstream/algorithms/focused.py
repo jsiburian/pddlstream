@@ -16,6 +16,7 @@ from pddlstream.algorithms.skeleton import SkeletonQueue
 from pddlstream.algorithms.visualization import create_visualizations, has_pygraphviz, log_plans, reset_visualizations
 from pddlstream.core.context import get_config, note_gap
 from pddlstream.core.problem import INFEASIBLE, get_length, is_plan, str_from_plan
+from pddlstream.core.trace import Iteration, SkeletonProgress, emit
 from pddlstream.core.utils import INF, implies
 from pddlstream.language.fluent import compile_fluent_streams
 from pddlstream.language.function import Function, Predicate
@@ -145,6 +146,7 @@ def solve_abstract(
             # TODO: this blows up memory wise for long stream plans
             stream_plan = reorder_stream_plan(store, stream_plan)
         report_plans(evaluations, stream_plan, opt_plan, cost, num_iterations, visualize)
+        emit(get_iteration(num_iterations, complexity_limit, stream_plan, opt_plan))
 
         if (stream_plan is INFEASIBLE) and (not eager_instantiator) and (not skeleton_queue) and (not disabled):
             note_unreached_facts(evaluations, complexity_limit)
@@ -174,6 +176,8 @@ def solve_abstract(
             infeasible = True
             break
 
+    for skeleton in skeleton_queue.skeletons:
+        emit(get_progress(skeleton))
     return store.finish(
         externals,
         infeasible,
@@ -181,6 +185,21 @@ def solve_abstract(
         complexity=complexity_limit,
         skeletons=len(skeleton_queue.skeletons),
     )
+
+
+def get_iteration(index, complexity, stream_plan, opt_plan):
+    """The Iteration event of a search that returned stream_plan and opt_plan."""
+    status = 'plan' if is_plan(opt_plan) else 'infeasible' if stream_plan is INFEASIBLE else 'failed'
+    num_streams = len(stream_plan) if is_plan(stream_plan) else 0
+    num_actions = len(opt_plan.action_plan) if is_plan(opt_plan) else 0
+    return Iteration(index, complexity, status, num_streams, num_actions)
+
+
+def get_progress(skeleton):
+    bound = skeleton.best_binding.index
+    stream_plan = skeleton.stream_plan
+    next_stream = stream_plan[bound].external.name if bound < len(stream_plan) else None
+    return SkeletonProgress(skeleton.index, bound, len(stream_plan), next_stream)
 
 
 def note_unreached_facts(evaluations, complexity_limit):

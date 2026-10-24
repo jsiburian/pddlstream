@@ -73,11 +73,13 @@ def apply_legacy_flags(config):
 
 @dataclass
 class SolveRecord:
-    """What happened during one solver run: its stream calls (language.external.Call), and gaps, the reasons why
-    concluding that no plan exists would be unsound (e.g. a search that timed out)."""
+    """What happened during one solver run: its stream calls (language.external.Call); gaps, the reasons why
+    concluding that no plan exists would be unsound (e.g. a search that timed out); and, with trace=True, its events
+    (core/trace.py)."""
 
     calls: list = field(default_factory=list)
     gaps: set = field(default_factory=set)
+    events: list = field(default_factory=list)
 
 
 @dataclass(frozen=True)

@@ -4,13 +4,14 @@ from collections import namedtuple
 from collections.abc import Sized
 from heapq import heappop, heappush
 
-from pddlstream.algorithms.common import stream_plan_preimage
+from pddlstream.algorithms.common import get_action_plan, stream_plan_preimage
 from pddlstream.algorithms.disabled import bind_action_plan, process_instance, update_bindings, update_cost
 from pddlstream.algorithms.visualization import visualize_stream_orders
 from pddlstream.core.context import BINDING_WORK, get_clock, get_config
 from pddlstream.core.conversion import evaluation_from_fact
 from pddlstream.core.evaluations import COMPLEXITY_OP
 from pddlstream.core.problem import FAILED, INFEASIBLE, is_plan
+from pddlstream.core.trace import SkeletonAdded, emit
 from pddlstream.core.utils import (
     INF,
     CreationHash,
@@ -326,6 +327,11 @@ class SkeletonQueue(Sized):
         skeleton = Skeleton(self, stream_plan, action_plan, cost)
         self.skeletons.append(skeleton)
         self.push_binding(skeleton.root)
+        emit(
+            SkeletonAdded(
+                skeleton.index, list(map(str, stream_plan)), list(map(str, get_action_plan(action_plan))), cost
+            )
+        )
         return skeleton
 
     def readd_standby(self):

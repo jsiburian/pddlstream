@@ -9,6 +9,7 @@ from pddlstream.algorithms.scheduling.plan_streams import preimage_from_plan
 from pddlstream.core.conversion import obj_from_pddl_plan
 from pddlstream.core.evaluations import add_certified, add_facts
 from pddlstream.core.problem import OptPlan, is_plan
+from pddlstream.core.trace import Iteration, emit
 from pddlstream.core.utils import INF, Verbose, str_from_object
 from pddlstream.fastdownward.grounding import instantiate_task, sas_from_instantiated
 from pddlstream.fastdownward.search import abstrips_solve_from_task
@@ -138,6 +139,8 @@ def solve_incremental(
         plan, cost, instantiated = solve_finite(
             evaluations, goal_expression, domain, max_cost=min(store.best_cost, constraints.max_cost), **search_kwargs
         )
+        num_actions = len(plan) if is_plan(plan) else 0
+        emit(Iteration(num_iterations, complexity_limit, 'plan' if is_plan(plan) else 'failed', 0, num_actions))
         if is_plan(plan) and (cost < store.best_cost):
             # Records what the plan relies on, for its certificate, reusing the search's grounded task
             preimage_facts = preimage_from_plan(evaluations, goal_expression, domain, plan, instantiated)

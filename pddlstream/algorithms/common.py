@@ -19,6 +19,7 @@ from pddlstream.core.evaluations import compute_complexity as compute_complexity
 from pddlstream.core.evaluations import evaluations_from_init as evaluations_from_init
 from pddlstream.core.evaluations import is_instance_ready as is_instance_ready
 from pddlstream.core.problem import FAILED, Incumbent, OptPlan, SolveResult, Status, get_length, is_plan
+from pddlstream.core.trace import emit, event_to_dict
 from pddlstream.core.utils import INF, check_memory, elapsed_time, str_from_object
 from pddlstream.language.external import Call, Outcome
 from pddlstream.language.statistics import write_stream_statistics
@@ -32,6 +33,13 @@ SOLUTIONS = []  # Deprecated: the last solve's solutions, now SolveResult.soluti
 
 def get_action_plan(plan):
     return plan.action_plan if isinstance(plan, OptPlan) else plan
+
+
+def to_incumbent(solution):
+    """A solution (plan, cost, time) with values instead of objects."""
+    return Incumbent(
+        transform_plan_args(get_action_plan(solution.plan), param_from_object), solution.cost, solution.time
+    )
 
 
 class SolutionStore:
@@ -65,6 +73,7 @@ class SolutionStore:
         # TODO: double-check that plan is a solution
         if is_plan(plan) and (cost < self.best_cost):
             self.solutions.append(Solution(plan, cost, elapsed_time(self.start_time)))
+            emit(to_incumbent(self.solutions[-1]))
 
     def has_solution(self):
         return is_plan(self.best_plan)
@@ -96,9 +105,7 @@ class SolutionStore:
         fresh = (num_history < len(instance.history)) or (outcome is Outcome.ERROR)
         call = Call(instance, call_index, outcome, new_results, new_facts, fresh)
         get_record().calls.append(call)
-        on_event = get_config().on_event
-        if on_event is not None:
-            on_event(call)
+        emit(call)
         return new_results, new_facts
 
     def finish(self, externals=(), infeasible=False, **stats):
@@ -151,14 +158,12 @@ class SolutionStore:
         if isinstance(self.best_plan, OptPlan):
             certificate = certify(certificate, self.evaluations, self.best_plan.preimage_facts)
         status = Status.SUCCEEDED if is_plan(plan) else Status.INFEASIBLE if infeasible else Status.FAILED
-        solutions = [
-            Incumbent(
-                transform_plan_args(get_action_plan(solution.plan), param_from_object), solution.cost, solution.time
-            )
-            for solution in self.solutions
-        ]
+        solutions = list(map(to_incumbent, self.solutions))
         stats = self.export_summary() if stats is None else stats
-        return SolveResult(plan, cost, certificate, status, stats, solutions)
+        result = SolveResult(plan, cost, certificate, status, stats, solutions)
+        if get_config().trace:
+            result.trace = list(map(event_to_dict, get_record().events))
+        return result
 
     def export_summary(self):
         return {

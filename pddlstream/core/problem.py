@@ -66,12 +66,14 @@ class SolveResult(Solution):
     status: Status | None = None
     stats: dict | None = None
     solutions: list | None = None
+    trace: list | None = None  # The solve's events as dicts, with trace=True (core/trace.py)
 
     def __new__(cls, plan, cost, certificate, status=None, stats=None, solutions=None):
         self = super().__new__(cls, plan, cost, certificate)
         self.status = status
         self.stats = {} if stats is None else stats
         self.solutions = [] if solutions is None else solutions
+        self.trace = None
         return self
 
     def __repr__(self):

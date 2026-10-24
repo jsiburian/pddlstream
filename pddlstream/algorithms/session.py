@@ -14,6 +14,7 @@ from pddlstream.core.registry import Registry
 from pddlstream.core.syntax import get_args, get_prefix
 from pddlstream.core.utils import value_or_id
 from pddlstream.language.exogenous import FutureStream
+from pddlstream.language.external import Call
 from pddlstream.language.optimizer import ComponentStream, OptimizerStream
 from pddlstream.language.statistics import load_stream_statistics, write_stream_statistics
 
@@ -113,7 +114,7 @@ class PlannerSession:
             SolverConfig.from_kwargs(self.config, 'PlannerSession.solve()', **kwargs),
             load_statistics=False,
             save_statistics=False,
-            on_event=calls.append,
+            on_event=lambda event: calls.append(event) if isinstance(event, Call) else None,
         )
         for external in self.externals:  # Instances whose procedure raised get another chance
             for key in [key for key, instance in external.instances.items() if instance.error is not None]:
