@@ -2,6 +2,7 @@ import logging
 import time
 from collections import Counter, namedtuple
 
+from pddlstream.algorithms.certificate import certify
 from pddlstream.core.context import get_clock, get_config, get_record
 from pddlstream.core.conversion import revert_solution
 
@@ -17,7 +18,7 @@ from pddlstream.core.evaluations import add_facts as add_facts
 from pddlstream.core.evaluations import compute_complexity as compute_complexity
 from pddlstream.core.evaluations import evaluations_from_init as evaluations_from_init
 from pddlstream.core.evaluations import is_instance_ready as is_instance_ready
-from pddlstream.core.problem import FAILED, SolveResult, Status, get_length, is_plan
+from pddlstream.core.problem import FAILED, OptPlan, SolveResult, Status, get_length, is_plan
 from pddlstream.core.utils import INF, check_memory, elapsed_time, str_from_object
 from pddlstream.language.external import Call, Outcome
 from pddlstream.language.statistics import write_stream_statistics
@@ -139,6 +140,8 @@ class SolutionStore:
         """The best plan as a SolveResult; infeasible says whether the solver concluded that no plan exists."""
         SOLUTIONS[:] = self.solutions
         plan, cost, certificate = revert_solution(self.best_plan, self.best_cost, self.evaluations)
+        if isinstance(self.best_plan, OptPlan):
+            certificate = certify(certificate, self.evaluations, self.best_plan.preimage_facts)
         status = Status.SUCCEEDED if is_plan(plan) else Status.INFEASIBLE if infeasible else Status.FAILED
         return SolveResult(plan, cost, certificate, status, self.export_summary() if stats is None else stats)
 
