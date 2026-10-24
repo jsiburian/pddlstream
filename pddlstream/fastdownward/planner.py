@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 from time import time
 
-from pddlstream.core.context import SEARCH_WORK, get_clock
+from pddlstream.core.context import SEARCH_WORK, get_clock, note_gap
 from pddlstream.core.problem import Action
 from pddlstream.core.utils import INF, elapsed_time, ensure_dir, read, safe_remove, safe_rm_dir, write
 from pddlstream.fastdownward.translator import convert_value, find_build, get_cost_scale, scale_cost
@@ -136,6 +136,11 @@ def write_sas_task(sas_task, temp_dir):
     return translate_path
 
 
+# FastDownward's exit codes (src/search/utils/system.h): a plan, a provably unsolvable task, or an exhausted search
+SEARCH_COMPLETE_CODES = [0, 11, 12]
+SEARCH_GAPS = {22: 'planner_memory', 23: 'planner_timeout'}
+
+
 def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_TIME, max_cost=INF, debug=False):
     """
     Runs FastDownward's search phase on translated SAS+ problem TRANSLATE_OUTPUT
@@ -166,7 +171,10 @@ def run_search(temp_dir, planner=DEFAULT_PLANNER, max_planner_time=DEFAULT_MAX_T
         logger.info(f'Search command: {shlex.join(command)}')
 
     with open(os.path.join(temp_dir, TRANSLATE_OUTPUT)) as sas_file:
-        output = subprocess.run(command, stdin=sas_file, stdout=subprocess.PIPE).stdout
+        process = subprocess.run(command, stdin=sas_file, stdout=subprocess.PIPE)
+    output = process.stdout
+    if process.returncode not in SEARCH_COMPLETE_CODES:  # The search stopped early, so "no plan" proves nothing
+        note_gap(SEARCH_GAPS.get(process.returncode, 'planner_error'))
 
     if debug:
         logger.info(output.decode(encoding='UTF-8')[:-1])

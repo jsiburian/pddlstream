@@ -4,6 +4,7 @@ from itertools import product
 
 from pddlstream.algorithms.instantiation import Instantiator
 from pddlstream.algorithms.scheduling.plan_streams import OptSolution, plan_streams
+from pddlstream.core.context import note_gap
 from pddlstream.core.conversion import evaluation_from_fact, substitute_expression
 from pddlstream.core.problem import FAILED, INFEASIBLE, is_plan
 from pddlstream.core.utils import INF, elapsed_time, get_mapping, safe_zip
@@ -44,6 +45,8 @@ def prune_high_effort_streams(streams, max_effort=INF, **effort_args):
         effort = stream.get_effort(**effort_args)
         if isinstance(stream, Function) or check_effort(effort, max_effort):
             low_effort_streams.append(stream)
+        else:
+            note_gap('max_effort')
     return low_effort_streams
 
 

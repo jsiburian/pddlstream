@@ -42,16 +42,18 @@ class Solution(NamedTuple):
 
 
 class Status(enum.Enum):
-    """How a solve ended."""
+    """How a solve ended. stats['termination'] says why the solver stopped, and stats['gaps'] what it cut short
+    (docs/v2/adr-001-stream-outcomes.md)."""
 
     SUCCEEDED = 'succeeded'  # Found a plan
-    FAILED = 'failed'  # Found no plan before a limit was reached (stats['timeout'] says whether time or memory ran out)
-    INFEASIBLE = 'infeasible'  # Concluded that no plan exists, counting searches that hit max_planner_time as failed
+    FAILED = 'failed'  # Found no plan, either before reaching a limit or after cutting part of the search short
+    INFEASIBLE = 'infeasible'  # Ran out of things to try without cutting anything short: no plan exists
 
 
 class SolveResult(Solution):
     """What the solvers return: a Solution (plan, cost, certificate), which it unpacks and compares like, with the
-    solver's status and statistics (the summary that it prints, including search_time, sample_time and run_time)."""
+    solver's status and statistics (the summary that it prints, including search_time, sample_time, run_time, the
+    outcomes of the stream calls, termination and gaps)."""
 
     status: Status | None = None
     stats: dict | None = None

@@ -51,6 +51,14 @@ The solvers return a `SolveResult`, which unpacks and compares like the old `(pl
 adds `status` (`Status.SUCCEEDED`, `FAILED` or `INFEASIBLE`) and `stats`, the summary the solver prints. When a
 problem is infeasible, the plan is still `None`, and `status` says so.
 
+`INFEASIBLE` means that the solver ran out of things to try without cutting anything short. A solve that hit a skeleton
+limit, ran out of time, had a FastDownward search time out or pruned streams by `max_effort` used to be reported
+infeasible in some cases; it now ends `FAILED`, with `stats['termination']` (why it stopped) and `stats['gaps']` (what
+was cut short). See [ADR-001](v2/adr-001-stream-outcomes.md).
+
+An exception raised by a stream now carries a note naming the call. `stream_errors='fail'` treats such a call as
+exhausted instead of stopping the solve.
+
 ## Output and files
 
 - Progress is reported through `logging` (loggers under `pddlstream`). Without a logging configuration it is still

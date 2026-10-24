@@ -14,6 +14,7 @@ from pddlstream.algorithms.reorder import reorder_stream_plan
 from pddlstream.algorithms.scheduling.plan_streams import OptSolution
 from pddlstream.algorithms.skeleton import SkeletonQueue
 from pddlstream.algorithms.visualization import create_visualizations, has_pygraphviz, log_plans, reset_visualizations
+from pddlstream.core.context import note_gap
 from pddlstream.core.problem import INFEASIBLE, get_length, is_plan, str_from_plan
 from pddlstream.core.utils import INF, implies
 from pddlstream.language.fluent import compile_fluent_streams
@@ -137,6 +138,7 @@ def solve_abstract(
                 skeleton_queue, positive_externals, optimistic_solve_fn, complexity_limit, max_effort, has_optimizers
             )
         else:
+            note_gap('max_skeletons')
             stream_plan, opt_plan, cost = OptSolution(INFEASIBLE, INFEASIBLE, INF)  # TODO: apply elsewhere
         stream_plan = combine_optimizers(evaluations, stream_plan)
         if reorder:
@@ -145,6 +147,7 @@ def solve_abstract(
         report_plans(evaluations, stream_plan, opt_plan, cost, num_iterations, visualize)
 
         if (stream_plan is INFEASIBLE) and (not eager_instantiator) and (not skeleton_queue) and (not disabled):
+            note_unreached_facts(evaluations, complexity_limit)
             infeasible = True
             break
         if not is_plan(stream_plan):
@@ -167,6 +170,7 @@ def solve_abstract(
             else INF
         )
         if skeleton_queue.process(stream_plan, opt_plan, cost, complexity_limit, allocated_sample_time) is INFEASIBLE:
+            note_unreached_facts(evaluations, complexity_limit)
             infeasible = True
             break
 
@@ -177,6 +181,13 @@ def solve_abstract(
         complexity=complexity_limit,
         skeletons=len(skeleton_queue.skeletons),
     )
+
+
+def note_unreached_facts(evaluations, complexity_limit):
+    """Optimistic planning only uses facts within the complexity limit, so facts above it make a conclusion that no
+    plan exists unsound."""
+    if any(node.complexity > complexity_limit for node in evaluations.values()):
+        note_gap('unreached_facts')
 
 
 def compile_problem(problem, stream_info, constraints, unit_costs, unit_efforts):

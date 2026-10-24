@@ -2,7 +2,7 @@ import logging
 import time
 from collections import Counter, namedtuple
 
-from pddlstream.core.context import get_clock, get_record
+from pddlstream.core.context import get_clock, get_config, get_record
 from pddlstream.core.conversion import revert_solution
 
 # Moved to pddlstream.core.evaluations; re-exported for existing code
@@ -93,13 +93,43 @@ class SolutionStore:
         return new_results, new_facts
 
     def finish(self, externals=(), infeasible=False, **stats):
-        """Logs the summary (with stats added), saves the externals' statistics and returns the SolveResult."""
+        """Logs the summary (with stats added), saves the externals' statistics and returns the SolveResult.
+        infeasible says whether the solver ran out of things to try; the solve is reported infeasible only if nothing
+        was cut short (docs/v2/adr-001-stream-outcomes.md)."""
+        record = get_record()
+        gaps = set(record.gaps)
+        if self.max_time <= self.elapsed_time():
+            gaps.add('max_time')
+        if not check_memory(self.max_memory):
+            gaps.add('max_memory')
+        if any(call.outcome is Outcome.ERROR for call in record.calls):
+            gaps.add('stream_errors')
         summary = self.export_summary()
         summary.update(stats)
-        summary['outcomes'] = dict(Counter(call.outcome.value for call in get_record().calls))
+        summary.update(
+            outcomes=dict(Counter(call.outcome.value for call in record.calls)),
+            termination=self.get_termination(infeasible, gaps, stats),
+            gaps=sorted(gaps),
+        )
         logger.info(f'Summary: {str_from_object(summary, ndigits=3)}')
         write_stream_statistics(externals, self.verbose)
-        return self.extract_solution(summary, infeasible)
+        return self.extract_solution(summary, infeasible and not gaps)
+
+    def get_termination(self, infeasible, gaps, stats):
+        """Why the solver stopped."""
+        config = get_config()
+        if self.is_solved():
+            return 'solved'
+        for limit in ['max_time', 'max_memory']:  # Running out of time also cuts the search short
+            if limit in gaps:
+                return limit
+        if infeasible:
+            return 'exhausted'
+        if stats.get('iterations', 0) >= config.max_iterations:
+            return 'max_iterations'
+        if stats.get('complexity', 0) > config.max_complexity:
+            return 'max_complexity'
+        return 'stopped'
 
     def extract_solution(self, stats=None, infeasible=False):
         """The best plan as a SolveResult; infeasible says whether the solver concluded that no plan exists."""
