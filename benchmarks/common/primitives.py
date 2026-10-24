@@ -223,13 +223,26 @@ def solve_ik(world, target_pose):
     return conf if pbu.all_between(lower, conf, upper) else None
 
 
+def balance_point(xy, bins=10):
+    """Where an object seen from above balances, about: the mean of its centerline (the centers of slices across its
+    main axis), as for a uniform rod. Unlike the mean of mesh vertices, which their density biases, it stays on the
+    middle of a curved object such as a banana."""
+    xy = np.asarray(xy, dtype=float)
+    axis = np.linalg.svd(xy - xy.mean(axis=0), full_matrices=False)[2][0]  # The direction of most spread
+    along = (xy - xy.mean(axis=0)) @ axis
+    edges = np.linspace(along.min(), along.max(), bins + 1)
+    slices = [xy[(along >= low) & (along <= high)] for low, high in zip(edges, edges[1:])]
+    return np.mean([part.mean(axis=0) for part in slices if len(part)], axis=0)
+
+
 def point_grasps(points, max_width, yaws=16, num_centers=24, max_grasps=16):
     """Top grasps (tool from object poses) of an object given by surface points in its frame, assumed upright. The
     fingers close across a slice of the object (the points under the finger pads) narrower than max_width, centered
-    on it; grasps nearest the object's middle come first. Unlike box grasps, they fit curved objects such as a
+    on it; grasps nearest where the object balances (balance_point) come first, so it doesn't swing down. Unlike box grasps, they fit curved objects such as a
     banana, whose bounding box is wider than the gripper opens."""
     points = np.asarray(points, dtype=float)
-    xy, middle = points[:, :2], points[:, :2].mean(axis=0)
+    xy = points[:, :2]
+    middle = balance_point(xy)
     # The middle, then points spread over the object, nearest the middle first
     order = np.argsort(np.linalg.norm(xy - middle, axis=1), kind='stable')
     centers = [middle] + [xy[i] for i in order[:: max(1, len(order) // num_centers)]]
