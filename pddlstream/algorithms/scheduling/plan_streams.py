@@ -329,13 +329,13 @@ def get_preimage_facts(full_preimage, negative_plan, eager_plan):
     return preimage_facts
 
 
-def preimage_from_plan(evaluations, goal_expression, domain, action_plan):
-    """The facts that a plan of real actions relies on (as recover_stream_plan computes for optimistic plans), or None
-    when an action name does not identify one action (e.g. the step copies that plan constraints create)."""
+def preimage_from_plan(evaluations, goal_expression, domain, action_plan, instantiated):
+    """The facts that a plan of real actions relies on (as recover_stream_plan computes for optimistic plans), given
+    the grounded task of the facts in evaluations; or None when an action name does not identify one action (e.g. the
+    step copies that plan constraints create)."""
     real_task, opt_task = (
         task_from_domain_problem(domain, get_problem(evaluations, goal_expression, domain)) for _ in range(2)
     )
-    instantiated = instantiate_task(real_task)
     names = [action.name for action in instantiated.task.actions]
     if len(names) != len(set(names)):
         return None

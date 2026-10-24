@@ -9,8 +9,8 @@ from pddlstream.algorithms.scheduling.plan_streams import preimage_from_plan
 from pddlstream.core.conversion import obj_from_pddl_plan
 from pddlstream.core.evaluations import add_certified, add_facts
 from pddlstream.core.problem import OptPlan, is_plan
-from pddlstream.core.utils import INF, str_from_object
-from pddlstream.fastdownward.grounding import sas_from_pddl
+from pddlstream.core.utils import INF, Verbose, str_from_object
+from pddlstream.fastdownward.grounding import instantiate_task, sas_from_instantiated
 from pddlstream.fastdownward.search import abstrips_solve_from_task
 from pddlstream.fastdownward.tasks import get_problem, task_from_domain_problem
 from pddlstream.language.statistics import load_stream_statistics
@@ -22,12 +22,16 @@ UPDATE_STATISTICS = False
 
 
 def solve_finite(evaluations, goal_exp, domain, unit_costs=False, debug=False, **search_args):
+    """A plan for the problem with the facts in evaluations (or None), its cost, and the grounded task."""
     problem = get_problem(evaluations, goal_exp, domain, unit_costs)
     task = task_from_domain_problem(domain, problem)
-    sas_task = sas_from_pddl(task, debug=debug)
+    with Verbose(debug):
+        instantiated = instantiate_task(task)
+        sas_task = sas_from_instantiated(instantiated)
+        sas_task.metric = task.use_min_cost_metric
     pddl_plan, cost = abstrips_solve_from_task(sas_task, debug=debug, **search_args)
     plan = obj_from_pddl_plan(pddl_plan)
-    return plan, cost
+    return plan, cost, instantiated
 
 
 ##################################################
@@ -131,11 +135,13 @@ def solve_incremental(
             f'Search Time: {store.search_time:.3f} | Sample Time: {store.sample_time:.3f} | '
             f'Time: {store.elapsed_time():.3f}'
         )
-        plan, cost = solve_finite(
+        plan, cost, instantiated = solve_finite(
             evaluations, goal_expression, domain, max_cost=min(store.best_cost, constraints.max_cost), **search_kwargs
         )
-        if is_plan(plan):
-            store.add_plan(plan, cost)
+        if is_plan(plan) and (cost < store.best_cost):
+            # Records what the plan relies on, for its certificate, reusing the search's grounded task
+            preimage_facts = preimage_from_plan(evaluations, goal_expression, domain, plan, instantiated)
+            store.add_plan(plan if preimage_facts is None else OptPlan(plan, preimage_facts), cost)
         if not instantiator:
             infeasible = not store.has_solution()
             break
@@ -146,11 +152,6 @@ def solve_incremental(
             complexity_limit += complexity_step
         num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
 
-    if store.has_solution():  # Records what the best plan relies on, for its certificate
-        solution = store.solutions[-1]
-        preimage_facts = preimage_from_plan(evaluations, goal_expression, domain, solution.plan)
-        if preimage_facts is not None:
-            store.solutions[-1] = solution._replace(plan=OptPlan(solution.plan, preimage_facts))
     statistics_externals = externals if UPDATE_STATISTICS else []
     return store.finish(statistics_externals, infeasible, iterations=num_iterations, complexity=complexity_limit)
 
