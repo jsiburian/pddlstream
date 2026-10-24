@@ -79,14 +79,16 @@ class SolutionStore:
     def sample(self, instance, verbose=False):
         """The instance's next results and new facts, with the time charged to sampling and the call recorded."""
         start_time = get_clock().now()
-        call_index, num_history = instance.num_calls, len(instance.history)
+        call_index, num_history, error = instance.num_calls, len(instance.history), instance.error
         new_results, new_facts = instance.next_results(verbose=verbose)
         self.sample_time += get_clock().now() - start_time
-        if new_results or new_facts:
+        if instance.error is not error:
+            outcome = Outcome.ERROR
+        elif new_results or new_facts:
             outcome = Outcome.YIELDED
         else:
             outcome = Outcome.EXHAUSTED if instance.enumerated else Outcome.NO_SAMPLE_YET
-        fresh = num_history < len(instance.history)
+        fresh = (num_history < len(instance.history)) or (outcome is Outcome.ERROR)
         get_record().calls.append(Call(instance, call_index, outcome, new_results, new_facts, fresh))
         return new_results, new_facts
 

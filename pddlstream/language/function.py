@@ -93,35 +93,36 @@ class FunctionInstance(Instance):
         return self.history[0]
 
     def _compute_output(self):
+        """The function's value (None if it raised and stream_errors='fail')."""
+        if not self.history and (self.error is None):
+            try:
+                value = self.external.fn(*self.get_input_values())
+                # TODO: cast the inputs and test whether still equal?
+                if value < 0:
+                    raise ValueError(f'Function [{self.external.name}] produced a negative value [{value}]')
+                self.history.append(self.external.codomain(value))
+            except Exception as error:
+                # The planner needs the value of a cost function, so only a predicate's errors are recoverable
+                self.fail(error, recoverable=isinstance(self, PredicateInstance))
         self.enumerated = True
         self.num_calls += 1
-        if self.history:
-            return self.value
-        input_values = self.get_input_values()
-        value = self.external.fn(*input_values)
-        # TODO: cast the inputs and test whether still equal?
-        # if not (type(self.value) is self.external._codomain):
-        # if not isinstance(self.value, self.external.codomain):
-        if value < 0:
-            raise ValueError(f'Function [{self.external.name}] produced a negative value [{value}]')
-        self.history.append(self.external.codomain(value))
-        return self.value
+        return self.value if self.history else None
 
     def next_results(self, verbose=False):
         assert not self.enumerated
         start_time = get_clock().now()
-        start_history = len(self.history)
+        start_history, error = len(self.history), self.error
         value = self._compute_output()
-        new_results = [self._Result(self, value, optimistic=False)]
+        new_results = [] if value is None else [self._Result(self, value, optimistic=False)]
         new_facts = []
 
-        if (value is not False) and verbose:
+        if new_results and (value is not False) and verbose:
             # TODO: str(new_results[-1])
             logger.info(
                 f'iter={self.get_iteration()}, outs={len(new_results)}) {get_prefix(self.external.head)}'
                 f'{str_from_object(self.get_input_values())}={value:.3f}'
             )
-        if start_history <= len(self.history) - 1:
+        if (start_history < len(self.history)) or (self.error is not error):  # The function was called
             self.update_statistics(start_time, new_results)
         self.successful |= any(r.is_successful() for r in new_results)
         return new_results, new_facts

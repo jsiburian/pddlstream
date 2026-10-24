@@ -12,6 +12,7 @@ INF = math.inf
 FOCUSED_ALGORITHMS = ['focused', 'binding', 'adaptive']
 ALGORITHMS = ['incremental'] + FOCUSED_ALGORITHMS
 DEFAULT_ALGORITHM = 'adaptive'
+STREAM_ERRORS = ['raise', 'fail']
 # Fields that are passed on to FastDownward's search
 SEARCH_FIELDS = ['planner', 'max_planner_time', 'hierarchy', 'temp_dir', 'clean', 'debug']
 
@@ -58,6 +59,11 @@ class SolverConfig:
     verbose: bool = True  # Print the result of each stream call
     deterministic: bool = False  # Count work units instead of seconds for time-based decisions (see README)
 
+    # Failures (docs/v2/adr-001-stream-outcomes.md)
+    # When a stream or predicate raises: 'raise' stops the solve, 'fail' treats the call as exhausted (a cost function
+    # that raises always stops the solve, since planning needs its value)
+    stream_errors: str = 'raise'
+
     # Stream statistics from earlier runs
     load_statistics: bool = True
     save_statistics: bool = True
@@ -77,6 +83,8 @@ class SolverConfig:
     def __post_init__(self):
         if self.algorithm not in ALGORITHMS:
             raise ValueError(f'Unknown algorithm {self.algorithm!r}; choose one of {ALGORITHMS}')
+        if self.stream_errors not in STREAM_ERRORS:
+            raise ValueError(f'Unknown stream_errors {self.stream_errors!r}; choose one of {STREAM_ERRORS}')
 
     @classmethod
     def from_kwargs(cls, base=None, caller='solve()', **kwargs):

@@ -62,18 +62,20 @@ def test_duplicate_outputs_are_not_new():
 
 
 def test_stream_exception_propagates():
-    """An exception raised by a stream procedure leaves solve() without a result."""
+    """By default (stream_errors='raise'), an exception raised by a stream procedure stops the solve, naming the
+    call."""
 
     def sample():
         raise ZeroDivisionError()
         yield
 
-    with pytest.raises(ZeroDivisionError):
+    with pytest.raises(ZeroDivisionError) as info:
         solve(make_problem(from_gen_fn(sample)), algorithm='adaptive', verbose=False)
+    assert info.value.__notes__ == ['Raised by sample()']
 
 
-def test_function_exception_breaks_its_instance():
-    """A function that raises is left marked as called and enumerated, without a value."""
+def test_function_exception_leaves_its_instance_uncalled():
+    """A function that raises leaves its instance as it was."""
     stream_pddl = STREAM_PDDL[:-1] + '\n  (:function (Cost ?x) (Value ?x)))'
     problem = make_problem(from_fn(lambda: (1,)), stream_pddl=stream_pddl, Cost=lambda x: 1 / 0)
     with solve_scope():
@@ -83,7 +85,7 @@ def test_function_exception_breaks_its_instance():
         instance = function.get_instance(result.output_objects)
         with pytest.raises(ZeroDivisionError):
             instance.next_results()
-        assert instance.enumerated and (instance.num_calls == 1) and not instance.history
+        assert not instance.enumerated and (instance.num_calls == 0) and not instance.history
 
 
 def test_replay_makes_a_spurious_call():

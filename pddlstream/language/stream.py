@@ -296,12 +296,16 @@ class StreamInstance(Instance):
         return output
 
     def _next_outputs(self):
-        # TODO: deprecate
-        self._create_generator()
         # TODO: shuffle history
         # TODO: return all test stream outputs at once
         if self.num_calls == len(self.history):
-            self.history.append(self._next_wild())
+            try:
+                self._create_generator()
+                output = self._next_wild()
+            except Exception as error:
+                self.fail(error)
+                output = WildOutput()
+            self.history.append(output)
         return self.history[self.num_calls]
 
     def dump_new_values(self, new_values=[]):

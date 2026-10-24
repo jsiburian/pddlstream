@@ -3,12 +3,12 @@ import logging
 from collections import Counter
 from typing import NamedTuple
 
-from pddlstream.core.context import CALL_WORK, get_clock
+from pddlstream.core.context import CALL_WORK, get_clock, get_config
 from pddlstream.core.conversion import substitute_fact, values_from_objects
 from pddlstream.core.evaluations import compute_complexity
 from pddlstream.core.objects import Object, OptimisticObject
 from pddlstream.core.syntax import Fact, get_args, get_prefix, is_parameter
-from pddlstream.core.utils import INF, CreationHash, Score, get_mapping, safe_apply_mapping
+from pddlstream.core.utils import INF, CreationHash, Score, get_mapping, safe_apply_mapping, str_from_object
 from pddlstream.language.statistics import DEFAULT_SEARCH_OVERHEAD, Performance, PerformanceInfo
 
 logger = logging.getLogger(__name__)
@@ -193,7 +193,7 @@ class Outcome(enum.Enum):
     YIELDED = 'yielded'  # Produced at least one new output tuple or fact
     NO_SAMPLE_YET = 'no_sample_yet'  # Produced nothing new; later calls may
     EXHAUSTED = 'exhausted'  # Produced nothing new, and the procedure has no further outputs for these inputs
-    ERROR = 'error'  # The procedure raised an exception
+    ERROR = 'error'  # The procedure raised an exception (with stream_errors='fail')
 
 
 class Call(NamedTuple):
@@ -219,6 +219,7 @@ class Instance(CreationHash):
         self.disabled = False  # TODO: perform disabled using complexity
         self.history = []  # TODO: facts history
         self.results_history = []
+        self.error = None  # The exception the procedure raised, with stream_errors='fail'
         self._mapping = None
         self._domain = None
         self.reset()
@@ -250,6 +251,16 @@ class Instance(CreationHash):
 
     def get_input_values(self):
         return values_from_objects(self.input_objects)
+
+    def fail(self, error, recoverable=True):
+        """Applies the solve's stream_errors policy to an exception that the procedure raised: re-raises it (naming
+        the call), or records it and marks the instance exhausted."""
+        error.add_note(f'Raised by {self.external.name}{str_from_object(self.get_input_values())}')
+        if (get_config().stream_errors == 'raise') or not recoverable:
+            raise error
+        logger.warning(f'{self.external.name} raised {error!r}; treating it as exhausted')
+        self.error = error
+        self.enumerated = True
 
     def reset(self):
         self.disabled = False
