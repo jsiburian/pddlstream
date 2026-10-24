@@ -15,12 +15,14 @@ class Workspace:
         self.sessions = {}
         self.results = {}  # run_id: (problem_id, SolveResult)
         self.hints = {}  # problem_id: plan skeleton to try first
+        self.goals = {}  # problem_id: an accepted proposed goal
         self._run_ids = itertools.count()
 
     def add_problem(self, problem_id, problem, stream_info=None, **config):
         """Registers a problem (replacing any problem with this id and its session)."""
         if problem_id in self.sessions:
             self.sessions.pop(problem_id).close()
+        self.goals.pop(problem_id, None)
         self.problems[problem_id] = (problem, stream_info or {}, config)
 
     def get_problem(self, problem_id):

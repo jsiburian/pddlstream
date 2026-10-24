@@ -5,6 +5,7 @@ import json
 import pytest
 
 from examples.agent.scripted_agent import fixed_sampler, make_problem
+from pddlstream.core.problem import PDDLProblem
 from pddlstream.tools import TOOLS, Toolbox, Workspace
 
 
@@ -84,3 +85,28 @@ def test_mcp_server_needs_mcp(toolbox):
             serve(toolbox.workspace)
     else:
         pytest.skip('mcp is installed')
+
+
+def test_propose_goal(toolbox):
+    proposal = call(toolbox, 'propose_goal', problem_id='squares', goal=['and', ['Done']])
+    assert (proposal['accepted'], proposal['issues']) == (True, [])
+    assert call(toolbox, 'run_search', problem_id='squares', budget={'max_time': 30})['status'] == 'succeeded'
+    # 7 is not an initial object, but a stream can produce it
+    [warning] = call(toolbox, 'propose_goal', problem_id='squares', goal=['Valid', 7])['issues']
+    assert (warning['severity'], warning['code']) == ('warning', 'unknown-object')
+    rejected = call(toolbox, 'propose_goal', problem_id='squares', goal=['and', ['Fly'], ['Valid'], ['not', 'Done']])
+    assert not rejected['accepted']
+    assert [issue['code'] for issue in rejected['issues']] == ['unknown-predicate', 'wrong-arity', 'malformed']
+
+
+def test_unreachable_goal():
+    domain = """(define (domain door) (:requirements :strips)
+  (:predicates (Closed ?d) (Open ?d) (Locked ?d))
+  (:action open :parameters (?d) :precondition (Closed ?d) :effect (and (Open ?d) (not (Closed ?d)))))"""
+    workspace = Workspace()
+    workspace.add_problem('door', PDDLProblem(domain, {}, None, {}, [('Closed', 'front')], ('Open', 'front')))
+    toolbox = Toolbox(workspace)
+    assert call(toolbox, 'propose_goal', problem_id='door', goal=['Open', 'front'])['accepted']
+    issues = call(toolbox, 'propose_goal', problem_id='door', goal=['and', ['Locked', 'front'], ['Open', 'back']])
+    assert [issue['code'] for issue in issues['issues']] == ['unreachable', 'unknown-object']
+    workspace.close()

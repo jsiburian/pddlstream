@@ -20,6 +20,7 @@ from pddlstream.core.evaluations import evaluations_from_init
 from pddlstream.core.objects import Object
 from pddlstream.core.problem import Action, Certificate, Solution
 from pddlstream.core.registry import Registry
+from pddlstream.core.syntax import get_args, get_prefix
 from pddlstream.fastdownward.tasks import (
     apply_action,
     evaluation_from_fd,
@@ -141,15 +142,16 @@ def run_search(workspace, problem_id, budget=None):
     budget = dict(budget or {})
     check_keywords(budget, BUDGET_KEYS, 'run_search budget')
     session = workspace.session(problem_id)
+    goal = workspace.goals.get(problem_id)  # An accepted proposed goal, if any
     hint = workspace.hints.pop(problem_id, None)
     result = None
     if hint is not None:
         skeleton, fraction = hint
         hint_budget = dict(budget, max_time=fraction * budget.get('max_time', 60))
         constraints = PlanConstraints(skeletons=[skeleton], exact=False)
-        result = session.solve(constraints=constraints, **hint_budget)
+        result = session.solve(goal=goal, constraints=constraints, **hint_budget)
     if (result is None) or (result.plan is None):  # The hint only ranks: without it, the search is complete again
-        result = session.solve(trace=True, **budget)
+        result = session.solve(goal=goal, trace=True, **budget)
     run_id = workspace.add_result(problem_id, result)
     stats = {key: result.stats.get(key) for key in ['termination', 'gaps', 'outcomes', 'iterations', 'run_time']}
     return {
@@ -172,6 +174,72 @@ def propose_hint(workspace, problem_id, skeleton, budget_fraction=0.5):
         return {'accepted_for_ranking': False, 'reason': f'Unknown actions {unknown}'}
     workspace.hints[problem_id] = ([(name, list(args)) for name, args in skeleton], budget_fraction)
     return {'accepted_for_ranking': True, 'reason': f'Tried first for {budget_fraction:.0%} of the next budget'}
+
+
+CONNECTIVES = {'and', 'or', 'not'}
+
+
+def propose_goal(workspace, problem_id, goal):
+    """Checks a goal that an agent proposes, e.g. from a language instruction: a formula as nested lists such as
+    ['and', ['On', 'a', 'tray'], ['not', ['Holding', 'a']]] (with and, or, not). It checks the predicates, their
+    arities, the objects (initial objects and constants; others are only warned about if streams can produce new
+    objects), and whether each predicate can become true at all (it holds initially, an action adds it, an axiom
+    derives it or a stream certifies it). An accepted goal is what the next run_search plans for."""
+    problem, stream_info, config = workspace.get_problem(problem_id)
+    model = describe(problem, stream_info=stream_info, unit_costs=config.get('unit_costs', False))
+    domain = parse_sequential_domain(problem.domain_pddl)
+    arities = {name.lower(): arity for name, arity in model.predicates.items()}
+    achievable = {get_prefix(fact).lower() for fact in problem.init}
+    achievable.update(
+        effect.literal.predicate.lower() for action in domain.actions for effect in action.effects
+        if not effect.literal.negated
+    )  # fmt: skip
+    achievable.update(name.lower() for name in model.derived)
+    achievable.update(fact[1:].split()[0].lower() for stream in model.streams for fact in stream.certified)
+    objects = {arg for fact in problem.init for arg in get_args(fact) if isinstance(arg, (str, int, float))}
+    objects.update(problem.constant_map)
+    objects.update(getattr(constant, 'name', constant) for constant in getattr(domain, 'constants', []))
+    produces_objects = any(stream.outputs for stream in model.streams)
+    issues = []
+
+    def issue(severity, code, message):
+        issues.append({'severity': severity, 'code': code, 'message': message})
+
+    def check(formula):
+        if not isinstance(formula, (list, tuple)) or not formula or not isinstance(formula[0], str):
+            issue('error', 'malformed', f'Not a formula: {formula!r}')
+            return None
+        head, *args = formula
+        if head.lower() in CONNECTIVES:
+            parts = [check(part) for part in args]
+            if (head.lower() == 'not') and (len(parts) != 1):
+                issue('error', 'malformed', f'not takes one formula: {formula!r}')
+            return (head.lower(), *parts)
+        if head.lower() not in arities:
+            issue('error', 'unknown-predicate', f'{head} is not a predicate of the domain')
+        elif len(args) != arities[head.lower()]:
+            issue('error', 'wrong-arity', f'{head} takes {arities[head.lower()]} arguments, not {len(args)}')
+        elif head.lower() not in achievable:
+            issue('error', 'unreachable', f'Nothing makes {head} true (no initial fact, action, axiom or stream)')
+        for arg in args:
+            if not isinstance(arg, (str, int, float)) or (isinstance(arg, str) and arg.startswith('?')):
+                issue('error', 'bad-argument', f'{arg!r} is not an object (quantifiers are not supported)')
+            elif arg not in objects:
+                if produces_objects:
+                    issue('warning', 'unknown-object', f'{arg!r} is not an initial object; a stream must produce it')
+                else:
+                    issue('error', 'unknown-object', f'{arg!r} is not an object of the problem')
+        return (head, *args)
+
+    normalized = check(goal)
+    accepted = not any(item['severity'] == 'error' for item in issues)
+    if accepted:
+        workspace.goals[problem_id] = normalized
+    return {'accepted': accepted, 'issues': issues, 'goal': to_json_formula(normalized) if accepted else None}
+
+
+def to_json_formula(formula):
+    return [to_json_formula(part) if isinstance(part, tuple) else to_value(part) for part in formula]
 
 
 def validate_plan(workspace, problem_id, plan=None, run_id=None):
@@ -275,6 +343,12 @@ TOOLS = [
         propose_hint.__doc__,
         schema({'problem_id': STRING, 'skeleton': PLAN, 'budget_fraction': NUMBER}, ['problem_id', 'skeleton']),
         propose_hint,
+    ),
+    Tool(
+        'propose_goal',
+        propose_goal.__doc__,
+        schema({'problem_id': STRING, 'goal': {'type': 'array'}}, ['problem_id', 'goal']),
+        propose_goal,
     ),
     Tool(
         'validate_plan',

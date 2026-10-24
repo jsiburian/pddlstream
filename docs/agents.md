@@ -2,7 +2,8 @@
 
 `pddlstream.tools` gives agents (coding agents, LLM tool use, scripts) a small set of tools over problems that the host
 program registers. Each tool takes and returns JSON-compatible data. No tool accepts facts, initial states or
-certificates: an agent can propose a plan or a skeleton, and pddlstream checks it, but an agent never asserts what holds.
+certificates: an agent can propose a plan, a skeleton or a goal, and pddlstream checks it, but an agent never asserts
+what holds.
 
 ```python
 from pddlstream.tools import Toolbox, Workspace
@@ -21,6 +22,7 @@ toolbox.call('run_search', {'problem_id': 'kitchen', 'budget': {'max_time': 30}}
 | `check_stream` | Calls a procedure on input values outside any search and reports contract violations (wrong arity, exceptions, duplicate outputs) |
 | `run_search` | Searches within a budget (`max_time`, `max_iterations`, `max_complexity`, `success_cost`, `algorithm`, `deterministic`) |
 | `propose_hint` | Asks the next search to first try a plan skeleton; it only orders the search |
+| `propose_goal` | Checks a goal an agent derived (e.g. from an instruction): predicates, arities, objects, and whether each predicate can become true. An accepted goal is what the next search plans for |
 | `validate_plan` | Verifies a run's certificate, or replays a plan the agent wrote and reports the first failing step and missing facts |
 | `explain_failure`, `inspect_trace`, `profile` | Why a run ended as it did, its events, and where its time went |
 | `run_regressions` | Runs a search on several problems |
