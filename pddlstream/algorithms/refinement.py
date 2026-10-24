@@ -95,6 +95,8 @@ def optimistic_stream_evaluation(evaluations, stream_plan, use_bindings=True):
     new_results = []
     bindings = {}  # TODO: report the depth considered
     for opt_result in stream_plan:  # TODO: just refine the first step of the plan
+        if not opt_result.optimistic:  # Real outputs stay as they are
+            continue
         for new_instance in optimistic_stream_instantiation(
             opt_result.instance, (bindings if use_bindings else {}), opt_evaluations
         ):
