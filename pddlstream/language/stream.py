@@ -234,8 +234,7 @@ class StreamInstance(Instance):
             for opt_gen_fn in self.external.opt_gen_fns
         ]
         self.opt_gens = len(self.opt_gen_fns) * [None]
-        self._axiom_predicate = None
-        self._disabled_axiom = None
+        self._exhausted = False  # Whether the procedure was exhausted after the last call in history
         # TODO: keep track of unique outputs to prune repeated ones
 
     def _check_output_values(self, new_values):
@@ -257,9 +256,12 @@ class StreamInstance(Instance):
             raise ValueError(f'Output wild facts for wild stream [{self.external.name}] is not a sequence: {new_facts}')
 
     def reset(self):
+        """Starts the instance over for a new solve; its calls are replayed from history before the procedure runs."""
         super().reset()
         self.previous_outputs = set()
         self.num_optimistic = 1
+        self._axiom_predicate = None  # A fluent stream's disabled axiom belongs to the last solve's domain
+        self._disabled_axiom = None
 
     #########################
 
@@ -309,6 +311,9 @@ class StreamInstance(Instance):
                 self.fail(error)
                 output = WildOutput()
             self.history.append(output)
+            self._exhausted = self.enumerated
+        elif self._exhausted and (self.num_calls == len(self.history) - 1):  # Replaying the last call
+            self.enumerated = True
         return self.history[self.num_calls]
 
     def dump_new_values(self, new_values=[]):
@@ -534,6 +539,10 @@ class Stream(External):
             for certified in self.certified:
                 if not (set(self.inputs) <= set(get_args(certified))):
                     raise ValueError('Negated streams must have certified facts including all input parameters')
+
+    def reset(self, *args, **kwargs):
+        super().reset(*args, **kwargs)
+        self.disabled_instances = []
 
     @property
     def num_opt_fns(self):

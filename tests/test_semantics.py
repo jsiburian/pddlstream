@@ -82,8 +82,8 @@ def test_function_exception_leaves_its_instance_uncalled():
         assert not instance.enumerated and (instance.num_calls == 0) and not instance.history
 
 
-def test_replay_makes_a_spurious_call():
-    """After reset(), an instance replays its history, then calls its exhausted generator once more."""
+def test_replay_matches_history():
+    """After reset(), an instance replays its history, including the exhaustion, without calling the procedure."""
     problem = make_problem(from_gen_fn(lambda: iter([(1,)])))
     with solve_scope():
         _, _, _, externals = parse_problem(problem)
@@ -92,9 +92,10 @@ def test_replay_makes_a_spurious_call():
             instance.next_results()
         assert len(instance.history) == 2  # [(1,)], then [] when the generator stopped
         instance.reset()
+        replayed = []
         while not instance.enumerated:
-            instance.next_results()
-        assert len(instance.history) == 3  # The replayed [] did not mark it enumerated
+            replayed.append(len(instance.next_results()[0]))
+        assert (replayed == [1, 0]) and (len(instance.history) == 2)
 
 
 def test_enable_keeps_streams_disabled():
