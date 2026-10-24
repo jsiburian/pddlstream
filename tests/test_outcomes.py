@@ -181,3 +181,10 @@ def test_wild_output_enumerated():
     problem = make_problem(from_list_gen_fn(lambda: iter([WildOutput(enumerated=True), [(1,)]])))
     result = solve(problem, algorithm='adaptive', verbose=False)
     assert result.status is Status.INFEASIBLE
+
+
+def test_stream_info_is_not_modified():
+    """Solving adjusts stream infos (e.g. unit_efforts sets their effort) on copies, not the caller's objects."""
+    info = StreamInfo()
+    solve(make_problem(from_fn(lambda: (1,))), stream_info={'sample': info}, unit_efforts=True, verbose=False)
+    assert info.effort is None

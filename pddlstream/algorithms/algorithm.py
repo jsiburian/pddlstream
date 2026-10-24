@@ -1,3 +1,4 @@
+import copy
 import dataclasses
 import functools
 import inspect
@@ -232,7 +233,7 @@ def parse_stream_pddl(stream_pddl, stream_map, stream_info={}, unit_costs=False,
         return stream_pddl
     if isinstance(stream_map, dict):  # DEBUG_MODES
         stream_map = {k.lower(): v for k, v in stream_map.items()}
-    stream_info = {k.lower(): v for k, v in stream_info.items()}
+    stream_info = {k.lower(): copy.copy(v) for k, v in stream_info.items()}  # Solving modifies the infos
     rules = []
     for pddl in stream_pddl:
         # TODO: check which functions are actually used and prune the rest
