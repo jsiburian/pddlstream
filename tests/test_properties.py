@@ -73,6 +73,8 @@ def test_example(case, tmp_path, record):
         assert call['solved'], call['summary']
         if call['kind'] == 'pddlstream':
             assert not call['violations'], call['violations']
+            missing = set(call['capabilities'] or []) - set(case.features)
+            assert not missing, f'Feature tags missing from tests/cases.py: {sorted(missing)}'
             assert call['valid'] == case.valid, call['validation_error']
         if call['valid']:
             assert float(call['replay_cost']) == pytest.approx(float(call['cost']), **TOLERANCE)

@@ -13,6 +13,7 @@ _MODULES = {
     'pddlstream.algorithms.incremental': ['solve_incremental'],
     'pddlstream.algorithms.constraints': ['PlanConstraints', 'OrderedSkeleton', 'WILD'],
     'pddlstream.algorithms.explain': ['explain'],
+    'pddlstream.algorithms.model': ['describe'],
     'pddlstream.algorithms.session': ['PlannerSession', 'WorldPatch'],
     'pddlstream.algorithms.validate': ['validate_solution', 'verify_certificate'],
     'pddlstream.core.config': ['SolverConfig'],

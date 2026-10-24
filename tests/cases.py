@@ -58,7 +58,7 @@ CASES = [
     Case('blocksworld.run -a binding', length=4, features=('pddl',)),
     Case('blocksworld.run_derived', cost=4, features=('derived',)),
     Case('kitchen.run', cost=32, bench=True, features=('streams', 'fluent', 'negated', 'derived', 'costs', 'debug')),
-    Case('temporal.run', cost=4, length=8, bench=True, features=('streams', 'derived', 'costs')),
+    Case('temporal.run', cost=4, length=8, bench=True, features=('streams', 'functions', 'derived', 'costs')),
     Case('ipc.rovers.run', length=10, features=('pddl',)),
     Case('ipc.satellites.run', length=9, features=('pddl',)),
     # Language features
@@ -68,10 +68,10 @@ CASES = [
     Case('advanced.exogenous.run', length=5, valid=None, features=('streams', 'exogenous', 'deferred')),
     Case('advanced.fluent.run', length=5, features=('streams', 'fluent')),
     Case('advanced.multi_cost', cost=4, features=('streams', 'functions', 'costs')),
-    Case('advanced.satisfy.run', length=2, features=('streams', 'satisfaction')),
-    Case('advanced.satisfy.run -a adaptive', length=2, features=('streams', 'satisfaction')),
-    Case('advanced.storage', length=5, bench=True, features=('streams', 'debug')),
-    Case('advanced.wild.run', cost=47.312, length=4, bench=True, features=('streams', 'functions', 'costs')),
+    Case('advanced.satisfy.run', length=2, features=('streams', 'functions', 'satisfaction')),
+    Case('advanced.satisfy.run -a adaptive', length=2, features=('streams', 'functions', 'satisfaction')),
+    Case('advanced.storage', length=5, bench=True, features=('streams', 'adl', 'debug')),
+    Case('advanced.wild.run', cost=47.312, length=4, bench=True, features=('streams', 'functions', 'adl', 'costs')),
     # Belief space
     Case('table_belief.run', cost=10.532, length=10, features=('belief', 'derived', 'costs')),
     Case(
@@ -104,7 +104,7 @@ CASES = [
         'continuous_tamp.replan',
         cost=5,
         length=5,
-        features=('streams', 'derived', 'costs', 'session'),
+        features=('streams', 'negated', 'adl', 'derived', 'costs', 'session'),
     ),
     Case(
         'continuous_tamp.run -s',
