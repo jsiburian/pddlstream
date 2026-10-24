@@ -128,7 +128,7 @@ class Recorder:
         certified, certificate_issues = None, []
         if kind == PDDLSTREAM:
             violations = check_solution(solution)
-            unit_costs = kwargs.get('unit_costs', False)
+            unit_costs = kwargs.get('unit_costs', getattr(kwargs.get('config'), 'unit_costs', False))
             try:
                 valid, replay_cost = validate_solution(problem, solution, unit_costs=unit_costs)
                 if valid:

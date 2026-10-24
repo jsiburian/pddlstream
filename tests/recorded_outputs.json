@@ -396,6 +396,77 @@
    }
   }
  ],
+ "continuous_tamp.replan": [
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 3,
+   "cost": 9.0,
+   "digest": "97efe1ff818e97e0",
+   "evaluations": 144,
+   "iterations": 7,
+   "skeletons": 4,
+   "solutions": 1,
+   "stream_calls": {
+    "s-grasp": 2,
+    "s-ik": 4,
+    "s-motion": 5,
+    "s-region": 37,
+    "t-cfree": 23,
+    "t-region": 29
+   }
+  },
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 3,
+   "cost": 5.0,
+   "digest": "b359d947511eeb7e",
+   "evaluations": 135,
+   "iterations": 5,
+   "skeletons": 2,
+   "solutions": 1,
+   "stream_calls": {
+    "s-motion": 1,
+    "t-cfree": 1
+   }
+  },
+  {
+   "actions": [
+    "move",
+    "pick",
+    "move",
+    "place",
+    "move"
+   ],
+   "complexity": 3,
+   "cost": 5.0,
+   "digest": "5723fe5d3fc17df0",
+   "evaluations": 133,
+   "iterations": 5,
+   "skeletons": 2,
+   "solutions": 1,
+   "stream_calls": {
+    "s-ik": 1,
+    "s-motion": 3,
+    "t-cfree": 2
+   }
+  }
+ ],
  "continuous_tamp.run": [
   {
    "actions": [

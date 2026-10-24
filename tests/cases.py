@@ -32,6 +32,7 @@ FEATURES = {
     'satisfaction': 'Constraint satisfaction instead of planning',
     'belief': 'Belief-space planning',
     'debug': 'Placeholder procedures (stream_map=DEBUG)',
+    'session': 'Planner sessions that replan as the world changes',
 }
 
 
@@ -98,6 +99,12 @@ CASES = [
         length=9,
         marks=('gui',),
         features=('streams', 'functions', 'deferred', 'derived', 'costs'),
+    ),
+    Case(
+        'continuous_tamp.replan',
+        cost=5,
+        length=5,
+        features=('streams', 'derived', 'costs', 'session'),
     ),
     Case(
         'continuous_tamp.run -s',

@@ -84,6 +84,8 @@ which is evaluated as needed instead of certified by a stream.
 - `opt_gen_fn=PartialInputs(...)`: which inputs the optimistic placeholder outputs depend on.
 - `defer_fn`: whether a call can wait until the plan reaches the step that needs it (`never_defer`,
   `defer_unique`, `defer_shared`). Deferred calls appear in the plan as `StreamAction` steps.
+- `reads`: what the procedure depends on besides its inputs, so that a planner session knows which results a change
+  invalidates (see [sessions](sessions.md)).
 - `complete=True`: the procedure produces every value that satisfies its certified facts (e.g. an exact test or an
   enumeration of all grasps). With `solve(..., strict=True)`, only exhausted complete streams let the solver conclude
   that no plan exists.
