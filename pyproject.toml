@@ -57,6 +57,10 @@ ignore = [
     "B905", # zip() without strict=; lengths are checked where they matter (safe_zip)
 ]
 
+[tool.ruff.lint.isort]
+# CI's lint job doesn't check out the submodules, and ruff only finds examples.pybullet.utils when they are there
+known-first-party = ["benchmarks", "examples", "pddlstream"]
+
 [tool.mypy]
 python_version = "3.11"
 # The layers that hold the data model and the public API; bodies of unannotated functions are not checked

@@ -7,6 +7,7 @@ import pathlib
 from examples.continuous_tamp.primitives import blocked
 from examples.learning.policies import ConflictPolicy, LearnedPolicy, StreamStatistics
 from examples.learning.run import OPTIONS, TRAINING, collect, make_problem
+from helpers import output_tail, run_python
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.validate import verify_certificate
 from pddlstream.core.problem import Status
@@ -32,19 +33,35 @@ def test_policies_import_only_the_facade():
     assert {module for module in modules if module.startswith('pddlstream')} == {'pddlstream.strategy'}
 
 
-def calls(result):
-    return sum(result.stats['outcomes'].values())
+# Prints the calls of the default and the learned policy on the held-out problem
+COMPARE = """
+from examples.continuous_tamp.primitives import blocked
+from examples.learning.policies import LearnedPolicy, StreamStatistics
+from examples.learning.run import OPTIONS, TRAINING, collect, make_problem
+from pddlstream.algorithms.meta import solve
+
+statistics = StreamStatistics.from_rows(collect(TRAINING))
+for policy in [None, LearnedPolicy(statistics)]:
+    result = solve(make_problem(lambda: blocked(n_blocks=4)), binding_policy=policy, **OPTIONS)
+    print('calls', sum(result.stats['outcomes'].values()))
+"""
 
 
-def test_learned_policy_on_a_held_out_problem():
+def test_learned_policy_on_a_held_out_problem(tmp_path):
     statistics = StreamStatistics.from_rows(collect(TRAINING))
     assert statistics.p_success('s-region') > statistics.p_success('t-cfree')
-    default = solve(make_problem(lambda: blocked(n_blocks=4)), **OPTIONS)
     problem = make_problem(lambda: blocked(n_blocks=4))
     learned = solve(problem, binding_policy=LearnedPolicy(statistics), **OPTIONS)
     assert learned.status is Status.SUCCEEDED
     assert verify_certificate(problem, learned, unit_costs=True) == (True, [])
-    assert calls(learned) < calls(default)
+    # Call counts repeat only under a fixed PYTHONHASHSEED (the translator iterates string-keyed sets), which this
+    # process may not have, so they are compared in a subprocess
+    result = run_python(['-c', COMPARE], cwd=tmp_path)
+    assert result.returncode == 0, output_tail(result)
+    default_calls, learned_calls = [
+        int(line.split()[1]) for line in result.stdout.splitlines() if line.startswith('calls ')
+    ]
+    assert learned_calls < default_calls
 
 
 def test_conflict_policy():
