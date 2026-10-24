@@ -2,10 +2,11 @@ import logging
 from collections import Counter
 
 from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
-from pddlstream.algorithms.common import SolutionStore
+from pddlstream.algorithms.common import SolutionStore, get_action_plan
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.instantiation import Instantiator
-from pddlstream.algorithms.scheduling.plan_streams import preimage_from_plan
+from pddlstream.algorithms.scheduling.plan_streams import OptSolution, preimage_from_plan
+from pddlstream.algorithms.strategies import SolveState, drive, finish
 from pddlstream.core.conversion import obj_from_pddl_plan
 from pddlstream.core.evaluations import add_certified, add_facts
 from pddlstream.core.problem import OptPlan, is_plan
@@ -14,9 +15,7 @@ from pddlstream.core.utils import INF, Verbose, str_from_object
 from pddlstream.fastdownward.grounding import instantiate_task, sas_from_instantiated
 from pddlstream.fastdownward.search import abstrips_solve_from_task
 from pddlstream.fastdownward.tasks import get_problem, task_from_domain_problem
-from pddlstream.language.lint import CapabilityError
 from pddlstream.language.statistics import load_stream_statistics
-from pddlstream.language.stream import Stream
 
 logger = logging.getLogger(__name__)
 
@@ -118,46 +117,88 @@ def solve_incremental(
     )  # TODO: include other info here?
     if UPDATE_STATISTICS and not deterministic:
         load_stream_statistics(externals)
-    fluent_streams = [external.name for external in externals if isinstance(external, Stream) and external.is_fluent]
-    if fluent_streams:
-        raise CapabilityError(
-            'The incremental algorithm does not support fluent streams ({}); use a focused '
-            'algorithm such as adaptive'.format(', '.join(fluent_streams))
+    state = SolveState(
+        store, domain, goal_expression, externals, constraints, initial_complexity, complexity_step, max_iterations,
+        max_complexity,
+    )  # fmt: skip
+    refinement = ExhaustiveRefinement(externals, verbose)
+    drive(state, FiniteSearch(search_kwargs), refinement)
+    return finish(state, refinement, statistics_externals=externals if UPDATE_STATISTICS else [])
+
+
+class FiniteSearch:
+    """Plans with the facts found so far (incremental), recording what each better plan relies on."""
+
+    def __init__(self, search_kwargs={}):
+        self.search_kwargs = search_kwargs
+
+    def propose(self, state, refinement):
+        plan, cost, instantiated = solve_finite(
+            state.evaluations, state.goal_exp, state.domain, max_cost=state.max_cost(), **self.search_kwargs
         )
-    num_iterations = num_calls = 0
-    complexity_limit = initial_complexity
-    infeasible = False
-    instantiator = Instantiator(externals, evaluations)
-    num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
-    while not store.is_terminated() and (num_iterations < max_iterations) and (complexity_limit <= max_complexity):
-        num_iterations += 1
+        if is_plan(plan) and (cost < state.store.best_cost):
+            # Records what the plan relies on, for its certificate, reusing the search's grounded task
+            preimage_facts = preimage_from_plan(state.evaluations, state.goal_exp, state.domain, plan, instantiated)
+            if preimage_facts is not None:
+                plan = OptPlan(plan, preimage_facts)
+        return OptSolution([], plan, cost)
+
+    def postprocess(self, state, solution):
+        plan = solution.opt_plan
+        num_actions = len(get_action_plan(plan)) if is_plan(plan) else 0
+        emit(Iteration(state.iteration, state.complexity_limit, 'plan' if is_plan(plan) else 'failed', 0, num_actions))
+        return solution
+
+
+class ExhaustiveRefinement:
+    """Calls every stream instance up to the complexity limit after each search (incremental)."""
+
+    unsupported = {
+        'fluent': 'The incremental algorithm does not support fluent streams ({}); use a focused algorithm such as '
+        'adaptive'
+    }
+
+    def __init__(self, externals, verbose=False):
+        self.externals, self.verbose = externals, verbose
+        self.instantiator, self.num_calls = None, 0
+
+    def initialize(self, state):
+        self.instantiator = Instantiator(self.externals, state.evaluations)
+        self.num_calls += process_stream_queue(
+            self.instantiator, state.store, state.complexity_limit, verbose=self.verbose
+        )
+
+    def before_search(self, state):
+        store = state.store
         logger.info(
-            f'Iteration: {num_iterations} | Complexity: {complexity_limit} | Calls: {num_calls} | '
-            f'Evaluations: {len(evaluations)} | Solved: {store.has_solution()} | Cost: {store.best_cost:.3f} | '
+            f'Iteration: {state.iteration} | Complexity: {state.complexity_limit} | Calls: {self.num_calls} | '
+            f'Evaluations: {len(state.evaluations)} | Solved: {store.has_solution()} | Cost: {store.best_cost:.3f} | '
             f'Search Time: {store.search_time:.3f} | Sample Time: {store.sample_time:.3f} | '
             f'Time: {store.elapsed_time():.3f}'
         )
-        plan, cost, instantiated = solve_finite(
-            evaluations, goal_expression, domain, max_cost=min(store.best_cost, constraints.max_cost), **search_kwargs
-        )
-        num_actions = len(plan) if is_plan(plan) else 0
-        emit(Iteration(num_iterations, complexity_limit, 'plan' if is_plan(plan) else 'failed', 0, num_actions))
-        if is_plan(plan) and (cost < store.best_cost):
-            # Records what the plan relies on, for its certificate, reusing the search's grounded task
-            preimage_facts = preimage_from_plan(evaluations, goal_expression, domain, plan, instantiated)
-            store.add_plan(plan if preimage_facts is None else OptPlan(plan, preimage_facts), cost)
-        if not instantiator:
-            infeasible = not store.has_solution()
-            break
-        if complexity_step is None:
-            # TODO: option to select the next k-smallest complexities
-            complexity_limit = instantiator.min_complexity()
-        else:
-            complexity_limit += complexity_step
-        num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
 
-    statistics_externals = externals if UPDATE_STATISTICS else []
-    return store.finish(statistics_externals, infeasible, iterations=num_iterations, complexity=complexity_limit)
+    def may_search(self, state):
+        return True
+
+    def after_search(self, state, solution):
+        _, plan, cost = solution
+        if is_plan(plan) and (cost < state.store.best_cost):
+            state.store.add_plan(plan, cost)
+        if not self.instantiator:
+            state.infeasible = not state.store.has_solution()
+            return True
+        if state.complexity_step is None:
+            # TODO: option to select the next k-smallest complexities
+            state.complexity_limit = self.instantiator.min_complexity()
+        else:
+            state.complexity_limit += state.complexity_step
+        self.num_calls += process_stream_queue(
+            self.instantiator, state.store, state.complexity_limit, verbose=self.verbose
+        )
+        return False
+
+    def stats(self, state):
+        return {}
 
 
 ##################################################

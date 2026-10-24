@@ -1,8 +1,6 @@
 import logging
 
-from pddlstream.algorithms.advanced import automatically_negate_externals, enforce_simultaneous
-from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
-from pddlstream.algorithms.common import SolutionStore
+from pddlstream.algorithms.algorithm import scoped_solve
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.disable_skeleton import create_disabled_axioms
 from pddlstream.algorithms.disabled import process_stream_plan, push_disabled, reenable_disabled
@@ -13,17 +11,15 @@ from pddlstream.algorithms.refinement import get_optimistic_solve_fn, iterative_
 from pddlstream.algorithms.reorder import reorder_stream_plan
 from pddlstream.algorithms.scheduling.plan_streams import OptSolution
 from pddlstream.algorithms.skeleton import SkeletonQueue
-from pddlstream.algorithms.strategies import SolveState, drive, finish
+from pddlstream.algorithms.strategies import solve_with
 from pddlstream.algorithms.visualization import create_visualizations, has_pygraphviz, log_plans, reset_visualizations
-from pddlstream.core.context import get_config, note_gap
+from pddlstream.core.context import note_gap
 from pddlstream.core.problem import INFEASIBLE, get_length, is_plan, str_from_plan
 from pddlstream.core.trace import Iteration, SkeletonProgress, emit
 from pddlstream.core.utils import INF
-from pddlstream.language.fluent import compile_fluent_streams
 from pddlstream.language.function import Function, Predicate
-from pddlstream.language.lint import CapabilityError
 from pddlstream.language.optimizer import ComponentStream
-from pddlstream.language.statistics import compute_plan_effort, load_stream_statistics
+from pddlstream.language.statistics import compute_plan_effort
 from pddlstream.language.stream import Stream
 
 logger = logging.getLogger(__name__)
@@ -94,43 +90,33 @@ def solve_abstract(
     # TODO: replan with a better search algorithm after feasible
     # TODO: change the search algorithm and unit costs based on the best cost
     use_skeletons = max_skeletons is not None
-    evaluations, goal_exp, domain, externals = compile_problem(
-        problem, stream_info, constraints, unit_costs, unit_efforts
-    )
     # TODO: make effort_weight be a function of the current cost
-    if not deterministic:
-        load_stream_statistics(externals)
     visualize = prepare_visualizations(visualize)
-    streams, functions, negative, optimizers = partition_externals(externals, verbose=verbose)
-    has_optimizers = bool(optimizers)  # TODO: deprecate
-    if has_optimizers and not use_skeletons:
-        raise CapabilityError('Optimizers need the adaptive algorithm (with plan skeletons)')
 
-    store = SolutionStore(evaluations, max_time, success_cost, verbose, max_memory=max_memory)
-    state = SolveState(
-        store, domain, goal_exp, externals, constraints, initial_complexity, complexity_step, max_iterations,
-        max_complexity,
+    def compose(state):
+        search = OptimisticSearch.from_state(
+            state,
+            verbose=verbose,
+            replan_actions=replan_actions,
+            reachieve=use_skeletons,
+            max_effort=max_effort,
+            effort_weight=effort_weight,
+            reorder=reorder,
+            visualize=visualize,
+        )
+        options = dict(effort_weight=effort_weight, verbose=verbose)
+        if use_skeletons:
+            refinement = SkeletonRefinement.from_state(
+                state, max_skeletons=max_skeletons, search_sample_ratio=search_sample_ratio, **options
+            )
+        else:
+            refinement = GreedyRefinement.from_state(state, bind=bind, max_failures=max_failures, **options)
+        return search, refinement
+
+    return solve_with.__wrapped__(  # Already in this solve's scope
+        problem, compose, constraints, stream_info, unit_costs, unit_efforts, success_cost, max_time, max_iterations,
+        max_memory, initial_complexity, complexity_step, max_complexity, verbose, deterministic, **search_kwargs,
     )  # fmt: skip
-    search = OptimisticSearch(
-        negative,
-        streams + functions + optimizers,
-        replan_actions=replan_actions,
-        reachieve=use_skeletons,
-        max_effort=max_effort,
-        effort_weight=effort_weight,
-        has_optimizers=has_optimizers,
-        reorder=reorder,
-        visualize=visualize,
-        search_kwargs=search_kwargs,
-    )
-    eager_externals = list(filter(lambda e: e.info.eager, externals))
-    refinement_args = dict(eager_externals=eager_externals, effort_weight=effort_weight, verbose=verbose)
-    if use_skeletons:
-        refinement = SkeletonRefinement(max_skeletons, search_sample_ratio, has_optimizers, **refinement_args)
-    else:
-        refinement = GreedyRefinement(bind, max_failures, has_optimizers, **refinement_args)
-    drive(state, search, refinement)
-    return finish(state, refinement)
 
 
 class OptimisticSearch:
@@ -153,6 +139,17 @@ class OptimisticSearch:
         self.replan_actions, self.reachieve = replan_actions, reachieve
         self.max_effort, self.effort_weight, self.has_optimizers = max_effort, effort_weight, has_optimizers
         self.reorder, self.visualize, self.search_kwargs = reorder, visualize, search_kwargs
+
+    @classmethod
+    def from_state(cls, state, verbose=False, search_kwargs=None, **options):
+        """An OptimisticSearch over the problem's streams, functions and optimizers, with the state's search options
+        unless search_kwargs is given. The options are those of the constructor."""
+        streams, functions, negative, optimizers = partition_externals(state.externals, verbose=verbose)
+        search_kwargs = state.search_kwargs if search_kwargs is None else search_kwargs
+        return cls(
+            negative, streams + functions + optimizers, has_optimizers=bool(optimizers), search_kwargs=search_kwargs,
+            **options,
+        )  # fmt: skip
 
     def propose(self, state, refinement):
         optimistic_solve_fn = get_optimistic_solve_fn(
@@ -198,6 +195,13 @@ class FocusedRefinement:
         self.eager_instantiator, self.eager_calls = None, 0
         self.skeleton_queue = None
 
+    @classmethod
+    def from_state(cls, state, **options):
+        """The refinement for the problem's optimizers and eager streams. The options are those of the constructor."""
+        optimizers = partition_externals(state.externals)[3]
+        eager_externals = list(filter(lambda e: e.info.eager, state.externals))
+        return cls(has_optimizers=bool(optimizers), eager_externals=eager_externals, **options)
+
     def initialize(self, state):
         self.skeleton_queue = SkeletonQueue(state.store, state.domain, disable=not self.has_optimizers)
 
@@ -241,6 +245,8 @@ class FocusedRefinement:
 
 class GreedyRefinement(FocusedRefinement):
     """Calls the plan's streams in order (focused), binding their outputs into later streams (binding)."""
+
+    unsupported = {'optimizer': 'Optimizers need the adaptive algorithm (with plan skeletons): {}'}
 
     def __init__(self, bind=True, max_failures=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -306,23 +312,6 @@ def note_unreached_facts(evaluations, complexity_limit):
     plan exists unsound."""
     if any(node.complexity > complexity_limit for node in evaluations.values()):
         note_gap('unreached_facts')
-
-
-def compile_problem(problem, stream_info, constraints, unit_costs, unit_efforts):
-    """Parses the problem and compiles its negated, simultaneous and fluent streams into the domain."""
-    evaluations, goal_exp, domain, externals = parse_problem(
-        problem, stream_info=stream_info, constraints=constraints, unit_costs=unit_costs, unit_efforts=unit_efforts
-    )
-    automatically_negate_externals(domain, externals)
-    enforce_simultaneous(domain, externals)
-    compile_fluent_streams(domain, externals)
-    if get_config().strict:
-        for external in externals:
-            if isinstance(external, Stream) and external.is_negated and not external.is_complete:
-                logger.warning(
-                    f'{external.name} is used negated but not declared complete, so its failures are trusted'
-                )
-    return evaluations, goal_exp, domain, externals
 
 
 def prepare_visualizations(visualize):

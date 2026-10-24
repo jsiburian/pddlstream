@@ -139,16 +139,22 @@ def get_capabilities(domain, externals, goal):
     if len(domain.types) > 1:
         capabilities.add('types')
     for external in externals:
-        capabilities.add(CAPABILITY_FROM_KIND[get_kind(external)])
-        if isinstance(external, Stream) and external.is_negated:
-            capabilities.add('negated')
-        if isinstance(external, Stream) and external.is_fluent:
-            capabilities.add('fluent')
-        if isinstance(external, FutureStream):
-            capabilities.add('exogenous')
-        if external.name.startswith('rule'):
-            capabilities.add('rules')
+        capabilities.update(get_external_capabilities(external))
     return tuple(sorted(capabilities))
+
+
+def get_external_capabilities(external):
+    """The capabilities that a stream, function or optimizer brings to a problem."""
+    capabilities = {CAPABILITY_FROM_KIND[get_kind(external)]}
+    if isinstance(external, Stream) and external.is_negated:
+        capabilities.add('negated')
+    if isinstance(external, Stream) and external.is_fluent:
+        capabilities.add('fluent')
+    if isinstance(external, FutureStream):
+        capabilities.add('exogenous')
+    if external.name.startswith('rule'):
+        capabilities.add('rules')
+    return capabilities
 
 
 def describe(problem, stream_info=None, unit_costs=False):
