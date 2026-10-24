@@ -3,14 +3,13 @@ import time
 from collections import namedtuple
 from collections.abc import Sized
 from heapq import heappop, heappush
-from itertools import count
 
 from pddlstream.algorithms.common import stream_plan_preimage
 from pddlstream.algorithms.disabled import bind_action_plan, process_instance, update_bindings, update_cost
 from pddlstream.algorithms.visualization import visualize_stream_orders
 from pddlstream.core.context import BINDING_WORK, get_clock, get_config
 from pddlstream.core.conversion import evaluation_from_fact
-from pddlstream.core.evaluations import COMPLEXITY_OP, add_certified
+from pddlstream.core.evaluations import COMPLEXITY_OP
 from pddlstream.core.problem import FAILED, INFEASIBLE, is_plan
 from pddlstream.core.utils import (
     INF,
@@ -62,7 +61,6 @@ class Skeleton(CreationHash):
         self.action_plan = action_plan
         self.cost = cost
         self.best_binding = None
-        self.improved = False
         self.root = Binding(self, self.cost, history=[], mapping={}, index=0, parent=None, parent_result=None)
         self.affected_indices = [
             compute_affected_downstream(self.stream_plan, index) for index in range(len(self.stream_plan))
@@ -109,7 +107,6 @@ class Skeleton(CreationHash):
             or ((self.best_binding.index == binding.index) and (binding.cost < self.best_binding.cost))
         ):
             self.best_binding = binding
-            self.improved = True
             return True
         return False
 
@@ -131,8 +128,6 @@ class Skeleton(CreationHash):
 
 
 class Binding(CreationHash):
-    counter = count()
-
     def __init__(self, skeleton, cost, history, mapping, index, parent, parent_result):
         self.skeleton = skeleton
         self.cost = cost
@@ -152,7 +147,6 @@ class Binding(CreationHash):
         self.complexities = None
         self.max_history = max(self.history) if self.history else 0
         self.skeleton.update_best(self)
-        self.num = next(self.counter)  # TODO: FIFO
 
     @property
     def is_fully_bound(self):
@@ -446,20 +440,7 @@ class SkeletonQueue(Sized):
 
     #########################
 
-    def accelerate_best_bindings(self, **kwargs):
-        # TODO: more generally reason about streams on several skeletons
-        # TODO: reset the complexity values for old streams
-        for skeleton in self.skeletons:
-            if not skeleton.improved:
-                continue
-            skeleton.improved = False
-            for result in skeleton.best_binding.recover_bound_results():
-                # TODO: just accelerate the facts within the plan preimage
-                result.call_index = 0  # Pretends the fact was first
-                add_certified(self.evaluations, result, **kwargs)  # TODO: should special have a complexity of INF?
-        # TODO: AssertionError: Could not find instantiation for numeric expression: dist
-
-    def process(self, stream_plan, action_plan, cost, complexity_limit, max_time=0, accelerate=False):
+    def process(self, stream_plan, action_plan, cost, complexity_limit, max_time=0):
         start_time = get_clock().now()
         if is_plan(stream_plan):
             self.new_skeleton(stream_plan, action_plan, cost)
@@ -473,6 +454,4 @@ class SkeletonQueue(Sized):
         # TODO: add and process
         self.timed_process(max_time=(max_time - (get_clock().now() - start_time)))
         self.process_complexity(complexity_limit)
-        if accelerate:
-            self.accelerate_best_bindings()
         return FAILED
