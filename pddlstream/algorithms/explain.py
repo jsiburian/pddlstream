@@ -33,6 +33,7 @@ class Explanation:
     skeletons: list = field(default_factory=list)  # How far each skeleton was bound (SkeletonProgress)
     supports: dict = field(default_factory=dict)  # The plan's supporting stream calls by stream
     assumptions: list = field(default_factory=list)  # Preimage facts that no stream certified
+    traced: bool = False  # Whether the solve recorded a trace (trace=True)
 
     def to_dict(self):
         return dataclasses.asdict(self)
@@ -55,7 +56,7 @@ class Explanation:
             lines.append(f'Plan supports: {format_counts(self.supports)}')
         if self.assumptions:
             lines.append(f'Assumed facts: {self.assumptions}')
-        if not self.streams and (self.status != Status.SUCCEEDED.value):
+        if not self.traced and (self.status != Status.SUCCEEDED.value):
             lines.append('Solve with trace=True for details by stream and skeleton.')
         return '\n'.join(lines)
 
@@ -88,4 +89,5 @@ def explain(result):
         skeletons=skeletons,
         supports=supports,
         assumptions=assumptions,
+        traced=result.trace is not None,
     )

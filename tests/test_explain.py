@@ -56,3 +56,9 @@ def test_plan_without_streams():
     problem = PDDLProblem(DOMAIN_PDDL, {}, None, stream_map, [('Value', 1), ('Good', 1)], ('Done',))
     explanation = explain(solve(problem, algorithm='adaptive', verbose=False))
     assert (explanation.supports, explanation.assumptions) == ({}, [])
+
+
+def test_traced_without_calls():
+    problem = make_problem(from_fn(lambda: (1,)), test=from_test(lambda x: False))
+    result = solve(problem, algorithm='adaptive', max_iterations=1, trace=True, verbose=False)
+    assert 'trace=True' not in str(explain(result))
