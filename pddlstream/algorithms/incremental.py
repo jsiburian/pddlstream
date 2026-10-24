@@ -5,9 +5,10 @@ from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
 from pddlstream.algorithms.common import SolutionStore
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.instantiation import Instantiator
+from pddlstream.algorithms.scheduling.plan_streams import preimage_from_plan
 from pddlstream.core.conversion import obj_from_pddl_plan
 from pddlstream.core.evaluations import add_certified, add_facts
-from pddlstream.core.problem import is_plan
+from pddlstream.core.problem import OptPlan, is_plan
 from pddlstream.core.utils import INF, str_from_object
 from pddlstream.fastdownward.grounding import sas_from_pddl
 from pddlstream.fastdownward.search import abstrips_solve_from_task
@@ -145,6 +146,11 @@ def solve_incremental(
             complexity_limit += complexity_step
         num_calls += process_stream_queue(instantiator, store, complexity_limit, verbose=verbose)
 
+    if store.has_solution():  # Records what the best plan relies on, for its certificate
+        solution = store.solutions[-1]
+        preimage_facts = preimage_from_plan(evaluations, goal_expression, domain, solution.plan)
+        if preimage_facts is not None:
+            store.solutions[-1] = solution._replace(plan=OptPlan(solution.plan, preimage_facts))
     statistics_externals = externals if UPDATE_STATISTICS else []
     return store.finish(statistics_externals, infeasible, iterations=num_iterations, complexity=complexity_limit)
 

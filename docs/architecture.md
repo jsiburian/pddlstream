@@ -39,7 +39,9 @@ Some older module paths (for example `pddlstream.language.constants`, `pddlstrea
 4. Each search writes a SAS+ task to a private temporary directory and runs FastDownward on it
    (`fastdownward/planner.py`).
 5. The solver returns a `SolveResult`: the plan, its cost and a certificate, plus a `status` (succeeded, failed
-   or infeasible) and `stats` (iterations and search, sampling and total time).
+   or infeasible) and `stats` (iterations, search, sampling and total time, the outcomes of the stream calls, why
+   the solver stopped and what it cut short). The certificate lists the stream calls behind the plan's preimage
+   facts (`algorithms/certificate.py`), which `validate.verify_certificate` checks independently.
 
 ## Conventions
 

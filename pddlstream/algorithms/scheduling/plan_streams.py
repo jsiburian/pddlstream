@@ -38,6 +38,7 @@ from pddlstream.fastdownward.tasks import (
     evaluation_from_fd,
     fact_from_fd,
     fd_from_fact,
+    get_action_instances,
     get_problem,
     make_domain,
     make_predicate,
@@ -326,6 +327,22 @@ def get_preimage_facts(full_preimage, negative_plan, eager_plan):
         preimage_facts.update(result.get_certified())  # Some facts might not be in the preimage
     # TODO: record streams and axioms
     return preimage_facts
+
+
+def preimage_from_plan(evaluations, goal_expression, domain, action_plan):
+    """The facts that a plan of real actions relies on (as recover_stream_plan computes for optimistic plans), or None
+    when an action name does not identify one action (e.g. the step copies that plan constraints create)."""
+    real_task, opt_task = (
+        task_from_domain_problem(domain, get_problem(evaluations, goal_expression, domain)) for _ in range(2)
+    )
+    instantiated = instantiate_task(real_task)
+    names = [action.name for action in instantiated.task.actions]
+    if len(names) != len(set(names)):
+        return None
+    action_instances = get_action_instances(instantiated.task, action_plan)
+    action_instances, axiom_plans = recover_axioms_plans(instantiated, action_instances)
+    _, full_plan = recover_negative_axioms(real_task, opt_task, axiom_plans, action_instances, {})
+    return get_preimage_facts(plan_preimage(full_plan, []), {}, [])
 
 
 ##################################################

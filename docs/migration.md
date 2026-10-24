@@ -56,6 +56,11 @@ limit, ran out of time, had a FastDownward search time out or pruned streams by 
 infeasible in some cases; it now ends `FAILED`, with `stats['termination']` (why it stopped) and `stats['gaps']` (what
 was cut short). See [ADR-001](v2/adr-001-stream-outcomes.md).
 
+The certificate is a `PlanCertificate`, which still unpacks as `(all_facts, preimage_facts)`. It adds `supports`,
+the stream calls behind the preimage facts (each after those that support its domain), and
+`pddlstream.algorithms.validate.verify_certificate` checks it. The incremental algorithm now records preimage facts
+too, where it used to leave `preimage_facts` as `None`.
+
 An exception raised by a stream now carries a note naming the call. `stream_errors='fail'` treats such a call as
 exhausted instead of stopping the solve.
 

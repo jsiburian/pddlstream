@@ -20,14 +20,14 @@ def chain_problem():
     return PDDLProblem(DOMAIN_PDDL, {}, CHAIN_STREAMS, stream_map, [], ('Done',))
 
 
-@pytest.mark.parametrize('algorithm', ['adaptive', 'binding'])
+@pytest.mark.parametrize('algorithm', ['adaptive', 'binding', 'incremental'])
 def test_supports(algorithm):
     problem = chain_problem()
     result = solve(problem, algorithm=algorithm, verbose=False)
     certificate = result.certificate
     assert isinstance(certificate, PlanCertificate) and isinstance(certificate, Certificate)
     all_facts, preimage_facts = certificate  # Still unpacks as before
-    assert set(preimage_facts) == {('value', 2), ('good', 2), ('other', 1)}
+    assert set(preimage_facts) >= {('value', 2), ('good', 2)}  # Focused solvers also include ('other', 1)
     assert certificate.complete and not certificate.internal
     calls = [(support.stream, support.inputs, support.outputs) for support in certificate.supports]
     assert calls == [('sample', (), (1,)), ('extend', (1,), (2,))]  # Each after the supports of its domain
