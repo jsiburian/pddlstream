@@ -5,6 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 
 from pddlstream.algorithms.algorithm import parse_problem, preload_results, solve_scope
+from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.meta import solve
 from pddlstream.core.config import SolverConfig
 from pddlstream.core.conversion import values_from_objects
@@ -104,9 +105,10 @@ class PlannerSession:
             for result in results
         ]
 
-    def solve(self, goal=None, **kwargs):
-        """Solves for goal (by default the last one) from the current initial facts; kwargs override the session's
-        configuration. Returns a SolveResult, and sets report to what was reused."""
+    def solve(self, goal=None, constraints=None, **kwargs):
+        """Solves for goal (by default the last one) from the current initial facts, subject to PlanConstraints if
+        given; kwargs override the session's configuration. Returns a SolveResult, and sets report to what was
+        reused."""
         if goal is not None:
             self.goal = goal
         calls = []
@@ -129,7 +131,7 @@ class PlannerSession:
             domain_pddl, constant_map, _, _, _, _ = self.problem
             problem = PDDLProblem(domain_pddl, constant_map, list(self.externals), None, self.init, self.goal)
             with self._scope(config, reuse=tuple(reused)):
-                result = solve(problem, config=config)
+                result = solve(problem, constraints=constraints or PlanConstraints(), config=config)
         self.report = self._get_report(reused, lost, calls)
         self._invalidated.clear()
         return result
