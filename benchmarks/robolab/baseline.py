@@ -9,6 +9,7 @@ import argparse
 import collections
 import json
 import pathlib
+import re
 
 from benchmarks.common.goals import coverage
 from benchmarks.common.protocol import task_from_json
@@ -40,14 +41,14 @@ def read_results(folders):
 
 
 def summarize(results):
-    """Episodes, successes, the success rate, and the failures grouped by RoboLab's reason (the first condition that
-    did not hold, without its object names)."""
+    """Episodes, successes, the success rate, and the failures grouped by the first condition that RoboLab's reason
+    names as not holding."""
     successes = [result for result in results if result.get('success')]
     reasons = collections.Counter()
     for result in results:
         if not result.get('success'):
-            reason = result.get('reason') or 'unknown'
-            reasons[reason.split('(')[0].replace('Condition not satisfied: ', '')] += 1
+            condition = re.search(r'(\w+)\(', result.get('reason') or '')  # RoboLab words its reasons in several ways
+            reasons[condition.group(1) if condition else 'unknown'] += 1
     return {
         'episodes': len(results),
         'successes': len(successes),

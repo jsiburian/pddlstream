@@ -64,9 +64,10 @@ def test_robolab_baseline():
             'success': False,
             'reason': 'Condition not satisfied: object_grabbed(object=banana) (step 1/2)',
         },
+        {'task_name': 'C', 'success': False, 'reason': 'Only 0/1 objects completed. Failed: object_grabbed(object=x)'},
     ]
     summary = summarize(results)
-    assert (summary['success_rate'], summary['failures'], summary['succeeded']) == (0.5, {'object_grabbed': 1}, ['A'])
+    assert (summary['success_rate'], summary['failures'], summary['succeeded']) == (0.333, {'object_grabbed': 2}, ['A'])
 
 
 def test_robolab_gripper_calibration():
