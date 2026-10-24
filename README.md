@@ -68,6 +68,7 @@ pddlstream looks for FastDownward in the `downward` submodule of its source chec
 FastDownward is loaded the first time a solver needs it, so `import pddlstream` works without a build.
 Without pixi, install CMake and a C++ compiler, then run `CMAKE_POLICY_VERSION_MINIMUM=3.5 CXXFLAGS=-Wno-template-body ./downward/build.py` and `pip install -e .` (the `CXXFLAGS` setting is only needed for GCC 15 and newer).
 See FastDownward's [documentation](http://www.fast-downward.org/ObtainingAndRunningFastDownward) for more detailed build instructions.
+pddlstream needs the fork in the `downward` submodule: upstream FastDownward 26.x lacks translator features it relies on ([ADR-002](docs/v2/adr-002-planner-backend.md)).
 
 Make sure to recursively update **pddlstream**'s submodules when pulling new commits, then rebuild FastDownward:
 ```
@@ -83,6 +84,7 @@ pddlstream$ ./update.sh
 * [Executors](docs/executors.md): running stream procedures on threads, in worker processes, or in batches.
 * [Architecture](docs/architecture.md): how the package is organized and what happens during a solve.
 * [Migrating from earlier versions](docs/migration.md): new options, results and import paths, and what was removed.
+* [Changelog](CHANGELOG.md) and the [V2 design notes](docs/v2/charter.md): decisions, ADRs and the feature matrix.
 
 ## Examples
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pddlstream"
-version = "0.1.0"
+version = "2.0.0a1"
 description = "PDDLStream: integrating symbolic planners and blackbox samplers via optimistic adaptive planning"
 readme = "README.md"
 license = "GPL-3.0-only"

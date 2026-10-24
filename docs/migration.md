@@ -61,8 +61,20 @@ the stream calls behind the preimage facts (each after those that support its do
 `pddlstream.algorithms.validate.verify_certificate` checks it. The incremental algorithm now records preimage facts
 too, where it used to leave `preimage_facts` as `None`.
 
+A certificate's `unevaluated` lists the cost function values that the plan's cost assumes but no call computed (their
+optimistic values). They concern only the cost, so the certificate can still be complete.
+
+`SolveResult.solutions` lists each better plan found during the solve as an `Incumbent(plan, cost, time)`, with
+values. The module-level `pddlstream.algorithms.common.SOLUTIONS` still holds the last solve's solutions, but is
+deprecated.
+
 An exception raised by a stream now carries a note naming the call. `stream_errors='fail'` treats such a call as
 exhausted instead of stopping the solve.
+
+Smaller corrections:
+- `max_failures` is honored by the focused and binding algorithms (a value of 3 used to act as 0).
+- Solving no longer modifies the `StreamInfo` objects passed in `stream_info`.
+- Replaying an instance's history (in a planner session) makes no extra call of its procedure.
 
 ## Types and errors
 
