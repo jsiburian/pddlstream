@@ -133,7 +133,7 @@ def solve(
         if config.algorithm == 'adaptive':
             return solve_adaptive(problem, constraints=constraints, **options)
         solver = solve_focused_original if config.algorithm == 'focused' else solve_binding
-        return solver(problem, constraints=constraints, fail_fast=config.max_failures < INF, **options)
+        return solver(problem, constraints=constraints, max_failures=config.max_failures, **options)
 
 
 ##################################################

@@ -46,7 +46,7 @@ def test_config_with_overrides(dispatched):
     meta.solve(None, config=config, max_time=10)
     [(solver, kwargs)] = dispatched
     assert solver == 'solve_focused_original'
-    assert (kwargs['max_time'], kwargs['planner'], kwargs['fail_fast']) == (10, 'ff-astar', True)
+    assert (kwargs['max_time'], kwargs['planner'], kwargs['max_failures']) == (10, 'ff-astar', 1)
 
 
 def test_config_is_frozen():

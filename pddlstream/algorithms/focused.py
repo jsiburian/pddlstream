@@ -270,25 +270,28 @@ solve_focused = solve_abstract  # TODO: deprecate solve_focused
 ##################################################
 
 
-def solve_focused_original(problem, fail_fast=False, **kwargs):
+def solve_focused_original(problem, fail_fast=False, max_failures=None, **kwargs):
     """The focused algorithm: plans with optimistic stream outputs, calls the plan's streams, and repeats (raising
     the complexity limit when no plan is found) until a plan's streams all succeed. fail_fast switches back to
-    planning after the first stream failure. The other keyword arguments are those of solve_abstract.
+    planning after the first stream failure, and max_failures after that many (by default 0 with fail_fast, else
+    INF). The other keyword arguments are those of solve_abstract.
     Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
     """
-    max_failures = 0 if fail_fast else INF
+    if max_failures is None:
+        max_failures = 0 if fail_fast else INF
     return solve_abstract(
         problem, max_skeletons=None, search_sample_ratio=None, bind=False, max_failures=max_failures, **kwargs
     )
 
 
-def solve_binding(problem, fail_fast=False, **kwargs):
+def solve_binding(problem, fail_fast=False, max_failures=None, **kwargs):
     """The binding algorithm: like focused, but the outputs that the plan's streams produce are bound into the rest of
-    the stream plan before it is called. fail_fast switches back to planning after the first stream failure. The
-    other keyword arguments are those of solve_abstract.
+    the stream plan before it is called. fail_fast and max_failures are as for solve_focused_original. The other
+    keyword arguments are those of solve_abstract.
     Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
     """
-    max_failures = 0 if fail_fast else INF
+    if max_failures is None:
+        max_failures = 0 if fail_fast else INF
     return solve_abstract(
         problem, max_skeletons=None, search_sample_ratio=None, bind=True, max_failures=max_failures, **kwargs
     )

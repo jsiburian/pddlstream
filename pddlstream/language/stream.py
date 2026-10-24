@@ -112,7 +112,7 @@ class WildOutput:
     :param values: a list of output tuples
     :param facts: additional certified facts
     :param enumerated: the stream has no further outputs for these inputs
-    :param replan: the facts change the problem substantially, so the solver should replan
+    :param replan: not used
     """
 
     def __init__(self, values=[], facts=[], actions=[], enumerated=False, replan=False):
@@ -122,7 +122,7 @@ class WildOutput:
         if self.actions:
             raise NotImplementedError()
         self.enumerated = enumerated
-        self.replan = replan  # Reports back whether the problem has changed substantially
+        self.replan = replan
 
     def __iter__(self):
         return iter([self.values, self.facts])
@@ -295,6 +295,7 @@ class StreamInstance(Instance):
         output, self.enumerated = get_next(self._generator, default=[])
         if not isinstance(output, WildOutput):
             output = WildOutput(values=output)
+        self.enumerated |= output.enumerated
         return output
 
     def _next_outputs(self):

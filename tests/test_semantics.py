@@ -7,7 +7,6 @@ the suite, so the fix also removes the mark).
 
 import pytest
 
-from pddlstream.algorithms import focused
 from pddlstream.algorithms.algorithm import parse_problem, solve_scope
 from pddlstream.algorithms.meta import solve
 from pddlstream.core.problem import PDDLProblem, Status
@@ -108,26 +107,3 @@ def test_enable_keeps_streams_disabled():
         instance.disable(evaluations, domain)
         instance.enable(evaluations, domain)
         assert instance.disabled
-
-
-##################################################
-
-# Known bugs
-
-
-def bug(reason):
-    return pytest.mark.xfail(reason=reason, strict=True)
-
-
-@bug('Phase 10: max_failures is passed to focused and binding as 0 or infinity (meta.py:136)')
-def test_max_failures_is_honored(monkeypatch):
-    max_failures = []
-    process_stream_plan = focused.process_stream_plan
-
-    def record(*args, **kwargs):
-        max_failures.append(kwargs['max_failures'])
-        return process_stream_plan(*args, **kwargs)
-
-    monkeypatch.setattr(focused, 'process_stream_plan', record)
-    solve(make_problem(from_fn(lambda: (1,))), algorithm='binding', max_failures=3, verbose=False)
-    assert max_failures and set(max_failures) == {3}

@@ -6,12 +6,13 @@ import time
 
 import pytest
 
+from pddlstream.algorithms import focused
 from pddlstream.algorithms.meta import solve
 from pddlstream.core.config import SolverConfig
 from pddlstream.core.problem import PDDLProblem, Status
 from pddlstream.fastdownward import planner
-from pddlstream.language.generator import from_fn, from_gen_fn, from_test
-from pddlstream.language.stream import StreamInfo
+from pddlstream.language.generator import from_fn, from_gen_fn, from_list_gen_fn, from_test
+from pddlstream.language.stream import StreamInfo, WildOutput
 from test_semantics import DOMAIN_PDDL, STREAM_PDDL, make_problem
 
 
@@ -154,4 +155,29 @@ def test_strict_needs_complete_streams():
     assert_gap(result, 'incomplete_streams')
     complete = {name: StreamInfo(complete=True) for name in ['sample', 'test']}
     result = solve(problem, algorithm='adaptive', stream_info=complete, strict=True, verbose=False)
+    assert result.status is Status.INFEASIBLE
+
+
+##################################################
+
+# Options
+
+
+def test_max_failures_is_honored(monkeypatch):
+    max_failures = []
+    process_stream_plan = focused.process_stream_plan
+
+    def record(*args, **kwargs):
+        max_failures.append(kwargs['max_failures'])
+        return process_stream_plan(*args, **kwargs)
+
+    monkeypatch.setattr(focused, 'process_stream_plan', record)
+    solve(make_problem(from_fn(lambda: (1,))), algorithm='binding', max_failures=3, verbose=False)
+    assert max_failures and set(max_failures) == {3}
+
+
+def test_wild_output_enumerated():
+    """A wild stream can declare that it has no further outputs."""
+    problem = make_problem(from_list_gen_fn(lambda: iter([WildOutput(enumerated=True), [(1,)]])))
+    result = solve(problem, algorithm='adaptive', verbose=False)
     assert result.status is Status.INFEASIBLE
