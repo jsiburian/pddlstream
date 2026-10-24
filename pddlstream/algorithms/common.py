@@ -94,7 +94,11 @@ class SolutionStore:
         else:
             outcome = Outcome.EXHAUSTED if instance.enumerated else Outcome.NO_SAMPLE_YET
         fresh = (num_history < len(instance.history)) or (outcome is Outcome.ERROR)
-        get_record().calls.append(Call(instance, call_index, outcome, new_results, new_facts, fresh))
+        call = Call(instance, call_index, outcome, new_results, new_facts, fresh)
+        get_record().calls.append(call)
+        on_event = get_config().on_event
+        if on_event is not None:
+            on_event(call)
         return new_results, new_facts
 
     def finish(self, externals=(), infeasible=False, **stats):

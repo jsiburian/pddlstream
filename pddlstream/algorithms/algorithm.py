@@ -20,7 +20,7 @@ from pddlstream.core.context import (
     get_context,
 )
 from pddlstream.core.conversion import obj_from_value_expression
-from pddlstream.core.evaluations import evaluations_from_init
+from pddlstream.core.evaluations import add_certified, evaluations_from_init, is_instance_ready
 from pddlstream.core.log import console_output
 from pddlstream.core.objects import Object
 from pddlstream.core.registry import get_registry, use_registry
@@ -104,22 +104,23 @@ def reset_globals():
 
 
 @contextmanager
-def solve_scope(config=None, record=None, registry=None):
+def solve_scope(config=None, record=None, registry=None, reuse=None):
     """Makes config (by default the current one) the current solve's configuration while solving. With
     config.deterministic, decisions based on elapsed time use work units instead of seconds (max_time is still
-    wall-clock time). Nested solves keep the outer solve's clock, and its record unless given one (each solver run
-    gets its own). After the outermost solve, the current object registry is cleared, so every solve starts from the
-    same state; a registry passed in (e.g. by a planner session) is used instead and kept."""
+    wall-clock time). Nested solves keep the outer solve's clock, its record unless given one (each solver run gets
+    its own) and the results to reuse. After the outermost solve, the current object registry is cleared, so every
+    solve starts from the same state; a registry passed in (e.g. by a planner session) is used instead and kept."""
     config = apply_legacy_flags(config or get_config())
     outer = get_context()
     objects = nullcontext() if registry is None else use_registry(registry)
     if outer is not None:
-        with objects, activate(SolveContext(config, outer.clock, record or outer.record)):
+        context = SolveContext(config, outer.clock, record or outer.record, outer.reuse if reuse is None else reuse)
+        with objects, activate(context):
             yield
         return
     clock = WorkClock() if config.deterministic else WallClock()
     try:
-        with objects, activate(SolveContext(config, clock, record or SolveRecord())), console_output():
+        with objects, activate(SolveContext(config, clock, record or SolveRecord(), reuse or ())), console_output():
             yield
     finally:
         # Cleared afterwards rather than beforehand because callers may create objects before solving (satisfaction)
@@ -152,6 +153,22 @@ def scoped_solve(solve_fn):
     return wrapper
 
 
+def preload_results(evaluations, results):
+    """Adds the certified facts of the results whose domain facts hold, until none is left (results can certify each
+    other's domain facts). Returns the results whose domain facts do not hold."""
+    pending = list(results)
+    while True:
+        remaining = []
+        for result in pending:
+            if is_instance_ready(evaluations, result.instance):
+                add_certified(evaluations, result)
+            else:
+                remaining.append(result)
+        if len(remaining) == len(pending):
+            return remaining
+        pending = remaining
+
+
 def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, unit_efforts=False):
     # TODO: just return the problem if already written programmatically
     domain_pddl, constant_map, stream_pddl, stream_map, init, goal = problem
@@ -172,6 +189,7 @@ def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, u
     check_problem(domain, streams, obj_from_constant)
 
     evaluations = evaluations_from_init(init)
+    preload_results(evaluations, get_context().reuse if get_context() else ())
     goal_exp = obj_from_value_expression(goal)
 
     goal_exp = add_plan_constraints(constraints, domain, evaluations, goal_exp)

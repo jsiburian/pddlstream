@@ -6,6 +6,7 @@ solve() accepts every SolverConfig field as a keyword argument, or a whole Solve
 import dataclasses
 import difflib
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 INF = math.inf
@@ -58,6 +59,7 @@ class SolverConfig:
     visualize: bool = False  # Draw the constraint network and stream plans with graphviz
     verbose: bool = True  # Print the result of each stream call
     deterministic: bool = False  # Count work units instead of seconds for time-based decisions (see README)
+    on_event: Callable | None = None  # Called with each stream call (language.external.Call) as it happens
 
     # Failures (docs/v2/adr-001-stream-outcomes.md)
     # When a stream or predicate raises: 'raise' stops the solve, 'fail' treats the call as exhausted (a cost function

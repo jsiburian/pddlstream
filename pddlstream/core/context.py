@@ -85,6 +85,7 @@ class SolveContext:
     config: SolverConfig
     clock: WallClock | WorkClock
     record: SolveRecord = field(default_factory=SolveRecord)
+    reuse: tuple = ()  # Stream results from earlier solves (of a PlannerSession) to start from
 
 
 _current = contextvars.ContextVar('pddlstream_solve_context', default=None)

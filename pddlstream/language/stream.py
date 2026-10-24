@@ -142,6 +142,9 @@ class StreamInfo(ExternalInfo):
         defer_unique, defer_shared)
     :param complete: the procedure's outputs are exactly the values that satisfy the certified facts, so running out
         of outputs proves that no others exist (only matters with strict=True)
+    :param reads: what the procedure depends on besides its inputs, so a PlannerSession knows which of its results
+        a change to the world invalidates: None (unknown, the default: any change), () (only its inputs), or names
+        of what it reads, e.g. ('walls',), which may be predicates of changed facts
     :param p_success: the prior probability that a call produces outputs
     :param overhead: the prior expected cost of a call
     :param effort: a fixed effort that replaces the estimate from p_success and overhead

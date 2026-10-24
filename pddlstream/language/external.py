@@ -87,11 +87,15 @@ def convert_constants(fact):
 
 
 class ExternalInfo(PerformanceInfo):
-    def __init__(self, eager=False, eager_skeleton=False, defer_fn=never_defer, complete=False, **kwargs):
+    def __init__(self, eager=False, eager_skeleton=False, defer_fn=never_defer, complete=False, reads=None, **kwargs):
         super().__init__(**kwargs)
         # Whether the procedure's outputs are exactly the values that satisfy the certified facts, so running out of
         # outputs proves that no others exist (used by strict=True; see docs/v2/adr-001-stream-outcomes.md)
         self.complete = complete
+        # What the procedure's results depend on besides its inputs, for a PlannerSession to know which results a change
+        # to the world invalidates: None (unknown: any change), () (nothing: only the inputs), or names of the things
+        # it reads (e.g. ('walls',)), which may be predicates of facts that change
+        self.reads = reads
         # TODO: enable eager=True for inexpensive test streams by default
         # TODO: change p_success and overhead if it's a function or test stream
         self.eager = eager
