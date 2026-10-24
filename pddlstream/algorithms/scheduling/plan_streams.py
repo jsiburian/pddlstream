@@ -24,6 +24,7 @@ from pddlstream.core.conversion import (
     evaluation_from_fact,
     fact_from_evaluation,
     obj_from_pddl,
+    pddl_from_object,
     transform_action_args,
     transform_plan_args,
 )
@@ -38,7 +39,6 @@ from pddlstream.fastdownward.tasks import (
     evaluation_from_fd,
     fact_from_fd,
     fd_from_fact,
-    get_action_instances,
     get_problem,
     make_domain,
     make_predicate,
@@ -333,13 +333,18 @@ def preimage_from_plan(evaluations, goal_expression, domain, action_plan, instan
     """The facts that a plan of real actions relies on (as recover_stream_plan computes for optimistic plans), given
     the grounded task of the facts in evaluations; or None when an action name does not identify one action (e.g. the
     step copies that plan constraints create)."""
-    real_task, opt_task = (
-        task_from_domain_problem(domain, get_problem(evaluations, goal_expression, domain)) for _ in range(2)
-    )
     names = [action.name for action in instantiated.task.actions]
     if len(names) != len(set(names)):
         return None
-    action_instances = get_action_instances(instantiated.task, action_plan)
+    action_from_name = {}  # Grounded actions are named by their arguments (FastDownward's instantiate)
+    for action in instantiated.actions:
+        action_from_name.setdefault(action.name, action)
+    action_instances = [
+        action_from_name['({} {})'.format(name, ' '.join(map(pddl_from_object, args)))] for name, args in action_plan
+    ]
+    real_task, opt_task = (
+        task_from_domain_problem(domain, get_problem(evaluations, goal_expression, domain)) for _ in range(2)
+    )
     action_instances, axiom_plans = recover_axioms_plans(instantiated, action_instances)
     _, full_plan = recover_negative_axioms(real_task, opt_task, axiom_plans, action_instances, {})
     return get_preimage_facts(plan_preimage(full_plan, []), {}, [])
