@@ -105,7 +105,8 @@ RoboLab's robot is DROID's Franka arm with a Robotiq 2F-85 gripper. A live probe
 When a planned grasp slips (a held object is not where the gripper should carry it), the planner leaves out its own
 pick of that object and uses the `vla_pick` skill instead: the server answers with the skill's instruction ("pick up
 the banana") rather than actions, the client runs a VLA, and once the object is off the table next to the gripper,
-the planner plans the rest from the grasp it observes. On RoboLab the VLA is pi0.5 (DROID, joint positions), served
+the planner plans the rest from the grasp it observes. When the planner gives up on an episode (it finds no plan,
+or has no replans left), the VLA takes over the whole task from its instruction. On RoboLab the VLA is pi0.5 (DROID, joint positions), served
 by [openpi](https://github.com/Physical-Intelligence/openpi) in its own environment and queried through RoboLab's
 pi0-family client (`policies/pi0_family`), as RoboLab documents:
 

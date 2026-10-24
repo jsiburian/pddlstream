@@ -22,7 +22,7 @@ parser.add_argument('--remote-host', default='localhost', help='The planner serv
 parser.add_argument('--remote-port', type=int, default=8765)
 parser.add_argument('--skills', nargs='*', default=[], help='Learned skills the planner may use')
 parser.add_argument('--vla-host', default='localhost', help="openpi's policy server, for the VLA skills")
-parser.add_argument('--vla-port', type=int, default=None, help='With a port, the planner may hand picks to the VLA')
+parser.add_argument('--vla-port', type=int, default=None, help='With a port, the VLA takes picks and failed tasks')
 from robolab.eval.runner import add_common_eval_args, run_evaluation  # noqa: E402
 
 add_common_eval_args(parser)

@@ -70,7 +70,10 @@ class OpenpiVLA:
 
 class TampInferenceClient(InferenceClient):
     """Plans each episode with the planner server and plays back its joint-position action chunks. The runner sets
-    the task and its scene (set_task) before a task's episodes; RoboLab's runner creates one client per task."""
+    the task and its scene (set_task) before a task's episodes; RoboLab's runner creates one client per task.
+
+    With a VLA, the planner may hand skill steps to it, and when the planner gives up on an episode (no plan, or no
+    replans left), the VLA takes over the whole task from its instruction for the rest of the episode."""
 
     open_loop_horizon = 8
 
@@ -82,6 +85,7 @@ class TampInferenceClient(InferenceClient):
         self.task, self.scene = None, None
         self.started = set()  # Environments whose episode has been planned
         self.broken = set()  # Environments whose episode the planner failed with an error
+        self.handed_over = set()  # Environments whose episode the VLA finishes, after the planner gave up
 
     def set_task(self, task, scene):
         """The task (a TaskSpec, or a RoboLab Task or environment configuration) and its ObjectSpecs."""
@@ -89,6 +93,7 @@ class TampInferenceClient(InferenceClient):
         self.scene = scene
         self.started.clear()
         self.broken.clear()
+        self.handed_over.clear()
 
     def _extract_observation(self, raw_obs, *, env_id=0):
         state = self._get_env_gt_state(raw_obs, env_id)
@@ -113,12 +118,18 @@ class TampInferenceClient(InferenceClient):
         env_id, observation = request['env_id'], request['observation']
         if env_id in self.broken:  # The planner failed this episode: hold still, so that the evaluation goes on
             return np.array([[*observation.arm, observation.gripper]] * self.open_loop_horizon)
+        if env_id in self.handed_over:
+            return self.vla.act(request['raw'], self.task.instruction['default'], env_id=env_id)
         try:
             if env_id not in self.started:
                 options = {'gripper': 'robotiq', 'containment': 'center', 'focus': True, 'skills': self.skills}
                 self.planner.reset(self.task, self.scene, observation, env_id=env_id, **options)
                 self.started.add(env_id)
-            actions, _ = self.planner.act(observation, env_id=env_id)  # An unsupported task holds the arm still
+            actions, status = self.planner.act(observation, env_id=env_id)  # An unsupported task holds the arm still
+            if (status == 'failed') and (self.vla is not None):
+                print(f'The planner gave up: the VLA takes over "{self.task.instruction["default"]}"', flush=True)
+                self.handed_over.add(env_id)
+                return self.vla.act(request['raw'], self.task.instruction['default'], env_id=env_id)
             if actions is None:  # The planner hands a skill's step (e.g. picking up an object) to the VLA
                 if self.vla is None:
                     raise RuntimeError(f'The planner asked for a VLA step ({self.planner.delegate}), but has no VLA')
@@ -137,6 +148,8 @@ class TampInferenceClient(InferenceClient):
         if env_id is None:
             self.started.clear()
             self.broken.clear()
+            self.handed_over.clear()
         else:
             self.started.discard(env_id)
             self.broken.discard(env_id)
+            self.handed_over.discard(env_id)
