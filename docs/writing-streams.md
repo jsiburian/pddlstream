@@ -110,4 +110,8 @@ A *wild* stream returns `WildOutput(values, facts)` to certify facts beyond its 
   `result.stats['termination']` says why the solver stopped, `result.stats['gaps']` what it cut short, and
   `result.stats['outcomes']` counts what the stream calls did.
 - `stream_errors='fail'` treats a stream that raises as exhausted instead of stopping the solve.
+- `print(explain(result))` says why a solve ended as it did: what cut the search short, which streams never produced
+  outputs and how far each plan skeleton got (the last two need `solve(..., trace=True)`). With `trace=True`,
+  `result.trace` lists the solve's events (stream calls, searches, skeletons and plans); `on_event` receives them as
+  they happen.
 - The `examples/` directory covers each feature, from `examples/blocksworld` (no streams) to the PyBullet robots.
