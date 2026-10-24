@@ -1,7 +1,7 @@
-"""The state of the solve in progress: its configuration and clock.
+"""The state of the solve in progress: its configuration, clock and record.
 
 pddlstream.algorithms.algorithm.solve_scope makes a SolveContext current for the duration of a solve, and code deep
-inside the solver reads it with get_config() and get_clock(). Outside a solve, they return the defaults.
+inside the solver reads it with get_config(), get_clock() and get_record(). Outside a solve, they return the defaults.
 The object registries are not part of the context: they are process-wide and cleared after each top-level solve.
 """
 
@@ -11,7 +11,7 @@ import dataclasses
 import sys
 import time
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from pddlstream.core.config import DEFAULTS, SolverConfig
 
@@ -70,10 +70,20 @@ def apply_legacy_flags(config):
     return dataclasses.replace(config, **changes) if changes else config
 
 
+@dataclass
+class SolveRecord:
+    """What happened during one solver run: its stream calls (language.external.Call), and gaps, the reasons why
+    concluding that no plan exists would be unsound (e.g. a search that timed out)."""
+
+    calls: list = field(default_factory=list)
+    gaps: set = field(default_factory=set)
+
+
 @dataclass(frozen=True)
 class SolveContext:
     config: SolverConfig
     clock: WallClock | WorkClock
+    record: SolveRecord = field(default_factory=SolveRecord)
 
 
 _current = contextvars.ContextVar('pddlstream_solve_context', default=None)
@@ -94,6 +104,17 @@ def get_clock():
     """The clock that the current solve's time-based decisions use."""
     context = get_context()
     return _wall_clock if context is None else context.clock
+
+
+def get_record():
+    """The current solver run's record (a throwaway one outside a solve)."""
+    context = get_context()
+    return SolveRecord() if context is None else context.record
+
+
+def note_gap(reason):
+    """Records that the current solver run skipped or cut short part of its search."""
+    get_record().gaps.add(reason)
 
 
 @contextlib.contextmanager

@@ -1,8 +1,8 @@
 import logging
 import time
-from collections import namedtuple
+from collections import Counter, namedtuple
 
-from pddlstream.core.context import get_clock
+from pddlstream.core.context import get_clock, get_record
 from pddlstream.core.conversion import revert_solution
 
 # Moved to pddlstream.core.evaluations; re-exported for existing code
@@ -19,6 +19,7 @@ from pddlstream.core.evaluations import evaluations_from_init as evaluations_fro
 from pddlstream.core.evaluations import is_instance_ready as is_instance_ready
 from pddlstream.core.problem import FAILED, SolveResult, Status, get_length, is_plan
 from pddlstream.core.utils import INF, check_memory, elapsed_time, str_from_object
+from pddlstream.language.external import Call, Outcome
 from pddlstream.language.statistics import write_stream_statistics
 
 logger = logging.getLogger(__name__)
@@ -76,16 +77,24 @@ class SolutionStore:
         return self.is_solved() or self.is_timeout()
 
     def sample(self, instance, verbose=False):
-        """The instance's next results and new facts, with the time charged to sampling."""
+        """The instance's next results and new facts, with the time charged to sampling and the call recorded."""
         start_time = get_clock().now()
+        call_index, num_history = instance.num_calls, len(instance.history)
         new_results, new_facts = instance.next_results(verbose=verbose)
         self.sample_time += get_clock().now() - start_time
+        if new_results or new_facts:
+            outcome = Outcome.YIELDED
+        else:
+            outcome = Outcome.EXHAUSTED if instance.enumerated else Outcome.NO_SAMPLE_YET
+        fresh = num_history < len(instance.history)
+        get_record().calls.append(Call(instance, call_index, outcome, new_results, new_facts, fresh))
         return new_results, new_facts
 
     def finish(self, externals=(), infeasible=False, **stats):
         """Logs the summary (with stats added), saves the externals' statistics and returns the SolveResult."""
         summary = self.export_summary()
         summary.update(stats)
+        summary['outcomes'] = dict(Counter(call.outcome.value for call in get_record().calls))
         logger.info(f'Summary: {str_from_object(summary, ndigits=3)}')
         write_stream_statistics(externals, self.verbose)
         return self.extract_solution(summary, infeasible)

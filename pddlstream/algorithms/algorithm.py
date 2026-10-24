@@ -10,6 +10,7 @@ from pddlstream.algorithms.constraints import add_plan_constraints
 from pddlstream.core.config import FIELD_NAMES, SEARCH_FIELDS, check_keywords
 from pddlstream.core.context import (
     SolveContext,
+    SolveRecord,
     WallClock,
     WorkClock,
     activate,
@@ -103,19 +104,21 @@ def reset_globals():
 
 
 @contextmanager
-def solve_scope(config=None):
+def solve_scope(config=None, record=None):
     """Makes config (by default the current one) the current solve's configuration while solving. With
     config.deterministic, decisions based on elapsed time use work units instead of seconds (max_time is still
-    wall-clock time). Nested solves keep the outer solve's clock. After the outermost solve, the object registries
-    are cleared, so every solve starts from the same state."""
+    wall-clock time). Nested solves keep the outer solve's clock, and its record unless given one (each solver run
+    gets its own). After the outermost solve, the object registries are cleared, so every solve starts from the same
+    state."""
     config = apply_legacy_flags(config or get_config())
     outer = get_context()
     if outer is not None:
-        with activate(SolveContext(config, outer.clock)):
+        with activate(SolveContext(config, outer.clock, record or outer.record)):
             yield
         return
+    clock = WorkClock() if config.deterministic else WallClock()
     try:
-        with activate(SolveContext(config, WorkClock() if config.deterministic else WallClock())), console_output():
+        with activate(SolveContext(config, clock, record or SolveRecord())), console_output():
             yield
     finally:
         # Cleared afterwards rather than beforehand because callers may create objects before solving (satisfaction)
@@ -141,7 +144,7 @@ def scoped_solve(solve_fn):
         config = dataclasses.replace(
             get_config(), **{name: arguments[name] for name in FIELD_NAMES if name in arguments}
         )
-        with solve_scope(config):
+        with solve_scope(config, SolveRecord()):
             return solve_fn(problem, *args, **kwargs)
 
     return wrapper

@@ -1,5 +1,7 @@
+import enum
 import logging
 from collections import Counter
+from typing import NamedTuple
 
 from pddlstream.core.context import CALL_WORK, get_clock
 from pddlstream.core.conversion import substitute_fact, values_from_objects
@@ -180,6 +182,29 @@ class Result(CreationHash):
 
     def effort_heuristic(self):  # Low is cheap and likely to succeed
         return Score(self.overhead_heuristic(), -self.success_heuristic())
+
+
+##################################################
+
+
+class Outcome(enum.Enum):
+    """What one stream or function call did (docs/v2/adr-001-stream-outcomes.md)."""
+
+    YIELDED = 'yielded'  # Produced at least one new output tuple or fact
+    NO_SAMPLE_YET = 'no_sample_yet'  # Produced nothing new; later calls may
+    EXHAUSTED = 'exhausted'  # Produced nothing new, and the procedure has no further outputs for these inputs
+    ERROR = 'error'  # The procedure raised an exception
+
+
+class Call(NamedTuple):
+    """One call of an instance during a solve."""
+
+    instance: 'Instance'
+    call_index: int  # The instance's number of calls before this one
+    outcome: Outcome
+    results: list  # The new results
+    facts: list  # The new facts beyond the results' certified facts (wild streams)
+    fresh: bool  # Whether the procedure ran, rather than the instance replaying its history
 
 
 ##################################################
