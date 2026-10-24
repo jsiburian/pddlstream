@@ -12,6 +12,8 @@ _MODULES = {
     'pddlstream.algorithms.focused': ['solve_adaptive', 'solve_binding', 'solve_focused'],
     'pddlstream.algorithms.incremental': ['solve_incremental'],
     'pddlstream.algorithms.constraints': ['PlanConstraints', 'OrderedSkeleton', 'WILD'],
+    'pddlstream.algorithms.session': ['PlannerSession', 'WorldPatch'],
+    'pddlstream.algorithms.validate': ['validate_solution', 'verify_certificate'],
     'pddlstream.core.config': ['SolverConfig'],
     'pddlstream.core.problem': [
         'PDDLProblem',
