@@ -13,6 +13,7 @@ from pddlstream.algorithms.refinement import get_optimistic_solve_fn, iterative_
 from pddlstream.algorithms.reorder import reorder_stream_plan
 from pddlstream.algorithms.scheduling.plan_streams import OptSolution
 from pddlstream.algorithms.skeleton import SkeletonQueue
+from pddlstream.algorithms.strategies import SolveState, drive, finish
 from pddlstream.algorithms.visualization import create_visualizations, has_pygraphviz, log_plans, reset_visualizations
 from pddlstream.core.context import get_config, note_gap
 from pddlstream.core.problem import INFEASIBLE, get_length, is_plan, str_from_plan
@@ -93,10 +94,6 @@ def solve_abstract(
     # TODO: replan with a better search algorithm after feasible
     # TODO: change the search algorithm and unit costs based on the best cost
     use_skeletons = max_skeletons is not None
-    eager_disabled = effort_weight is None  # No point if no stream effort biasing
-    num_iterations = eager_calls = 0
-    complexity_limit = initial_complexity
-
     evaluations, goal_exp, domain, externals = compile_problem(
         problem, stream_info, constraints, unit_costs, unit_efforts
     )
@@ -105,88 +102,188 @@ def solve_abstract(
         load_stream_statistics(externals)
     visualize = prepare_visualizations(visualize)
     streams, functions, negative, optimizers = partition_externals(externals, verbose=verbose)
-    eager_externals = list(filter(lambda e: e.info.eager, externals))
-    positive_externals = streams + functions + optimizers
     has_optimizers = bool(optimizers)  # TODO: deprecate
     if has_optimizers and not use_skeletons:
         raise CapabilityError('Optimizers need the adaptive algorithm (with plan skeletons)')
 
     store = SolutionStore(evaluations, max_time, success_cost, verbose, max_memory=max_memory)
-    skeleton_queue = SkeletonQueue(store, domain, disable=not has_optimizers)
-    disabled = set()  # Max skeletons after a solution
-    infeasible = False
-    while (not store.is_terminated()) and (num_iterations < max_iterations) and (complexity_limit <= max_complexity):
-        num_iterations += 1
-        eager_instantiator, num_calls = process_eager_streams(
-            eager_externals, store, disabled, complexity_limit, eager_disabled, verbose
-        )
-        eager_calls += num_calls
-        log_iteration(store, skeleton_queue, disabled, num_iterations, complexity_limit, eager_calls)
+    state = SolveState(
+        store, domain, goal_exp, externals, constraints, initial_complexity, complexity_step, max_iterations,
+        max_complexity,
+    )  # fmt: skip
+    search = OptimisticSearch(
+        negative,
+        streams + functions + optimizers,
+        replan_actions=replan_actions,
+        reachieve=use_skeletons,
+        max_effort=max_effort,
+        effort_weight=effort_weight,
+        has_optimizers=has_optimizers,
+        reorder=reorder,
+        visualize=visualize,
+        search_kwargs=search_kwargs,
+    )
+    eager_externals = list(filter(lambda e: e.info.eager, externals))
+    refinement_args = dict(eager_externals=eager_externals, effort_weight=effort_weight, verbose=verbose)
+    if use_skeletons:
+        refinement = SkeletonRefinement(max_skeletons, search_sample_ratio, has_optimizers, **refinement_args)
+    else:
+        refinement = GreedyRefinement(bind, max_failures, has_optimizers, **refinement_args)
+    drive(state, search, refinement)
+    return finish(state, refinement)
 
-        # Plan with optimistic stream outputs
+
+class OptimisticSearch:
+    """Plans with optimistic stream outputs (focused, binding and adaptive)."""
+
+    def __init__(
+        self,
+        negative,
+        externals,
+        replan_actions=set(),
+        reachieve=True,
+        max_effort=INF,
+        effort_weight=None,
+        has_optimizers=False,
+        reorder=True,
+        visualize=False,
+        search_kwargs={},
+    ):
+        self.negative, self.externals = negative, externals
+        self.replan_actions, self.reachieve = replan_actions, reachieve
+        self.max_effort, self.effort_weight, self.has_optimizers = max_effort, effort_weight, has_optimizers
+        self.reorder, self.visualize, self.search_kwargs = reorder, visualize, search_kwargs
+
+    def propose(self, state, refinement):
         optimistic_solve_fn = get_optimistic_solve_fn(
-            goal_exp,
-            domain,
-            negative,
-            replan_actions=replan_actions,
-            reachieve=use_skeletons,
-            max_cost=min(store.best_cost, constraints.max_cost),
-            max_effort=max_effort,
-            effort_weight=effort_weight,
-            **search_kwargs,
+            state.goal_exp,
+            state.domain,
+            self.negative,
+            replan_actions=self.replan_actions,
+            reachieve=self.reachieve,
+            max_cost=state.max_cost(),
+            max_effort=self.max_effort,
+            effort_weight=self.effort_weight,
+            **self.search_kwargs,
         )
         # TODO: just set unit effort for each stream beforehand
-        if (max_skeletons is None) or (len(skeleton_queue.skeletons) < max_skeletons):
-            stream_plan, opt_plan, cost = plan_optimistically(
-                skeleton_queue, positive_externals, optimistic_solve_fn, complexity_limit, max_effort, has_optimizers
-            )
-        else:
-            note_gap('max_skeletons')
-            stream_plan, opt_plan, cost = OptSolution(INFEASIBLE, INFEASIBLE, INF)  # TODO: apply elsewhere
-        stream_plan = combine_optimizers(evaluations, stream_plan)
-        if reorder:
-            # TODO: this blows up memory wise for long stream plans
-            stream_plan = reorder_stream_plan(store, stream_plan)
-        report_plans(evaluations, stream_plan, opt_plan, cost, num_iterations, visualize)
-        emit(get_iteration(num_iterations, complexity_limit, stream_plan, opt_plan))
+        return plan_optimistically(
+            refinement.skeleton_queue,
+            self.externals,
+            optimistic_solve_fn,
+            state.complexity_limit,
+            self.max_effort,
+            self.has_optimizers,
+        )
 
-        if (stream_plan is INFEASIBLE) and (not eager_instantiator) and (not skeleton_queue) and (not disabled):
-            note_unreached_facts(evaluations, complexity_limit)
-            infeasible = True
-            break
+    def postprocess(self, state, solution):
+        stream_plan, opt_plan, cost = solution
+        stream_plan = combine_optimizers(state.evaluations, stream_plan)
+        if self.reorder:
+            # TODO: this blows up memory wise for long stream plans
+            stream_plan = reorder_stream_plan(state.store, stream_plan)
+        report_plans(state.evaluations, stream_plan, opt_plan, cost, state.iteration, self.visualize)
+        emit(get_iteration(state.iteration, state.complexity_limit, stream_plan, opt_plan))
+        return OptSolution(stream_plan, opt_plan, cost)
+
+
+class FocusedRefinement:
+    """What focused, binding and adaptive share: eager streams before each search, the conclusion that no plan exists
+    when nothing is left to try, and raising the complexity limit when the search finds no plan."""
+
+    def __init__(self, has_optimizers=False, eager_externals=(), effort_weight=None, verbose=True):
+        self.has_optimizers, self.eager_externals, self.verbose = has_optimizers, eager_externals, verbose
+        self.eager_disabled = effort_weight is None  # No point if no stream effort biasing
+        self.disabled = set()  # Max skeletons after a solution
+        self.eager_instantiator, self.eager_calls = None, 0
+        self.skeleton_queue = None
+
+    def initialize(self, state):
+        self.skeleton_queue = SkeletonQueue(state.store, state.domain, disable=not self.has_optimizers)
+
+    def before_search(self, state):
+        self.eager_instantiator, num_calls = process_eager_streams(
+            self.eager_externals, state.store, self.disabled, state.complexity_limit, self.eager_disabled, self.verbose
+        )
+        self.eager_calls += num_calls
+        log_iteration(
+            state.store, self.skeleton_queue, self.disabled, state.iteration, state.complexity_limit, self.eager_calls
+        )
+
+    def may_search(self, state):
+        return True
+
+    def after_search(self, state, solution):
+        stream_plan, _, _ = solution
+        nothing_left = (not self.eager_instantiator) and (not self.skeleton_queue) and (not self.disabled)
+        if (stream_plan is INFEASIBLE) and nothing_left:
+            note_unreached_facts(state.evaluations, state.complexity_limit)
+            state.infeasible = True
+            return True
         if not is_plan(stream_plan):
             logger.info(
-                f'No plan: increasing complexity from {complexity_limit} to {complexity_limit + complexity_step}'
+                f'No plan: increasing complexity from {state.complexity_limit} to '
+                f'{state.complexity_limit + state.complexity_step}'
             )
-            complexity_limit += complexity_step
-            if not eager_disabled:
-                reenable_disabled(evaluations, domain, disabled)
+            state.complexity_limit += state.complexity_step
+            if not self.eager_disabled:
+                reenable_disabled(state.evaluations, state.domain, self.disabled)
+        return self.sample(state, solution)
 
-        # Sample the plan's streams: greedily for focused and binding, through the skeleton queue for adaptive
-        if not use_skeletons:
-            process_stream_plan(
-                store, domain, disabled, stream_plan, opt_plan, cost, bind=bind, max_failures=max_failures
-            )
-            continue
+    def sample(self, state, solution):
+        raise NotImplementedError()
+
+    def stats(self, state):
+        for skeleton in self.skeleton_queue.skeletons:
+            emit(get_progress(skeleton))
+        return {'skeletons': len(self.skeleton_queue.skeletons)}
+
+
+class GreedyRefinement(FocusedRefinement):
+    """Calls the plan's streams in order (focused), binding their outputs into later streams (binding)."""
+
+    def __init__(self, bind=True, max_failures=0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bind, self.max_failures = bind, max_failures
+
+    def sample(self, state, solution):
+        stream_plan, opt_plan, cost = solution
+        process_stream_plan(
+            state.store, state.domain, self.disabled, stream_plan, opt_plan, cost, bind=self.bind,
+            max_failures=self.max_failures,
+        )  # fmt: skip
+        return False
+
+
+class SkeletonRefinement(FocusedRefinement):
+    """Keeps a queue of plan skeletons and divides its time between sampling them and searching for new ones."""
+
+    def __init__(self, max_skeletons=INF, search_sample_ratio=1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max_skeletons, self.search_sample_ratio = max_skeletons, search_sample_ratio
+
+    def may_search(self, state):
+        if len(self.skeleton_queue.skeletons) < self.max_skeletons:
+            return True
+        note_gap('max_skeletons')
+        return False
+
+    def sample(self, state, solution):
+        stream_plan, opt_plan, cost = solution
+        store = state.store
         allocated_sample_time = (
-            (search_sample_ratio * store.search_time) - store.sample_time
-            if len(skeleton_queue.skeletons) <= max_skeletons
+            (self.search_sample_ratio * store.search_time) - store.sample_time
+            if len(self.skeleton_queue.skeletons) <= self.max_skeletons
             else INF
         )
-        if skeleton_queue.process(stream_plan, opt_plan, cost, complexity_limit, allocated_sample_time) is INFEASIBLE:
-            note_unreached_facts(evaluations, complexity_limit)
-            infeasible = True
-            break
-
-    for skeleton in skeleton_queue.skeletons:
-        emit(get_progress(skeleton))
-    return store.finish(
-        externals,
-        infeasible,
-        iterations=num_iterations,
-        complexity=complexity_limit,
-        skeletons=len(skeleton_queue.skeletons),
-    )
+        if (
+            self.skeleton_queue.process(stream_plan, opt_plan, cost, state.complexity_limit, allocated_sample_time)
+            is INFEASIBLE
+        ):
+            note_unreached_facts(state.evaluations, state.complexity_limit)
+            state.infeasible = True
+            return True
+        return False
 
 
 def get_iteration(index, complexity, stream_plan, opt_plan):
