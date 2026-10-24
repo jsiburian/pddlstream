@@ -33,11 +33,14 @@ notes are in [docs/v2](docs/v2/charter.md).
 - **Per-session state.** Object registries live in a context variable, so concurrent solves on different threads are
   isolated.
 - **Examples.** Replanning (`continuous_tamp.replan`), a scripted agent (`agent.scripted_agent`), executors
-  (`executors.run`) and learning policies (`learning.run`). The RoboLab integration lives in its own repository
-  ([robolab](docs/v2/robolab.md)).
+  (`executors.run`) and learning policies (`learning.run`).
+- **Robot benchmarks.** `benchmarks/` runs pddlstream as a task and motion planning policy on robot benchmarks, with
+  RoboLab as an opt-in submodule and a CPU stand-in simulator. It supports learned skills, demonstrations and goals
+  from language ([benchmarks](benchmarks/README.md), [overview](docs/v2/robolab.md)).
 
 ### Changed
 
+- `pixi run bench` is now `pixi run timing` (`tests/timing.py`), so that it is not confused with `benchmarks/`.
 - Unknown or misspelled solver options raise a `TypeError` before solving. Unsupported combinations raise
   `CapabilityError`.
 - `solve()` passes `stream_info` to the incremental algorithm too.

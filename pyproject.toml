@@ -32,14 +32,15 @@ markers = [
     "slow: takes several minutes (run with -m slow)",
     "gui: opens a viewer, so it runs under xvfb-run (run with pixi run test-gui)",
     "gurobi: needs gurobipy (run with pixi run -e full test-gurobi)",
+    "benchmarks: runs stand-in benchmark episodes, about two minutes (run with pixi run test-benchmarks)",
 ]
-addopts = "-m 'not slow and not gui and not gurobi'"
+addopts = "-m 'not slow and not gui and not gurobi and not benchmarks'"
 
 [tool.ruff]
 target-version = "py311"
 line-length = 120
 # Submodules with their own style
-extend-exclude = ["downward", "examples/pybullet/utils"]
+extend-exclude = ["downward", "examples/pybullet/utils", "benchmarks/robolab/RoboLab"]
 # Where first-party modules live (the tests import their helpers as top-level modules)
 src = [".", "tests"]
 
@@ -146,4 +147,5 @@ setup = { depends-on = ["submodules", "build-fd"], description = "Fetch submodul
 build-ikfast = { cmd = "python setup.py", cwd = "examples/pybullet/utils/pybullet_tools/ikfast/pr2", description = "Optional: compile the PR2 IKFast solver (otherwise pybullet IK is used)" }
 test = { cmd = "pytest", description = "Run the fast test suite" }
 test-gui = { cmd = "pytest -m 'gui and not slow and not gurobi'", description = "Run the examples that open viewers, under xvfb-run" }
-bench = { cmd = "python tests/benchmark.py", description = "Time the benchmark cases against the saved baseline (--save to update it)" }
+test-benchmarks = { cmd = "pytest -m benchmarks", description = "Run the stand-in episodes of the robot benchmark integrations (benchmarks/)" }
+timing = { cmd = "python tests/timing.py", description = "Time the timed example cases against the saved baseline (--save to update it)" }

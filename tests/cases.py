@@ -1,4 +1,4 @@
-"""Example runs checked by tests/test_properties.py and timed by tests/benchmark.py.
+"""Example runs checked by tests/test_properties.py and timed by tests/timing.py.
 
 Each case is an example command (a module under examples/ and its arguments, as for `python -m examples.<module>`)
 plus what its solution must satisfy. Costs are exact for examples whose solutions are reproducible and upper
@@ -46,7 +46,7 @@ class Case(NamedTuple):
     marks: tuple = ()  # gui (needs a display), slow, gurobi (needs the `full` environment)
     xfail: str = None  # Reason, for known failures
     deterministic: bool = True  # Solves with deterministic=True and must reproduce its recorded output
-    bench: bool = False  # Timed by tests/benchmark.py
+    bench: bool = False  # Timed by tests/timing.py
     features: tuple = ()  # Language features the example exercises (see FEATURES and docs/v2/features.md)
 
 

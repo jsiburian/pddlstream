@@ -9,5 +9,9 @@ gurobi.log
 .pixi/
 *.egg-info/
 /build/
-# Machine-specific benchmark baselines (tests/benchmark.py)
+# Machine-specific timing baselines (tests/timing.py)
 .benchmarks/
+# Outputs of the robot benchmark integrations (benchmarks/)
+robolab_results.jsonl
+gt_state.json
+/demos/

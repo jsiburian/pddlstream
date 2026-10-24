@@ -60,7 +60,8 @@ Other tasks:
 * `pixi run test`: run the fast test suite. Every headless example must solve, and the validator must accept its plan.
 * `pixi run test-gui`: run the examples that open viewers (Tkinter and PyBullet) under `xvfb-run`.
 * `pixi run -e full test-gurobi`: run the optimizer examples. Add `-m slow` to any pytest run for the multi-minute examples.
-* `pixi run bench`: time the benchmark examples against a baseline saved with `pixi run bench --save`.
+* `pixi run timing`: time the timed examples against a baseline saved with `pixi run timing --save`.
+* `pixi run test-benchmarks`: run the stand-in episodes of the robot benchmark integrations ([benchmarks/](benchmarks/README.md)).
 * `pixi run lint`: check the code with ruff; `pixi run format` fixes what it can and formats the code. To skip the formatting commit in `git blame`, run `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 PDDLStream requires Python 3.11 or newer.
@@ -82,6 +83,7 @@ pddlstream$ ./update.sh
 * [Agent tools](docs/agents.md): JSON tools for agents to inspect problems, test samplers, plan and validate.
 * [Strategies](docs/strategies.md): the algorithms as search and refinement strategies, and how to write your own.
 * [Executors](docs/executors.md): running stream procedures on threads, in worker processes, or in batches.
+* [Robot benchmarks](benchmarks/README.md): pddlstream as a TAMP policy on RoboLab (and a CPU stand-in), with learned skills, demonstrations and goals from language.
 * [Architecture](docs/architecture.md): how the package is organized and what happens during a solve.
 * [Migrating from earlier versions](docs/migration.md): new options, results and import paths, and what was removed.
 * [Changelog](CHANGELOG.md) and the [V2 design notes](docs/v2/charter.md): decisions, ADRs and the feature matrix.

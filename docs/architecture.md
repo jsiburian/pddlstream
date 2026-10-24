@@ -17,6 +17,9 @@ The package is split into five layers. Each layer imports only from the layers l
 | `algorithms` | The solvers: `meta.solve` dispatches to `incremental` or to `focused` (focused, binding and adaptive), whose search and refinement strategies run on the loop in `strategies` (see [strategies](strategies.md)), and which build on parsing (`algorithm`), the solution store (`common`), optimistic planning (`refinement`, `scheduling/`), the skeleton queue (`skeleton`), plan constraints (`constraints`), and the alternatives `serialized` and `satisfaction`. |
 | `tools` | Agent tools over registered problems (`toolbox`, `workspace`) and an optional MCP server (`mcp_server`); see [agents](agents.md). |
 
+Outside the package, `examples/` holds runnable example domains and `benchmarks/` the robot benchmark integrations
+(see [benchmarks](../benchmarks/README.md)); neither is imported by `pddlstream/`.
+
 Some older module paths (for example `pddlstream.language.constants`, `pddlstream.utils` and
 `pddlstream.algorithms.downward`) are short compatibility modules that re-export the moved code.
 `pddlstream/__init__.py` exposes the commonly used names, which it imports on first use. `pddlstream/strategy.py` is
@@ -59,5 +62,5 @@ the stable surface for strategy plugins.
 `pixi run test` runs every headless example through `tests/harness.py`. The harness checks each plan with the
 validator in `pddlstream/algorithms/validate.py` and compares it with `tests/recorded_outputs.json`, which records
 each deterministic case's plan, cost and stream calls. `pixi run test-gui`, `pixi run -e full test-gurobi` and
-`pytest -m slow` cover the remaining examples. `pixi run bench` compares timings with a saved baseline, and
+`pytest -m slow` cover the remaining examples. `pixi run timing` compares timings with a saved baseline, and
 `pixi run lint` runs ruff and mypy.

@@ -1,6 +1,6 @@
-"""Times the benchmark cases in tests/cases.py and compares them with a saved baseline.
+"""Times the example cases marked bench=True in tests/cases.py and compares them with a saved baseline.
 
-Usage: pixi run bench [--save] [--repeat N] [--baseline PATH] [--wall-clock]
+Usage: pixi run timing [--save] [--repeat N] [--baseline PATH] [--wall-clock]
 
 Each case runs `repeat` times through tests/harness.py, and its fastest solve time is compared with the baseline:
 more than 10% slower warns and more than 20% fails (exit code 1), ignoring slowdowns under 50 ms. Search counters

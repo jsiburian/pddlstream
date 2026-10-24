@@ -4,3 +4,8 @@
 [submodule "downward"]
 	path = downward
 	url = https://github.com/caelan/downward.git
+[submodule "benchmarks/robolab/RoboLab"]
+	path = benchmarks/robolab/RoboLab
+	url = https://github.com/NVlabs/RoboLab.git
+	update = none
+	shallow = true
