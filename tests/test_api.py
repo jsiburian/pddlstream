@@ -14,6 +14,15 @@ PUBLIC_NAMES = {
     'pddlstream.algorithms.meta': ['solve', 'create_parser', 'solve_restart'],
     'pddlstream.algorithms.focused': ['solve_adaptive', 'solve_focused', 'solve_binding'],
     'pddlstream.algorithms.incremental': ['solve_incremental'],
+    'pddlstream.strategy': [
+        'solve_with',
+        'SolveState',
+        'SearchStrategy',
+        'RefinementStrategy',
+        'OptimisticSearch',
+        'SkeletonRefinement',
+        'BindingPolicy',
+    ],
     'pddlstream.algorithms.algorithm': ['reset_globals'],
     'pddlstream.algorithms.downward': [
         'set_cost_scale',

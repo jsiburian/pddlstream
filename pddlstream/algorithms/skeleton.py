@@ -230,6 +230,10 @@ class Binding(CreationHash):
         # TODO: use last if self.result.external.get_complexity(num_calls=INF) == 0
         # TODO: intelligently compute/cache this - store parent stream_plan_complexity or compute formula per skeleton
         if self.complexity is None:
+            if (self.index != 0) and (self.parent.complexities is None):
+                # The default policy computes it when the parent is queued, but other policies may not. A parent keeps
+                # its complexities when update_bindings resets its complexity, so children see the same ones.
+                self.parent.compute_complexity()
             full_history = self.history + [self.calls]  # TODO: relevant history, full history, or future
             future = full_history + [0] * (len(self.skeleton.stream_plan) - len(full_history))
             parent_complexities = [0] * len(self.skeleton.stream_plan) if self.index == 0 else self.parent.complexities

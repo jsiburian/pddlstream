@@ -11,12 +11,13 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from pddlstream.algorithms.advanced import automatically_negate_externals, enforce_simultaneous
-from pddlstream.algorithms.algorithm import parse_problem, scoped_solve
+from pddlstream.algorithms.algorithm import parse_problem, solve_scope
 from pddlstream.algorithms.common import SolutionStore
 from pddlstream.algorithms.constraints import PlanConstraints
 from pddlstream.algorithms.model import get_external_capabilities
 from pddlstream.algorithms.scheduling.plan_streams import OptSolution
-from pddlstream.core.context import get_config
+from pddlstream.core.config import SolverConfig
+from pddlstream.core.context import SolveRecord, get_config
 from pddlstream.core.problem import INFEASIBLE
 from pddlstream.core.utils import INF
 from pddlstream.language.fluent import compile_fluent_streams
@@ -142,35 +143,25 @@ def compile_problem(problem, stream_info, constraints, unit_costs, unit_efforts)
     return evaluations, goal_exp, domain, externals
 
 
-@scoped_solve
-def solve_with(
+def run_strategies(
     problem,
     compose,
-    constraints=PlanConstraints(),
-    stream_info={},
-    unit_costs=False,
-    unit_efforts=False,
-    success_cost=INF,
-    max_time=INF,
-    max_iterations=INF,
-    max_memory=INF,
-    initial_complexity=0,
-    complexity_step=1,
-    max_complexity=INF,
-    verbose=True,
-    deterministic=False,
-    **search_kwargs,
+    constraints,
+    stream_info,
+    unit_costs,
+    unit_efforts,
+    success_cost,
+    max_time,
+    max_iterations,
+    max_memory,
+    initial_complexity,
+    complexity_step,
+    max_complexity,
+    verbose,
+    deterministic,
+    search_kwargs,
 ):
-    """Solves problem with the search and refinement strategies that compose(state) returns, on the loop that the
-    built-in algorithms use (solve_adaptive is solve_with and the adaptive strategies). The problem is compiled as for
-    the focused algorithms, so negated, simultaneous and fluent streams are supported.
-
-    :param problem: a PDDLProblem
-    :param compose: a function from the SolveState to a (search strategy, refinement strategy) pair
-    The other parameters are those of solve_abstract; search_kwargs (planner, max_planner_time, ...) are kept in the
-    state's search_kwargs for the search strategy.
-    Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
-    """
+    """Compiles problem and runs the strategies that compose(state) returns, in the current solve scope."""
     evaluations, goal_exp, domain, externals = compile_problem(
         problem, stream_info, constraints, unit_costs, unit_efforts
     )
@@ -184,3 +175,39 @@ def solve_with(
     search, refinement = compose(state)
     drive(state, search, refinement)
     return finish(state, refinement)
+
+
+def solve_with(problem, compose, constraints=PlanConstraints(), stream_info={}, config=None, **kwargs):
+    """Solves problem with the search and refinement strategies that compose(state) returns, on the loop that the
+    built-in algorithms use (solve_adaptive is solve_with and the adaptive strategies). The problem is compiled as for
+    the focused algorithms, so negated, simultaneous and fluent streams are supported.
+
+    :param problem: a PDDLProblem
+    :param compose: a function from the SolveState to a (search strategy, refinement strategy) pair
+    :param constraints: PlanConstraints that plans must satisfy, such as plan skeletons
+    :param stream_info: a StreamInfo, FunctionInfo or PredicateInfo by stream or function name
+    :param config: a SolverConfig; keyword arguments are SolverConfig fields that override it (max_time,
+        deterministic, binding_policy, ...). Its search options (planner, max_planner_time, ...) are kept in the
+        state's search_kwargs for the search strategy.
+    Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.
+    """
+    config = SolverConfig.from_kwargs(config, caller='solve_with()', **kwargs)
+    with solve_scope(config, SolveRecord()):
+        return run_strategies(
+            problem,
+            compose,
+            constraints,
+            stream_info,
+            unit_costs=config.unit_costs,
+            unit_efforts=config.unit_efforts,
+            success_cost=config.success_cost,
+            max_time=config.max_time,
+            max_iterations=config.max_iterations,
+            max_memory=config.max_memory,
+            initial_complexity=config.initial_complexity,
+            complexity_step=config.complexity_step,
+            max_complexity=config.max_complexity,
+            verbose=config.verbose,
+            deterministic=config.deterministic,
+            search_kwargs=config.search_kwargs(),
+        )

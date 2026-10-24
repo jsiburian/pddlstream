@@ -11,7 +11,7 @@ from pddlstream.algorithms.refinement import get_optimistic_solve_fn, iterative_
 from pddlstream.algorithms.reorder import reorder_stream_plan
 from pddlstream.algorithms.scheduling.plan_streams import OptSolution
 from pddlstream.algorithms.skeleton import SkeletonQueue
-from pddlstream.algorithms.strategies import solve_with
+from pddlstream.algorithms.strategies import run_strategies
 from pddlstream.algorithms.visualization import create_visualizations, has_pygraphviz, log_plans, reset_visualizations
 from pddlstream.core.context import note_gap
 from pddlstream.core.problem import INFEASIBLE, get_length, is_plan, str_from_plan
@@ -113,10 +113,24 @@ def solve_abstract(
             refinement = GreedyRefinement.from_state(state, bind=bind, max_failures=max_failures, **options)
         return search, refinement
 
-    return solve_with.__wrapped__(  # Already in this solve's scope
-        problem, compose, constraints, stream_info, unit_costs, unit_efforts, success_cost, max_time, max_iterations,
-        max_memory, initial_complexity, complexity_step, max_complexity, verbose, deterministic, **search_kwargs,
-    )  # fmt: skip
+    return run_strategies(
+        problem,
+        compose,
+        constraints,
+        stream_info,
+        unit_costs=unit_costs,
+        unit_efforts=unit_efforts,
+        success_cost=success_cost,
+        max_time=max_time,
+        max_iterations=max_iterations,
+        max_memory=max_memory,
+        initial_complexity=initial_complexity,
+        complexity_step=complexity_step,
+        max_complexity=max_complexity,
+        verbose=verbose,
+        deterministic=deterministic,
+        search_kwargs=search_kwargs,
+    )
 
 
 class OptimisticSearch:

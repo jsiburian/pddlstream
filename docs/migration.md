@@ -69,7 +69,10 @@ exhausted instead of stopping the solve.
 - Domains may declare `:types`, which used to be rejected (see [writing streams](writing-streams.md)).
 - Combinations that an algorithm does not support (the incremental algorithm with fluent streams, optimizers without
   the adaptive algorithm) raise `CapabilityError`, a `NotImplementedError`, instead of an `AssertionError` or a bare
-  `NotImplementedError`.
+  `NotImplementedError`. The strategies declare these combinations (see [strategies](strategies.md)), so the message
+  for optimizers now also names the streams.
+- `pddlstream.algorithms.focused.compile_problem` moved to `pddlstream.algorithms.strategies`. The algorithms are
+  compositions of strategies, and `pddlstream.strategy.solve_with` runs your own.
 
 ## Output and files
 
