@@ -24,7 +24,8 @@ class Gripper:
     the fingers close along its y axis (pybullet_tools' top grasps); max_width is the widest object they close on.
     At a grasp or placement, the arm holds still for arrive_steps actions before the fingers move (so that a lagging
     controller reaches the pose first), then for settle_steps actions while they open or close. With reobserve, the
-    policy replans after lifting an object, from the grasp it observes (objects shift in a real gripper)."""
+    policy replans after lifting an object, from the grasp it observes (objects shift in a real gripper). parts are
+    boxes (size, center) in the link's frame that model the gripper's volume where the URDF's hand doesn't."""
 
     link: str
     offset: tuple = pbu.unit_pose()
@@ -32,6 +33,7 @@ class Gripper:
     settle_steps: int = 5
     arrive_steps: int = 0
     reobserve: bool = False
+    parts: tuple = ()
 
 
 GRIPPERS = {
@@ -47,6 +49,13 @@ GRIPPERS = {
         settle_steps=15,
         arrive_steps=10,
         reobserve=True,  # A banana held off its middle swings down
+        # The Robotiq reaches 7 cm past the URDF's Panda hand: its body from the coupling, and its open fingers, which
+        # close along y
+        parts=(
+            ((0.065, 0.1, 0.1), (0.0, 0.0, 0.068)),
+            ((0.022, 0.012, 0.06), (0.0, 0.0485, 0.151)),
+            ((0.022, 0.012, 0.06), (0.0, -0.0485, 0.151)),
+        ),
     ),
 }
 
@@ -81,6 +90,10 @@ class World:
         self.gripper = GRIPPERS[gripper]
         self.containment = containment
         self.tool = pbu.link_from_name(self.robot, self.gripper.link)  # The link the tool frame is fixed to
+        self.parts = [  # Attachments that carry the gripper's parts along with the arm
+            pbu.Attachment(self.robot, self.tool, pbu.Pose(point=center), pbu.create_box(*size, color=pbu.GREY))
+            for size, center in self.gripper.parts
+        ]
         self.table = pbu.create_box(*TABLE_SIZE, color=pbu.TAN)
         self.set_table_top(TABLE_TOP)
         self.specs = {spec.name: spec for spec in specs}
@@ -100,6 +113,8 @@ class World:
 
     def set_arm(self, conf):
         pbu.set_joint_positions(self.robot, self.arm, conf)
+        for part in self.parts:
+            part.assign()
 
     def get_arm(self):
         return tuple(pbu.get_joint_positions(self.robot, self.arm))

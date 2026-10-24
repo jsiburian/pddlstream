@@ -51,10 +51,12 @@ class Conf:
 
 
 class Trajectory:
-    """A path of arm configurations, possibly carrying an object in a grasp."""
+    """A path of arm configurations, possibly carrying an object in a grasp. target is the object that a pick's or a
+    place's approach reaches for: the gripper closes around it."""
 
-    def __init__(self, path, holding=None):
+    def __init__(self, path, holding=None, target=None):
         self.path, self.holding = [tuple(conf) for conf in path], holding  # holding: (name, Grasp)
+        self.target = target
 
     def __repr__(self):
         return f't{id(self) % 1000}'
@@ -111,10 +113,10 @@ def get_procedures(world, teleport=False):
         for _ in range(IK_ATTEMPTS):
             world.set_arm(sample_fn())
             q_approach = solve_ik(world, approach_pose)
-            if (q_approach is None) or collides(world, obstacles):
+            if (q_approach is None) or collides(world, obstacles, around=world.bodies[name]):
                 continue
             q_grasp = solve_ik(world, gripper_pose)
-            if (q_grasp is None) or collides(world, obstacles):
+            if (q_grasp is None) or collides(world, obstacles, around=world.bodies[name]):
                 continue
             world.set_arm(q_approach)
             path = (
@@ -124,7 +126,7 @@ def get_procedures(world, teleport=False):
             )
             if path is None:
                 continue
-            return Conf(q_approach), Trajectory(path)
+            return Conf(q_approach), Trajectory(path, target=name)
         return None
 
     def plan_motion(q1, q2, holding=None, fluents=[]):
@@ -132,11 +134,11 @@ def get_procedures(world, teleport=False):
             name for name in assign_fluents(fluents) if name in world.movables
         ]  # Fixed objects are already obstacles
         obstacles = world.fixed + [world.bodies[name] for name in placed]
-        attachments = []
+        attachments = list(world.parts)
         if holding is not None:
             name, grasp = holding
             world.set_arm(q1.values)
-            attachments = [attach(world, name, grasp)]
+            attachments.append(attach(world, name, grasp))
             obstacles = [b for b in obstacles if b != world.bodies[name]]
         world.set_arm(q1.values)
         if teleport:
@@ -183,7 +185,8 @@ def get_procedures(world, teleport=False):
         body = world.bodies[name]
         for conf in trajectory.path:
             world.set_arm(conf)
-            if pbu.pairwise_collision(robot, body):
+            parts = [] if trajectory.target == name else [part.child for part in world.parts]  # See collides
+            if any(pbu.pairwise_collision(part, body) for part in [robot] + parts):
                 return False
             if trajectory.holding is not None:
                 attach(world, *trajectory.holding).assign()
@@ -279,11 +282,16 @@ def center_region(aabb, margin=CENTER_MARGIN):
     return pbu.AABB(lower + shrink, upper - shrink)
 
 
-def collides(world, obstacles):
-    """Whether the arm's moving links touch any of the obstacles. Its base is left out: on RoboLab's tables it stands
-    level with the table top, as the motion planner's collision checks already allow."""
+def collides(world, obstacles, around=None):
+    """Whether the arm's moving links or the gripper's parts touch any of the obstacles. The arm's base is left out:
+    on RoboLab's tables it stands level with the table top, as the motion planner's collision checks already allow.
+    The gripper's parts are not checked against the object it closes around: grasps fit its points between the
+    fingers (point_grasps), while its body is the convex hull of its points, which fills e.g. a banana's curve."""
     moving = (world.robot, frozenset(pbu.get_moving_links(world.robot, world.arm)))
-    return any(pbu.pairwise_collision(moving, obstacle) for obstacle in obstacles)
+    if any(pbu.pairwise_collision(moving, obstacle) for obstacle in obstacles):
+        return True
+    parts = [part.child for part in world.parts]  # set_arm placed them
+    return any(pbu.pairwise_collision(part, obstacle) for part in parts for obstacle in obstacles if obstacle != around)
 
 
 def attach(world, name, grasp):

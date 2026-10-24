@@ -31,7 +31,7 @@ HELD_TOLERANCE = 0.08  # Meters a held object may be from where the gripper shou
 LIFT = 0.03  # Meters above the table that a picked-up object's lowest point rises
 NEAR_GRIPPER = 0.15  # Meters from the tool point to the center of an object the gripper holds
 UPRIGHT = 0.99  # The least cosine between an object's z axis and the vertical for its frame to count as upright
-FOCUS_TIME = 20  # Seconds for the solve with the objects the goal does not mention fixed (see focus)
+FOCUS_TIME = 60  # Seconds for the solve with the objects the goal does not mention fixed (see focus)
 
 
 class Reobserve:
@@ -68,11 +68,12 @@ class TampPolicy:
         containment='full',
         reobserve=None,
         focus=False,
+        focus_time=FOCUS_TIME,
     ):
         """reobserve: whether to replan from the observed grasp after lifting an object (by default, the gripper's).
         focus: whether to plan first with the movable objects that the goal does not mention fixed (as obstacles),
-        which cluttered scenes need, and with all of them movable only if that finds no plan."""
-        self.focus = focus
+        which cluttered scenes need, and with all of them movable only if that finds no plan within focus_time."""
+        self.focus, self.focus_time = focus, focus_time
         self.world = World(scene, gripper=gripper, containment=containment)
         self.reobserve = self.world.gripper.reobserve if reobserve is None else reobserve
         self.horizon, self.max_time, self.max_replans = horizon, max_time, max_replans
@@ -116,7 +117,7 @@ class TampPolicy:
         obstacles = self.obstacles() if self.focus else []
         for name in obstacles:  # Fixed for a first, smaller solve
             self.world.set_kind(name, 'obstacle')
-        self.start(max_time=min(self.max_time, FOCUS_TIME) if obstacles else self.max_time)
+        self.start(max_time=min(self.max_time, self.focus_time) if obstacles else self.max_time)
         if obstacles and (self.status == 'failed'):  # Maybe one is in the way: solve again with them all movable
             logger.info(f'No plan with {obstacles} fixed: planning with them movable')
             for name in obstacles:

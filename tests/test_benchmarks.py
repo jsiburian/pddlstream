@@ -11,7 +11,7 @@ import pytest
 from benchmarks.common.goals import UnsupportedTask, coverage, goal_from_task, goal_literals
 from benchmarks.common.language import ScriptedAgent, score, symbolic_problem
 from benchmarks.common.policy import TampPolicy
-from benchmarks.common.primitives import Pose, point_grasps
+from benchmarks.common.primitives import Pose, collides, point_grasps, solve_ik
 from benchmarks.common.protocol import Conditional, ObjectSpec, TaskSpec, observation_from_json, task_from_json, to_json
 from benchmarks.common.remote import start_server
 from benchmarks.common.skills import PRESS, compile_skills
@@ -96,6 +96,23 @@ def banana_points(radius=0.1, sweep=np.radians(75), thickness=0.036):
             points.append((x, y, thickness / 2 * np.sin(around)))
     points = np.array(points)
     return points - (points.min(axis=0) + points.max(axis=0)) / 2
+
+
+def test_robotiq_parts():
+    # The Robotiq reaches 7 cm past the URDF's Panda hand: its fingertips in the table are a collision
+    probe = json.loads(LIVE_PROBE.read_text())
+    world = World([], gripper='robotiq')
+    try:
+        world.set_table_top(0.0)
+        world.set_arm(probe['arm'])
+        down = world.tool_pose()[1]
+        for height, expected in [(-0.02, True), (0.05, False)]:  # The tool frame is 1 cm above the fingertips
+            conf = solve_ik(world, ((0.45, 0.0, height), down))
+            moving = (world.robot, frozenset(pbu.get_moving_links(world.robot, world.arm)))
+            assert conf is not None and not pbu.pairwise_collision(moving, world.table)  # The hand stays above
+            assert collides(world, [world.table]) == expected
+    finally:
+        world.close()
 
 
 def test_point_grasps():
@@ -353,7 +370,7 @@ def test_reobserved_grasp(client):
 def test_focus_fallback(client):
     # Block b, which the goal does not mention, is in the way: fixed, it allows no plan, so it becomes movable
     scenario = next(s for s in SCENARIOS if s.task.name == 'ClearTheTray')
-    result = run_episode(client, scenario, focus=True)
+    result = run_episode(client, scenario, focus=True, focus_time=10)
     assert result['success'], result
     assert any(step.startswith('pick(b') for step in result['plans'][-1]['plan'])
 
