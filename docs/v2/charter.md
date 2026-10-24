@@ -41,7 +41,7 @@ changes to the world, and new search strategies, executors and integrations plug
 - Formal safety guarantees. A certificate says which facts a plan relies on and where they came from, relative to
   the models the streams used.
 - A built-in learning system or LLM. Learning and agents are users of the API.
-- Temporal planning inside the core. Temporal problems go through a bridge (e.g. to ScheduleStream).
+- Temporal planning inside the core. Temporal problems would go through a bridge (see [ADR-003](adr-003-schedulestream.md)).
 
 ## Phases
 
@@ -59,6 +59,8 @@ changes to the world, and new search strategies, executors and integrations plug
 | 18 | Strategy SDK |
 | 19 | Parallel and batched stream execution |
 | 20 | RoboLab II: demonstrations and learned skills |
-| 21+ | Planner backends, bridges, learning hooks, release |
+| 21 | Learning hooks: trace datasets, policies that learn |
+| 22 | Planner backend and bridges: [ADR-002](adr-002-planner-backend.md) (FastDownward 26.6), [ADR-003](adr-003-schedulestream.md) (ScheduleStream) |
+| 23 | Release readiness |
 
 The [feature matrix](features.md) lists which examples exercise which features under which algorithms.
