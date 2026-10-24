@@ -76,6 +76,7 @@ def test_example(case, tmp_path, record):
             assert call['valid'] == case.valid, call['validation_error']
         if call['valid']:
             assert float(call['replay_cost']) == pytest.approx(float(call['cost']), **TOLERANCE)
+            assert call['certified'] is not False, call['certificate_issues']
 
     last_call = result['calls'][-1]
     cost = float(last_call['cost'])

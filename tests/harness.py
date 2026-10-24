@@ -4,11 +4,11 @@ Usage: python tests/harness.py [--wall-clock] <example module> [example args...]
 e.g.   python tests/harness.py continuous_tamp.run -p blocked -n 3
 
 The harness wraps the solver entry points before the example is imported. Each outermost PDDLStream solve runs with
-deterministic=True (unless --wall-clock) inside its own solve scope, and its plan is checked with
-pddlstream.algorithms.validate within that scope, before the object registries are cleared, and checked against
-invariants (check_solution). Plain PDDL plans and constraint-satisfaction assignments are only recorded. Every stream
-and function call is logged by stream name and input object names, so the digest of the log identifies a run. The
-last stdout line starting with RESULT_PREFIX holds the JSON result.
+deterministic=True (unless --wall-clock) inside its own solve scope. Within that scope, before the object registries
+are cleared, its plan is checked with pddlstream.algorithms.validate, its certificate is verified, and the solution is
+checked against invariants (check_solution). Plain PDDL plans and constraint-satisfaction assignments are only
+recorded. Every stream and function call is logged by stream name and input object names, so the digest of the log
+identifies a run. The last stdout line starting with RESULT_PREFIX holds the JSON result.
 """
 
 import argparse
@@ -27,7 +27,7 @@ import numpy as np
 from pddlstream.algorithms import focused, incremental, meta, satisfaction, search, serialized
 from pddlstream.algorithms.algorithm import solve_scope
 from pddlstream.algorithms.common import SolutionStore
-from pddlstream.algorithms.validate import validate_solution
+from pddlstream.algorithms.validate import validate_solution, verify_certificate
 from pddlstream.core.config import SolverConfig
 from pddlstream.core.objects import OPT_PREFIX
 from pddlstream.core.problem import Status, StreamAction
@@ -125,10 +125,14 @@ class Recorder:
         stream_calls = self.stream_calls[first_stream_call:]
         plan, cost = solution[:2]
         valid, replay_cost, validation_error, violations = None, INF, None, []
+        certified, certificate_issues = None, []
         if kind == PDDLSTREAM:
             violations = check_solution(solution)
+            unit_costs = kwargs.get('unit_costs', False)
             try:
-                valid, replay_cost = validate_solution(problem, solution, unit_costs=kwargs.get('unit_costs', False))
+                valid, replay_cost = validate_solution(problem, solution, unit_costs=unit_costs)
+                if valid:
+                    certified, certificate_issues = verify_certificate(problem, solution, unit_costs=unit_costs)
             except Exception:
                 validation_error = traceback.format_exc()
         self.calls.append(
@@ -143,6 +147,8 @@ class Recorder:
                 'replay_cost': to_json(replay_cost),
                 'validation_error': validation_error,
                 'violations': violations,
+                'certified': certified,
+                'certificate_issues': certificate_issues,
                 'elapsed': elapsed,
                 'summary': to_json(summary) if summary else None,
                 'stream_calls': dict(sorted(Counter(name for name, _ in stream_calls).items())),
