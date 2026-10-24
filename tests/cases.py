@@ -48,6 +48,8 @@ class Case(NamedTuple):
     deterministic: bool = True  # Solves with deterministic=True and must reproduce its recorded output
     bench: bool = False  # Timed by tests/benchmark.py
     features: tuple = ()  # Language features the example exercises (see FEATURES and docs/v2/features.md)
+    # Why the plans' certificates may be incomplete (verify_certificate gives None), e.g. facts no stream certified yet
+    uncertified: str = None
 
 
 CASES = [
@@ -67,11 +69,23 @@ CASES = [
     Case('advanced.defer.run', length=5, valid=None, features=('streams', 'deferred', 'derived')),
     Case('advanced.exogenous.run', length=5, valid=None, features=('streams', 'exogenous', 'deferred')),
     Case('advanced.fluent.run', length=5, features=('streams', 'fluent')),
-    Case('advanced.multi_cost', cost=4, features=('streams', 'functions', 'costs')),
+    Case(
+        'advanced.multi_cost',
+        cost=4,
+        features=('streams', 'functions', 'costs'),
+        uncertified='The cost relies on the optimistic value of Sum, which is never evaluated',
+    ),
     Case('advanced.satisfy.run', length=2, features=('streams', 'functions', 'satisfaction')),
     Case('advanced.satisfy.run -a adaptive', length=2, features=('streams', 'functions', 'satisfaction')),
     Case('advanced.storage', length=5, bench=True, features=('streams', 'adl', 'debug')),
-    Case('advanced.wild.run', cost=47.312, length=4, bench=True, features=('streams', 'functions', 'adl', 'costs')),
+    Case(
+        'advanced.wild.run',
+        cost=47.312,
+        length=4,
+        bench=True,
+        features=('streams', 'functions', 'adl', 'costs'),
+        uncertified='The cost relies on optimistic values of SplitCost, which are never evaluated',
+    ),
     Case('agent.scripted_agent', length=1, features=('streams', 'session')),
     # Belief space
     Case('table_belief.run', cost=10.532, length=10, features=('belief', 'derived', 'costs')),

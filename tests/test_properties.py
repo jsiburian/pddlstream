@@ -57,6 +57,10 @@ def check_recorded_output(case, result, record):
         assert output == recorded[case.example], 'The run differs from its recorded output'
 
 
+# Plans that may rely on facts that no stream has certified yet, so their certificates need not be complete
+UNCERTIFIED = {'deferred', 'optimizer', 'exogenous'}
+
+
 @pytest.mark.parametrize('case', [to_param(case) for case in CASES])
 def test_example(case, tmp_path, record):
     display = 'gui' in case.marks
@@ -79,6 +83,8 @@ def test_example(case, tmp_path, record):
         if call['valid']:
             assert float(call['replay_cost']) == pytest.approx(float(call['cost']), **TOLERANCE)
             assert call['certified'] is not False, call['certificate_issues']
+            if not (UNCERTIFIED & set(case.features)) and (case.uncertified is None):
+                assert call['certified'], call['certificate_issues']
 
     last_call = result['calls'][-1]
     cost = float(last_call['cost'])
