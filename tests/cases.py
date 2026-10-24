@@ -98,7 +98,7 @@ CASES = [
         max_cost=150,
         length=9,
         marks=('gui',),
-        features=('streams', 'functions', 'deferred', 'derived', 'costs'),
+        features=('streams', 'functions', 'negated', 'adl', 'deferred', 'derived', 'costs'),
     ),
     Case(
         'continuous_tamp.replan',
@@ -111,7 +111,7 @@ CASES = [
         max_cost=150,
         length=9,
         marks=('gui',),
-        features=('streams', 'functions', 'deferred', 'derived', 'costs', 'constraints'),
+        features=('streams', 'functions', 'negated', 'adl', 'deferred', 'derived', 'costs', 'constraints'),
     ),
     Case(
         'continuous_tamp.run -p blocked -n 3',
@@ -119,7 +119,7 @@ CASES = [
         timeout=300,
         marks=('gui',),
         bench=True,
-        features=('streams', 'functions', 'deferred', 'derived', 'costs'),
+        features=('streams', 'functions', 'negated', 'adl', 'deferred', 'derived', 'costs'),
     ),
     Case(
         'continuous_tamp.run -a incremental -c',
@@ -160,7 +160,7 @@ CASES = [
         cost=9,
         length=9,
         marks=('gui',),
-        features=('streams', 'functions', 'deferred', 'derived', 'costs'),
+        features=('streams', 'functions', 'negated', 'adl', 'deferred', 'derived', 'costs'),
     ),
     Case('continuous_tamp.satisfy', max_cost=150, length=12, marks=('gui',), features=('streams', 'satisfaction')),
     Case(
