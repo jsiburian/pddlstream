@@ -29,7 +29,7 @@ from pddlstream.core.conversion import (
     transform_plan_args,
 )
 from pddlstream.core.problem import FAILED, OptPlan
-from pddlstream.core.syntax import EQ, Not, get_args, get_prefix
+from pddlstream.core.syntax import EQ, Head, Not, get_args, get_prefix, is_parameter
 from pddlstream.core.utils import INF, Verbose, get_ancestors
 from pddlstream.fastdownward.grounding import instantiate_task, sas_from_instantiated
 from pddlstream.fastdownward.search import solve_from_task
@@ -39,14 +39,16 @@ from pddlstream.fastdownward.tasks import (
     evaluation_from_fd,
     fact_from_fd,
     fd_from_fact,
+    get_derived_predicates,
     get_problem,
+    is_literal,
     make_domain,
     make_predicate,
     pddl_from_instance,
     plan_preimage,
     task_from_domain_problem,
 )
-from pddlstream.fastdownward.translator import get_cost_scale, scale_cost
+from pddlstream.fastdownward.translator import get_cost_scale, pddl, scale_cost
 from pddlstream.language.exogenous import get_fluent_domain
 from pddlstream.language.external import Result
 from pddlstream.language.function import Function
@@ -348,9 +350,57 @@ def preimage_from_plan(evaluations, goal_expression, domain, action_plan, instan
     real_task, opt_task = (
         task_from_domain_problem(domain, get_problem(evaluations, goal_expression, domain)) for _ in range(2)
     )
+    cost_facts = get_cost_facts(evaluations, action_instances)
     action_instances, axiom_plans = recover_axioms_plans(instantiated, action_instances)
     _, full_plan = recover_negative_axioms(real_task, opt_task, axiom_plans, action_instances, {})
-    return get_preimage_facts(plan_preimage(full_plan, []), {}, [])
+    full_preimage = plan_preimage(full_plan, [])
+    negated_facts = get_negated_derived_support(evaluations, opt_task.axioms, full_preimage)
+    return get_preimage_facts(full_preimage, {}, []) | cost_facts | negated_facts
+
+
+def get_negated_derived_support(evaluations, axioms, preimage):
+    """The facts that keep the derived predicates which the plan needs false from being derived: every fact of a
+    predicate negated in the bodies of their axioms (and, transitively, of the derived predicates in those bodies).
+    This over-approximates, but without negated streams (whose failures the focused algorithms record) nothing else
+    supports these preconditions."""
+    axioms_from_name = get_derived_predicates(axioms)
+    queue = [literal.predicate for literal in preimage if literal.negated and (literal.predicate in axioms_from_name)]
+    derived, negated = set(queue), set()
+    while queue:
+        for axiom in axioms_from_name[queue.pop()]:
+            for literal in iterate_literals(axiom.condition):
+                if literal.predicate in axioms_from_name:
+                    if literal.predicate not in derived:
+                        derived.add(literal.predicate)
+                        queue.append(literal.predicate)
+                elif literal.negated:
+                    negated.add(literal.predicate)
+    return {fact_from_evaluation(e) for e in evaluations if get_prefix(fact_from_evaluation(e)).lower() in negated}
+
+
+def iterate_literals(condition):
+    if is_literal(condition):
+        yield condition
+    for part in getattr(condition, 'parts', ()):
+        yield from iterate_literals(part)
+
+
+def get_cost_facts(evaluations, action_instances):
+    """The function values that the costs of grounded actions use, as facts."""
+    evaluation_from_head = {evaluation.head: evaluation for evaluation in evaluations}
+    facts = set()
+    for instance in action_instances:
+        action = instance.action
+        if (action is None) or (action.cost is None):
+            continue
+        expression = action.cost.expression
+        if not isinstance(expression, pddl.PrimitiveNumericExpression):
+            continue
+        args = tuple(obj_from_pddl(instance.var_mapping[p] if is_parameter(p) else p) for p in expression.args)
+        evaluation = evaluation_from_head.get(Head(expression.symbol, args))
+        if evaluation is not None:
+            facts.add(fact_from_evaluation(evaluation))
+    return facts
 
 
 ##################################################

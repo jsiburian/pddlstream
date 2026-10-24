@@ -10,6 +10,7 @@ from typing import NamedTuple
 from pddlstream.core.conversion import evaluation_from_fact, param_from_object, replace_expression
 from pddlstream.core.evaluations import INTERNAL_EVALUATION
 from pddlstream.core.problem import Certificate
+from pddlstream.core.syntax import EQ, get_prefix
 from pddlstream.language.external import Instance, Result
 from pddlstream.language.stream import StreamInstance, StreamResult
 
@@ -31,17 +32,21 @@ class PlanCertificate(Certificate):
     supports: the stream calls behind the preimage facts, each after those that support its domain facts
     internal: preimage facts that the solver added itself (e.g. compiled plan constraints)
     unsupported: preimage facts no stream call certified yet (facts about the outputs of deferred streams)
+    unevaluated: cost function values the plan's cost assumes but no call computed (their optimistic values); they
+        concern the cost only, so the certificate can be complete without them
     """
 
     supports: list
     internal: list
     unsupported: list
+    unevaluated: list
 
-    def __new__(cls, all_facts, preimage_facts, supports=(), internal=(), unsupported=()):
+    def __new__(cls, all_facts, preimage_facts, supports=(), internal=(), unsupported=(), unevaluated=()):
         self = super().__new__(cls, all_facts, preimage_facts)
         self.supports = list(supports)
         self.internal = list(internal)
         self.unsupported = list(unsupported)
+        self.unevaluated = list(unevaluated)
         return self
 
     @property
@@ -114,6 +119,12 @@ def support_from_result(support):
 def certify(certificate, evaluations, preimage_facts):
     """certificate (with value-level facts) extended with the supports of the object-level preimage_facts."""
     supports, internal, unsupported = extract_supports(evaluations, preimage_facts)
+    unevaluated = [fact for fact in unsupported if get_prefix(fact) == EQ]  # Function values
+    unsupported = [fact for fact in unsupported if get_prefix(fact) != EQ]
     return PlanCertificate(
-        *certificate, map(support_from_result, supports), map(value_fact, internal), map(value_fact, unsupported)
+        *certificate,
+        map(support_from_result, supports),
+        map(value_fact, internal),
+        map(value_fact, unsupported),
+        map(value_fact, unevaluated),
     )

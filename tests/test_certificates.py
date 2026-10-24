@@ -6,8 +6,8 @@ import pytest
 from pddlstream.algorithms.certificate import PlanCertificate
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.validate import verify_certificate
-from pddlstream.core.problem import Certificate, PDDLProblem
-from pddlstream.language.generator import from_fn
+from pddlstream.core.problem import Action, Certificate, PDDLProblem
+from pddlstream.language.generator import from_fn, from_test
 from test_semantics import DOMAIN_PDDL, make_problem
 
 CHAIN_STREAMS = """(define (stream chain)
@@ -67,3 +67,25 @@ def test_fluent_supports(algorithm):
     [support] = result.certificate.supports
     assert (support.outputs, support.fluents) == (('a-b',), [('at', 'a')])
     assert verify_certificate(problem, result, unit_costs=True) == (True, [])
+
+
+GATE_PDDL = """(define (domain gates) (:requirements :strips :derived-predicates)
+  (:predicates (Gate ?g) (Open ?g) (Blocked ?g) (Passed))
+  (:functions (Toll ?g))
+  (:derived (Blocked ?g) (and (Gate ?g) (not (Open ?g))))
+  (:action pass :parameters (?g) :precondition (and (Gate ?g) (not (Blocked ?g)))
+    :effect (and (Passed) (increase (total-cost) (Toll ?g)))))"""
+
+GATE_STREAMS = """(define (stream gates)
+  (:stream test-open :inputs (?g) :domain (Gate ?g) :certified (Open ?g))
+  (:function (Toll ?g) (Gate ?g)))"""
+
+
+def test_incremental_costs_and_negated_derived():
+    # The certificate includes the cost function values and the facts that keep (Blocked g) from being derived
+    stream_map = {'test-open': from_test(lambda g: g == 'east'), 'toll': lambda g: 3}
+    problem = PDDLProblem(GATE_PDDL, {}, GATE_STREAMS, stream_map, [('Gate', 'east'), ('Gate', 'west')], ('Passed',))
+    result = solve(problem, algorithm='incremental', verbose=False)
+    assert result.plan == [Action('pass', ('east',))] and result.cost == 3
+    assert {('open', 'east'), ('=', ('toll', 'east'), 3)} <= set(result.certificate.preimage_facts)
+    assert verify_certificate(problem, result) == (True, [])

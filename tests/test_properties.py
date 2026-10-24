@@ -83,7 +83,7 @@ def test_example(case, tmp_path, record):
         if call['valid']:
             assert float(call['replay_cost']) == pytest.approx(float(call['cost']), **TOLERANCE)
             assert call['certified'] is not False, call['certificate_issues']
-            if not (UNCERTIFIED & set(case.features)) and (case.uncertified is None):
+            if not (UNCERTIFIED & set(case.features)):
                 assert call['certified'], call['certificate_issues']
 
     last_call = result['calls'][-1]
