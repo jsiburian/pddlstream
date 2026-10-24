@@ -9,6 +9,7 @@ robolab/eval/gt_state.py.
 
 import json
 import os
+import traceback
 
 import numpy as np
 from robolab.eval import InferenceClient
@@ -80,12 +81,14 @@ class TampInferenceClient(InferenceClient):
         self.vla = vla  # The VLA that performs the skill steps the planner hands over (OpenpiVLA), or None
         self.task, self.scene = None, None
         self.started = set()  # Environments whose episode has been planned
+        self.broken = set()  # Environments whose episode the planner failed with an error
 
     def set_task(self, task, scene):
         """The task (a TaskSpec, or a RoboLab Task or environment configuration) and its ObjectSpecs."""
         self.task = task if isinstance(task, TaskSpec) else task_spec_from_robolab(task)
         self.scene = scene
         self.started.clear()
+        self.broken.clear()
 
     def _extract_observation(self, raw_obs, *, env_id=0):
         state = self._get_env_gt_state(raw_obs, env_id)
@@ -108,16 +111,23 @@ class TampInferenceClient(InferenceClient):
 
     def _query_server(self, request):
         env_id, observation = request['env_id'], request['observation']
-        if env_id not in self.started:
-            options = {'gripper': 'robotiq', 'containment': 'center', 'skills': self.skills}
-            self.planner.reset(self.task, self.scene, observation, env_id=env_id, **options)
-            self.started.add(env_id)
-        actions, _ = self.planner.act(observation, env_id=env_id)  # An unsupported task holds the arm still
-        if actions is None:  # The planner hands a skill's step (e.g. picking up an object) to the VLA
-            if self.vla is None:
-                raise RuntimeError(f'The planner asked for a VLA step ({self.planner.delegate}), but there is no VLA')
-            actions = self.vla.act(request['raw'], self.planner.delegate, env_id=env_id)
-        return actions
+        if env_id in self.broken:  # The planner failed this episode: hold still, so that the evaluation goes on
+            return np.array([[*observation.arm, observation.gripper]] * self.open_loop_horizon)
+        try:
+            if env_id not in self.started:
+                options = {'gripper': 'robotiq', 'containment': 'center', 'skills': self.skills}
+                self.planner.reset(self.task, self.scene, observation, env_id=env_id, **options)
+                self.started.add(env_id)
+            actions, _ = self.planner.act(observation, env_id=env_id)  # An unsupported task holds the arm still
+            if actions is None:  # The planner hands a skill's step (e.g. picking up an object) to the VLA
+                if self.vla is None:
+                    raise RuntimeError(f'The planner asked for a VLA step ({self.planner.delegate}), but has no VLA')
+                actions = self.vla.act(request['raw'], self.planner.delegate, env_id=env_id)
+            return actions
+        except Exception:  # A planner error fails this episode only (RoboLab's runner stops at an exception)
+            traceback.print_exc()
+            self.broken.add(env_id)
+            return np.array([[*observation.arm, observation.gripper]] * self.open_loop_horizon)
 
     def _unpack_response(self, response):
         return np.asarray(response, dtype=np.float32)
@@ -126,5 +136,7 @@ class TampInferenceClient(InferenceClient):
         super().reset(env_id=env_id)
         if env_id is None:
             self.started.clear()
+            self.broken.clear()
         else:
             self.started.discard(env_id)
+            self.broken.discard(env_id)
