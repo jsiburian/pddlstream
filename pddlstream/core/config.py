@@ -83,6 +83,7 @@ class SolverConfig:
     greedy_visits: int = 0
     greedy_best: bool = True
     require_downstream: bool = True
+    binding_policy: object = None  # A skeleton.BindingPolicy that replaces the four fields above
     exogenous_axioms: bool = True  # Compile exogenous streams into axioms rather than actions
     exogenous_future_values: bool = True  # Plan with placeholder values until an exogenous stream can be called
 

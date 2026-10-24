@@ -26,10 +26,53 @@ from pddlstream.language.plans import get_output_objects, get_partial_orders
 
 logger = logging.getLogger(__name__)
 
-# The queue's options are SolverConfig fields: skeleton_priorities, greedy_visits, greedy_best and require_downstream
 # TODO: the bias away from solved things is actually due to skeleton_priorities+timed_process not require_downstream
 
 Priority = namedtuple('Priority', ['not_greedy', 'complexity', 'visits', 'remaining', 'cost'])  # TODO: FIFO
+
+
+class BindingPolicy:
+    """How the skeleton queue orders bindings (partial assignments of a skeleton's streams) for sampling. The default
+    uses the SolverConfig fields of the same names; a subclass passed as solve(..., binding_policy=...) can order
+    bindings differently, e.g. to try research ideas without changing the queue (see pddlstream.strategy).
+
+    :param skeleton_priorities: order bindings by complexity, visits and remaining streams (otherwise by visits)
+    :param greedy_visits: how many visits a binding is sampled greedily for
+    :param greedy_best: only a skeleton's most advanced binding is sampled greedily
+    :param require_downstream: sample a binding only while its downstream streams can still succeed
+    """
+
+    def __init__(self, skeleton_priorities=True, greedy_visits=0, greedy_best=True, require_downstream=True):
+        self.skeleton_priorities = skeleton_priorities
+        self.greedy_visits = greedy_visits
+        self.greedy_best = greedy_best
+        self.require_downstream = require_downstream
+
+    @classmethod
+    def from_config(cls, config):
+        return config.binding_policy or cls(
+            config.skeleton_priorities, config.greedy_visits, config.greedy_best, config.require_downstream
+        )
+
+    def is_greedy(self, binding):
+        """Whether to keep sampling binding right away, before returning to the queue."""
+        return (binding.visits <= self.greedy_visits) and (not self.greedy_best or binding.is_best())
+
+    def priority(self, binding):
+        """The key that orders bindings in the queue (lowest first)."""
+        if not self.skeleton_priorities:
+            return Priority(not_greedy=True, complexity=0, visits=binding.visits, remaining=0, cost=0.0)
+        # TODO: use effort instead
+        # TODO: instead of remaining, use the index in the queue to reprocess earlier ones
+        complexity = binding.compute_complexity() + (binding.visits - binding.calls)  # TODO: check this
+        remaining = len(binding.skeleton.stream_plan) - binding.index
+        return Priority(not self.is_greedy(binding), complexity, binding.visits, remaining, binding.cost)
+
+    def is_standby(self, binding):
+        """Whether to set binding aside until the queue's next pass."""
+        return self.require_downstream and not binding.check_downstream()
+
+
 Affected = namedtuple('Affected', ['indices', 'has_cost'])
 
 
@@ -174,8 +217,7 @@ class Binding(CreationHash):
         return not self.children
 
     def is_greedy(self):
-        config = get_config()
-        return (self.visits <= config.greedy_visits) and (not config.greedy_best or self.is_best())
+        return self.skeleton.queue.policy.is_greedy(self)
 
     def up_to_date(self):
         if self.is_fully_bound:
@@ -226,14 +268,7 @@ class Binding(CreationHash):
         return self.check_downstream_helper(self.skeleton.affected_indices[self.index])
 
     def get_priority(self):
-        if not get_config().skeleton_priorities:
-            return Priority(not_greedy=True, complexity=0, visits=self.visits, remaining=0, cost=0.0)
-        # TODO: use effort instead
-        # TODO: instead of remaining, use the index in the queue to reprocess earlier ones
-        priority = self.compute_complexity() + (self.visits - self.calls)  # TODO: check this
-        # TODO: call_index
-        remaining = len(self.skeleton.stream_plan) - self.index
-        return Priority(not self.is_greedy(), priority, self.visits, remaining, self.cost)
+        return self.skeleton.queue.policy.priority(self)
 
     def post_order(self):
         for child in self.children:
@@ -288,10 +323,11 @@ STANDBY = None
 
 
 class SkeletonQueue(Sized):
-    def __init__(self, store, domain, disable=True):
+    def __init__(self, store, domain, disable=True, policy=None):
         # TODO: multi-threaded
         self.store = store
         self.domain = domain
+        self.policy = BindingPolicy.from_config(get_config()) if policy is None else policy
         self.skeletons = []
         self.queue = []  # TODO: deque version
         self.disable = disable
@@ -353,7 +389,7 @@ class SkeletonQueue(Sized):
             return readd, is_new
         binding.visits += 1
         instance = binding.result.instance
-        if get_config().require_downstream and not binding.check_downstream():  # TODO: move check_complexity here
+        if self.policy.is_standby(binding):  # TODO: move check_complexity here
             # TODO: causes redundant plan skeletons to be identified
             # (along with complexity using visits instead of calls)
             # Do I need to re-enable this stream in case another skeleton needs it?
