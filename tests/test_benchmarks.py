@@ -11,7 +11,7 @@ import pytest
 from benchmarks.common.goals import UnsupportedTask, coverage, goal_from_task, goal_literals
 from benchmarks.common.language import ScriptedAgent, score, symbolic_problem
 from benchmarks.common.policy import Reobserve, TampPolicy
-from benchmarks.common.primitives import Pose, collides, point_grasps, solve_ik
+from benchmarks.common.primitives import Pose, collides, objects_collide, point_grasps, solve_ik
 from benchmarks.common.protocol import Conditional, ObjectSpec, TaskSpec, observation_from_json, task_from_json, to_json
 from benchmarks.common.remote import start_server
 from benchmarks.common.skills import PRESS, compile_skills
@@ -112,6 +112,24 @@ def test_robotiq_parts():
             moving = (world.robot, frozenset(pbu.get_moving_links(world.robot, world.arm)))
             assert conf is not None and not pbu.pairwise_collision(moving, world.table)  # The hand stays above
             assert collides(world, [world.table]) == expected
+    finally:
+        world.close()
+
+
+def test_object_shapes():
+    # A banana's body leaves the inside of its curve free, and objects resting against each other don't collide
+    banana = banana_points()
+    inside = np.array([banana[:, 0].max() - 0.01, 0.0, 0.0])  # The middle of the curve's inside
+    world = World([ObjectSpec('banana', (0.1, 0.23, 0.036), points=tuple(map(tuple, banana))),
+                   ObjectSpec('a', (0.01, 0.01, 0.01)), ObjectSpec('b', (0.05, 0.05, 0.05))])  # fmt: skip
+    try:
+        world.set_pose('banana', ((0, 0, 0), (0, 0, 0, 1)))
+        world.set_pose('a', (tuple(inside), (0, 0, 0, 1)))
+        assert not pbu.pairwise_collision(world.bodies['banana'], world.bodies['a'])
+        world.set_pose('a', ((0.5, 0, 0), (0, 0, 0, 1)))
+        for gap, expected in [(-0.003, False), (-0.01, True)]:  # Overlaps
+            world.set_pose('b', ((0.5 + 0.03 + gap, 0, 0), (0, 0, 0, 1)))
+            assert objects_collide(world.bodies['a'], world.bodies['b']) == expected
     finally:
         world.close()
 

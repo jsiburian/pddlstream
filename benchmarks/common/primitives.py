@@ -14,6 +14,8 @@ CENTER_MARGIN = 0.02  # With 'center' containment, object centers stay this far 
 PAD_HALF_WIDTH = 0.011  # Half a finger pad's width, across the direction the fingers close in
 GRASP_DEPTH = 0.035  # How far below the top of the slice it grasps the tool frame goes (the pads are longer)
 FINGER_CLEARANCE = 0.01  # Room left between the object and each open finger, and above the table
+OBJECT_CONTACT = 0.005  # Meters two objects' shapes may overlap without colliding (see objects_collide)
+MOTION_TIME = 5  # Seconds for one motion-planning call: the solve's max_time is checked only between calls
 SELF_COLLISIONS = False  # PyBullet's Panda model reports contacts between the hand and its fingers
 IK_ATTEMPTS = 10
 
@@ -147,7 +149,7 @@ def get_procedures(world, teleport=False):
             kwargs = dict(obstacles=obstacles, attachments=attachments, self_collisions=SELF_COLLISIONS)
             path = pbu.plan_direct_joint_motion(robot, arm, q2.values, **kwargs)
             if path is None:
-                path = pbu.plan_joint_motion(robot, arm, q2.values, **kwargs)
+                path = pbu.plan_joint_motion(robot, arm, q2.values, max_time=MOTION_TIME, **kwargs)
         if path is None:
             return None
         return (Trajectory(path, holding),)
@@ -163,7 +165,7 @@ def get_procedures(world, teleport=False):
             return True
         pose1.assign()
         pose2.assign()
-        return not pbu.pairwise_collision(world.bodies[name1], world.bodies[name2])
+        return not objects_collide(world.bodies[name1], world.bodies[name2])
 
     def cfree_approach_pose(name1, pose1, grasp, name2, pose2):
         if name1 == name2:
@@ -174,7 +176,7 @@ def get_procedures(world, teleport=False):
         approach_pose = pbu.multiply(gripper_pose, grasp.approach)
         for gripper in pbu.interpolate_poses(gripper_pose, approach_pose):
             pbu.set_pose(body1, pbu.multiply(gripper, grasp.value))
-            if pbu.pairwise_collision(body1, body2):
+            if objects_collide(body1, body2):
                 return False
         return True
 
@@ -190,7 +192,7 @@ def get_procedures(world, teleport=False):
                 return False
             if trajectory.holding is not None:
                 attach(world, *trajectory.holding).assign()
-                if pbu.pairwise_collision(world.bodies[trajectory.holding[0]], body):
+                if objects_collide(world.bodies[trajectory.holding[0]], body):
                     return False
         return True
 
@@ -280,6 +282,12 @@ def center_region(aabb, margin=CENTER_MARGIN):
     shrink = np.minimum(margin, (upper - lower) / 2)
     shrink[2] = 0.0
     return pbu.AABB(lower + shrink, upper - shrink)
+
+
+def objects_collide(body1, body2):
+    """Whether two objects overlap by more than OBJECT_CONTACT: objects resting against each other (e.g. a pile of
+    bananas) overlap a little in their approximate shapes, and could otherwise never be picked."""
+    return pbu.pairwise_collision(body1, body2, max_distance=-OBJECT_CONTACT)
 
 
 def collides(world, obstacles, around=None):

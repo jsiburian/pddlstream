@@ -27,6 +27,10 @@ def export(folder, run=0):
     poses = {name: initial[f'rigid_object/{name}/root_pose'][0] for name in initial['rigid_object']}
     names = [name for name in poses if name != 'table']
     points = object_points(config['scene']['scene']['spawn']['usd_path'], names)
+    sizes = {}  # Objects whose mesh can't be read here (e.g. a payload on NVIDIA's servers): their recorded box
+    for name in set(names) - set(points):
+        corners = data[f'bbox/bbox_mm/{name}'][0] / 1000.0
+        sizes[name] = (corners.max(axis=0) - corners.min(axis=0)).tolist()
     return {
         'task': folder.name,
         'arm': initial['articulation/robot/joint_position'][0][:7].tolist(),
@@ -36,6 +40,7 @@ def export(folder, run=0):
             if name in names
         },
         'points': {name: np.round(array, 5).tolist() for name, array in points.items()},
+        'sizes': sizes,
     }
 
 
@@ -53,6 +58,8 @@ def solve(problem, max_time=60):
         array = np.array(points)
         size = tuple(array.max(axis=0) - array.min(axis=0))
         scene.append(ObjectSpec(name, size, 'container' if name in supports else 'movable', tuple(map(tuple, points))))
+    for name, size in problem.get('sizes', {}).items():  # Boxes, as the runner makes objects without points
+        scene.append(ObjectSpec(name, tuple(size), 'container' if name in supports else 'movable'))
     observation = observation_from_json({'arm': problem['arm'], 'gripper': 0.0, 'objects': problem['objects']})
     policy = TampPolicy(scene, gripper='robotiq', containment='center', focus=True, max_time=max_time)
     policy.reset(task, observation)

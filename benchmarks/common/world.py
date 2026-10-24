@@ -3,9 +3,12 @@
 """
 
 import dataclasses
+import os
+import tempfile
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.spatial import ConvexHull
 
 from benchmarks.common.protocol import ObjectSpec, object_spec_from_json  # noqa: F401 (part of the world's interface)
 from examples.pybullet.utils.pybullet_tools import utils as pbu
@@ -61,19 +64,54 @@ GRIPPERS = {
 
 
 CONTAINER_BASE = 0.01  # Meters of a container given by points that its body keeps: its base (see create_body)
+SLICES = 6  # Convex hulls along an object's main axis that make up its body (see create_body)
+SLICE_POINTS = 8  # The fewest points in each slice; sparser meshes (a box's corners) keep one hull
 
 
 def create_body(spec):
-    """A static PyBullet body for an object: its box, or the convex hull of its points. A container given by points
-    (e.g. a bowl) keeps only its base, since its hull would be solid and anything in it would collide with it;
-    objects are placed in it at its rim (container_aabb)."""
+    """A static PyBullet body for an object: its box, or the convex hulls of its points. A movable object with a dense
+    mesh is the union of the hulls of SLICES overlapping slices along its main axis, so that the inside of a curve
+    (a banana's) stays free; a container keeps only the hull of its base, since its hull would be solid and anything
+    in it would collide with it (objects are placed in it at its rim: container_aabb)."""
     if not spec.points:
         return pbu.create_box(*spec.size, color=COLORS[spec.kind])
     points = np.asarray(spec.points)
     if spec.kind == 'container':
         points = points[points[:, 2] <= points[:, 2].min() + CONTAINER_BASE]
-    collision = pbu.p.createCollisionShape(pbu.p.GEOM_MESH, vertices=points.tolist(), physicsClientId=pbu.CLIENT)
+    parts = slices(points) if spec.kind == 'movable' else [points]
+    if len(parts) == 1:
+        collision = pbu.p.createCollisionShape(pbu.p.GEOM_MESH, vertices=points.tolist(), physicsClientId=pbu.CLIENT)
+    else:  # Compound shapes take meshes from files only
+        files = [write_hull(part) for part in parts]
+        collision = pbu.p.createCollisionShapeArray(
+            shapeTypes=[pbu.p.GEOM_MESH] * len(files), fileNames=files, physicsClientId=pbu.CLIENT
+        )
+        for path in files:
+            os.remove(path)
     return pbu.create_body(collision)  # Without a visual shape: the mirror has no viewer
+
+
+def slices(points, count=SLICES, overlap=0.15):
+    """The points in count slices across their main axis, each overlapping its neighbors by a fraction of its width;
+    or [points] when a slice would have fewer than SLICE_POINTS."""
+    centered = points - points.mean(axis=0)
+    axis = np.linalg.svd(centered, full_matrices=False)[2][0]
+    along = centered @ axis
+    edges = np.linspace(along.min(), along.max(), count + 1)
+    margin = overlap * (edges[1] - edges[0])
+    parts = [points[(along >= low - margin) & (along <= high + margin)] for low, high in zip(edges, edges[1:])]
+    return parts if all(len(part) >= SLICE_POINTS for part in parts) else [points]
+
+
+def write_hull(points):
+    """A temporary OBJ file of the convex hull of points."""
+    hull = ConvexHull(points)
+    file, path = tempfile.mkstemp(suffix='.obj', prefix='pddlstream-hull-')
+    with os.fdopen(file, 'w') as obj:
+        obj.writelines(f'v {x} {y} {z}\n' for x, y, z in points[hull.vertices])
+        index = {vertex: i + 1 for i, vertex in enumerate(hull.vertices)}
+        obj.writelines(f'f {index[a]} {index[b]} {index[c]}\n' for a, b, c in hull.simplices)
+    return path
 
 
 class World:
