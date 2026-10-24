@@ -13,6 +13,9 @@ authors = [{ name = "Caelan Reed Garrett" }]
 requires-python = ">=3.11"
 dependencies = ["numpy>=2"]
 
+[project.optional-dependencies]
+agent = ["mcp"] # pddlstream.tools.mcp_server
+
 [project.urls]
 Homepage = "https://github.com/caelan/pddlstream"
 

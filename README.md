@@ -78,6 +78,7 @@ pddlstream$ ./update.sh
 
 * [Writing streams](docs/writing-streams.md): problems, stream declarations and procedures, options and debugging.
 * [Replanning with planner sessions](docs/sessions.md): reusing stream results as the world changes.
+* [Agent tools](docs/agents.md): JSON tools for agents to inspect problems, test samplers, plan and validate.
 * [Architecture](docs/architecture.md): how the package is organized and what happens during a solve.
 * [Migrating from earlier versions](docs/migration.md): new options, results and import paths, and what was removed.
 

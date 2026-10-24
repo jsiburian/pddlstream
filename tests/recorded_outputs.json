@@ -197,6 +197,24 @@
    }
   }
  ],
+ "agent.scripted_agent": [
+  {
+   "actions": [
+    "report"
+   ],
+   "complexity": 1,
+   "cost": 1.0,
+   "digest": "fd5d8f88ae7f0524",
+   "evaluations": 9,
+   "iterations": 2,
+   "skeletons": 1,
+   "solutions": 1,
+   "stream_calls": {
+    "sample-candidate": 8,
+    "test-valid": 8
+   }
+  }
+ ],
  "blocksworld.run -a adaptive": [
   {
    "actions": [

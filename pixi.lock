@@ -3614,6 +3614,7 @@ packages:
   name: pddlstream
   requires_dist:
   - numpy>=2
+  - mcp ; extra == 'agent'
   requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/5c/5f/396c38ca5611ff491c040a4628c6c78df118eb4ca67432b3c8e2f1b68786/gurobipy-13.0.3-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
   name: gurobipy

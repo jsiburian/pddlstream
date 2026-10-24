@@ -6,7 +6,7 @@ import pathlib
 import pytest
 
 PACKAGE = pathlib.Path(__file__).resolve().parents[1] / 'pddlstream'
-LAYERS = ['core', 'fastdownward', 'language', 'algorithms']
+LAYERS = ['core', 'fastdownward', 'language', 'algorithms', 'tools']
 
 
 def layer(module):

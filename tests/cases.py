@@ -72,6 +72,7 @@ CASES = [
     Case('advanced.satisfy.run -a adaptive', length=2, features=('streams', 'functions', 'satisfaction')),
     Case('advanced.storage', length=5, bench=True, features=('streams', 'adl', 'debug')),
     Case('advanced.wild.run', cost=47.312, length=4, bench=True, features=('streams', 'functions', 'adl', 'costs')),
+    Case('agent.scripted_agent', length=1, features=('streams', 'session')),
     # Belief space
     Case('table_belief.run', cost=10.532, length=10, features=('belief', 'derived', 'costs')),
     Case(

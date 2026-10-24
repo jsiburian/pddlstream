@@ -6,7 +6,7 @@ facts they certify. The solvers interleave symbolic planning with FastDownward a
 
 ## Layers
 
-The package is split into four layers. Each layer imports only from the layers above it in this list, and
+The package is split into five layers. Each layer imports only from the layers listed before it (`tools` is the last), and
 `tests/test_layers.py` checks this.
 
 | Package | Contents |
@@ -15,6 +15,7 @@ The package is split into four layers. Each layer imports only from the layers a
 | `fastdownward` | The planner. `translator` loads FastDownward's Python translator on first use; `tasks` converts between pddlstream's facts and the translator's PDDL objects; `grounding` grounds tasks and translates them to SAS+; `planner` runs the compiled search in a private directory; `search` solves PDDL and SAS+ tasks, optionally with goal serialization or an ABSTRIPS hierarchy. |
 | `language` | What users declare: streams (`stream`), functions and predicates (`function`), optimizers (`optimizer`), rules (`rule`), their shared machinery (`external`), the generator helpers (`generator`), stream statistics (`statistics`), stream-plan helpers (`plans`), and compilations of fluent and exogenous streams into the domain (`fluent`, `exogenous`). |
 | `algorithms` | The solvers: `meta.solve` dispatches to `incremental` or to `focused` (focused, binding and adaptive), which build on parsing (`algorithm`), the solution store (`common`), optimistic planning (`refinement`, `scheduling/`), the skeleton queue (`skeleton`), plan constraints (`constraints`), and the alternatives `serialized` and `satisfaction`. |
+| `tools` | Agent tools over registered problems (`toolbox`, `workspace`) and an optional MCP server (`mcp_server`); see [agents](agents.md). |
 
 Some older module paths (for example `pddlstream.language.constants`, `pddlstream.utils` and
 `pddlstream.algorithms.downward`) are short compatibility modules that re-export the moved code.
