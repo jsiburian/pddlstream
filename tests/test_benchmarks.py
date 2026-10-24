@@ -8,7 +8,7 @@ import pathlib
 import numpy as np
 import pytest
 
-from benchmarks.common.goals import UnsupportedTask, coverage, goal_from_task
+from benchmarks.common.goals import UnsupportedTask, coverage, goal_from_task, goal_literals
 from benchmarks.common.language import ScriptedAgent, score, symbolic_problem
 from benchmarks.common.protocol import Conditional, TaskSpec, observation_from_json, task_from_json, to_json
 from benchmarks.common.remote import start_server
@@ -17,21 +17,33 @@ from benchmarks.standin.env import SCENARIOS, StandinEnv
 from benchmarks.standin.episodes import generate, load, replay, run_episode
 from pddlstream.tools import Toolbox, Workspace
 
-FIXTURES = pathlib.Path(__file__).with_name('fixtures') / 'robolab_tasks.json'  # From benchmarks/robolab/probe.py
+FIXTURES = pathlib.Path(__file__).with_name('fixtures') / 'robolab_tasks.json'
 
 
 def test_goals():
-    task = TaskSpec('Stack', {}, (Conditional('stacked', {'objects': ['a', 'b', 'c']}),))
-    assert goal_from_task(task) == ('and', ('On', 'a', 'b'), ('On', 'b', 'c'))
+    task = TaskSpec('Stack', {}, (Conditional('stacked', {'objects': ['c', 'b', 'a'], 'order': 'bottom_to_top'}),))
+    assert goal_from_task(task) == ('and', ('On', 'b', 'c'), ('On', 'a', 'b'))
+    either = Conditional('object_in_container', {'object': ['a', 'b'], 'container': 'bin', 'logical': 'any'})
+    assert goal_from_task(TaskSpec('Either', {}, (either,))) == ('or', ('On', 'a', 'bin'), ('On', 'b', 'bin'))
+    two = Conditional(
+        'object_on_top', {'object': ['a', 'b', 'c'], 'reference_object': 'plate', 'logical': 'choose', 'K': 2}
+    )
+    assert len(goal_from_task(TaskSpec('Two', {}, (two,)))) == 1 + 3  # 'or' and the three pairs
+    any_order = Conditional('stacked', {'objects': ['a', 'b', 'c'], 'order': 'None'})
+    assert len(goal_from_task(TaskSpec('Stack', {}, (any_order,)))) == 1 + 6
     with pytest.raises(UnsupportedTask, match='object_upright'):
         goal_from_task(TaskSpec('Upright', {}, (Conditional('object_upright', {'object': 'a'}),)))
 
 
-@pytest.mark.skipif(not FIXTURES.exists(), reason='Run benchmarks/robolab/probe.py on a RoboLab machine first')
 def test_robolab_coverage():
+    # The fixtures come from benchmarks/robolab/probe.py, which scans RoboLab's task definitions
     tasks = [task_from_json(data) for data in json.loads(FIXTURES.read_text())]
     supported, skipped = coverage(tasks)
-    assert supported, skipped
+    assert (len(tasks), len(supported)) == (120, 97), skipped
+    for task in tasks:
+        if task.name in supported:
+            for literal in goal_literals(goal_from_task(task)):
+                assert literal[0] in ('On', 'Holding') and all(isinstance(arg, str) for arg in literal[1:]), literal
 
 
 def test_protocol_round_trip():

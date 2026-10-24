@@ -9,7 +9,7 @@ import os
 
 import numpy as np
 
-from benchmarks.common.goals import goal_from_task
+from benchmarks.common.goals import goal_from_task, goal_literals
 from benchmarks.common.primitives import Conf, Pose, get_procedures, get_stream_info, seed
 from benchmarks.common.protocol import condition_key, pose_from_state
 from benchmarks.common.skills import SKILLS, SkillStep, compile_skills
@@ -17,7 +17,6 @@ from benchmarks.common.world import World
 from pddlstream.algorithms.session import PlannerSession, WorldPatch
 from pddlstream.algorithms.validate import verify_certificate
 from pddlstream.core.problem import PDDLProblem
-from pddlstream.core.syntax import AND
 from pddlstream.core.utils import read
 
 logger = logging.getLogger(__name__)
@@ -54,6 +53,13 @@ class TampPolicy:
             name: Pose(self.world, name, pose_from_state(state)) for name, state in observation.objects.items()
         }
         self.poses[TABLE] = Pose(self.world, TABLE, ((0, 0, 0), (0, 0, 0, 1)))
+        bottoms = [
+            state.position[2] - self.world.specs[name].size[2] / 2
+            for name, state in observation.objects.items()
+            if name in self.world.specs
+        ]
+        if bottoms:  # The table is where the lowest object rests
+            self.world.set_table_top(min(bottoms))
         for pose in self.poses.values():  # The mirror starts where the objects are
             pose.assign()
         self.conf = Conf(observation.arm)
@@ -74,7 +80,7 @@ class TampPolicy:
 
     def get_init(self):
         movables = set(self.world.movables) & set(self.poses)
-        literals = self.goal[1:] if self.goal[0] == AND else [self.goal]  # And() of one literal is the literal
+        literals = goal_literals(self.goal)
         supports = {support for name, _, support in filter(lambda literal: literal[0] == 'On', literals)}
         buttons = {name for name, spec in self.world.specs.items() if spec.kind == 'button'}
         init = [('Conf', self.conf), ('AtConf', self.conf), ('HandEmpty',), ('CanMove',)]

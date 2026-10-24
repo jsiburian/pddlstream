@@ -42,7 +42,7 @@ class World:
         self.fingers = pbu.joints_from_names(self.robot, FINGER_JOINTS)
         self.tool = pbu.link_from_name(self.robot, TOOL_LINK)
         self.table = pbu.create_box(*TABLE_SIZE, color=pbu.TAN)
-        pbu.set_point(self.table, (0.0, 0.0, TABLE_TOP - TABLE_SIZE[2] / 2))
+        self.set_table_top(TABLE_TOP)
         self.specs = {spec.name: spec for spec in specs}
         self.bodies = {spec.name: pbu.create_box(*spec.size, color=COLORS[spec.kind]) for spec in specs}
         self.names = {body: name for name, body in self.bodies.items()}
@@ -76,9 +76,14 @@ class World:
     def get_pose(self, name):
         return pbu.get_pose(self.bodies[name])
 
+    def set_table_top(self, height):
+        """Moves the table so that its top is at height (meters, in the robot's base frame)."""
+        self.table_top = height
+        pbu.set_point(self.table, (0.0, 0.0, height - TABLE_SIZE[2] / 2))
+
     def resting_pose(self, name, point):
         """The pose of an object resting on the table at (x, y)."""
-        return (point[0], point[1], TABLE_TOP + self.specs[name].size[2] / 2), pbu.unit_quat()
+        return (point[0], point[1], self.table_top + self.specs[name].size[2] / 2), pbu.unit_quat()
 
     def close(self):
         pbu.disconnect()

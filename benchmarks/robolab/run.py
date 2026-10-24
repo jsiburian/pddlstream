@@ -1,88 +1,80 @@
-"""Run on the GPU machine: evaluates the TAMP policy on RoboLab tasks, following RoboLab's run_eval.py template
-(docs/environment_run.md), with ground-truth state enabled and the planner server running separately.
+"""Evaluates the planner as a RoboLab policy with RoboLab's own evaluation loop (robolab/eval/runner.py), which writes
+results, videos and summaries to RoboLab's output folder. Start the planner server in pddlstream's environment, then
+run this in RoboLab's environment with the pddlstream checkout on PYTHONPATH:
 
-  # Terminal 1, in this repository's planning environment (pddlstream installed):
-  python -m benchmarks.common.server --port 8765
-  # Terminal 2, in RoboLab's environment:
-  python -m benchmarks.robolab.run --task BananaInBowlTask --scenes scenes/ --headless --remote-port 8765
+  python -m benchmarks.common.server --port 8765                                  # pddlstream's environment
+  python -m benchmarks.robolab.run --task BananaInBowlTask --headless --num-envs 1  # RoboLab's environment
 
---scenes is a directory of ObjectSpec files named <task>.json (benchmarks/robolab/export_assets.py). Results are
-appended to --results as JSON lines. Tasks whose conditionals the planner does not support are recorded as skipped.
+The planner's scene comes from the running environment: a box with each object's bounding box (RoboLab's
+WorldState). Tasks whose success conditionals the planner does not support run with the arm held still, so they
+fail; benchmarks/robolab/probe.py lists them.
 """
 
 import argparse
-import json
-import os
-import time
+import sys
+import traceback
 
+import cv2  # noqa: F401 (RoboLab's runners import it before isaaclab)
 from isaaclab.app import AppLauncher
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--task', nargs='+', default=None)
-parser.add_argument('--tag', nargs='+', default=None)
-parser.add_argument('--num-runs', type=int, default=1)
-parser.add_argument('--scenes', required=True, help='Directory of <task>.json ObjectSpec files')
-parser.add_argument('--remote-host', default='localhost')
+parser = argparse.ArgumentParser(description='Evaluate pddlstream as a RoboLab policy.')
+parser.add_argument('--remote-host', default='localhost', help='The planner server (benchmarks/common/server.py)')
 parser.add_argument('--remote-port', type=int, default=8765)
-parser.add_argument('--results', default='robolab_results.jsonl')
+parser.add_argument('--skills', nargs='*', default=[], help='Learned skills the planner may use')
+from robolab.eval.runner import add_common_eval_args, run_evaluation  # noqa: E402
+
+add_common_eval_args(parser)
 AppLauncher.add_app_launcher_args(parser)
-args = parser.parse_args()
+args, _ = parser.parse_known_args()
 args.enable_cameras = True
+args.enable_gt_state = True  # The planner reads the objects' poses
 simulation_app = AppLauncher(args).app
 
-import torch  # noqa: E402 (Isaac Sim must start before these imports)
-from robolab.core.environments.factory import get_envs  # noqa: E402
-from robolab.core.environments.runtime import create_env, end_episode  # noqa: E402
+from robolab.core.world.world_state import get_world  # noqa: E402
+from robolab.eval.episode import run_episode  # noqa: E402
 from robolab.registrations.droid.auto_env_registrations_jointpos import auto_register_droid_envs  # noqa: E402
 
-from benchmarks.common.goals import UnsupportedTask, goal_from_task  # noqa: E402
-from benchmarks.common.world import object_spec_from_json  # noqa: E402
+from benchmarks.common.world import ObjectSpec  # noqa: E402
 from benchmarks.robolab.client import TampInferenceClient, task_spec_from_robolab  # noqa: E402
 
+FIXTURES = {'table', 'robot'}  # The planner models the robot and the table itself
 
-def run_episode(env, client, instruction):
-    obs, _ = env.reset()
-    success, steps = None, 0
-    while steps < env.max_episode_length:
-        steps += 1
-        output = client.infer(obs, instruction)
-        action = torch.as_tensor(output['action'], device=env.device).unsqueeze(0)
-        obs, _, terminated, truncated, _ = env.step(action)
-        if bool(terminated.any()):
-            success = True
-            break
-        if bool(truncated.any()):
-            success = False
-            break
-    client.reset()
-    return success, steps
+auto_register_droid_envs(task_dirs=args.task_dirs, task=args.task)
+
+
+def scene_from_env(env, env_cfg, task):
+    """The task's objects as ObjectSpecs: boxes of their bounding boxes. Objects that the success conditionals put
+    things in or on are containers, which the planner keeps fixed; the others are movable."""
+    world = get_world(env)
+    supports = {c.params.get('container') or c.params.get('reference_object') for c in task.success} - {None}
+    specs = []
+    for name in env_cfg.contact_object_list or []:
+        if name not in FIXTURES:
+            size = tuple(float(x) for x in world.get_dimensions(name))
+            specs.append(ObjectSpec(name, size, 'container' if name in supports else 'movable'))
+    return specs
+
+
+def make_client(args):
+    return TampInferenceClient(args.remote_host, args.remote_port, args.skills)
+
+
+def episode_runner(*, env, env_cfg, client, **kwargs):
+    """RoboLab's episode, after giving the client the task and its scene."""
+    task = task_spec_from_robolab(env_cfg)
+    client.set_task(task, scene_from_env(env, env_cfg, task))
+    return run_episode(env=env, env_cfg=env_cfg, client=client, **kwargs)
 
 
 def main():
-    auto_register_droid_envs(task=args.task)
-    task_envs = get_envs(task=args.task) if args.task else get_envs(tag=args.tag) if args.tag else get_envs()
-    for task_env in task_envs:
-        env, env_cfg = create_env(task_env, device=args.device, num_envs=1, use_fabric=True)
-        task = task_spec_from_robolab(env_cfg.task)  # The Task the environment was registered from
-        result = {'task': task.name}
-        try:
-            goal_from_task(task)
-        except UnsupportedTask as error:
-            result.update(status='skipped', reason=str(error))
-        else:
-            with open(os.path.join(args.scenes, f'{task.name}.json')) as file:
-                scene = [object_spec_from_json(spec) for spec in json.load(file)]
-            client = TampInferenceClient(task, scene, remote_host=args.remote_host, remote_port=args.remote_port)
-            for episode in range(args.num_runs):
-                start = time.time()
-                success, steps = run_episode(env, client, task.instruction['default'])
-                end_episode(env)
-                result.update(episode=episode, success=success, steps=steps, time=round(time.time() - start, 1))
-        with open(args.results, 'a') as file:
-            file.write(json.dumps(result) + '\n')
-        env.close()
+    run_evaluation(args, policy='pddlstream', client_factory=make_client, episode_runner=episode_runner)
     simulation_app.close()
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception:
+        traceback.print_exc()
+        simulation_app.close()
+        sys.exit(1)

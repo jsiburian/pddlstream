@@ -164,7 +164,11 @@ SCENARIOS = [
         {'a': (0.5, -0.15), 'b': (0.45, 0.15)},
     ),
     Scenario(
-        task('StackThree', 'Stack block a on block b on block c', Conditional('stacked', {'objects': ['a', 'b', 'c']})),
+        task(
+            'StackThree',
+            'Stack block a on block b on block c',
+            Conditional('stacked', {'objects': ['c', 'b', 'a'], 'order': 'bottom_to_top'}),
+        ),
         (block('a'), block('b'), block('c')),
         {'a': (0.5, -0.2), 'b': (0.4, -0.05), 'c': (0.45, 0.2)},
     ),

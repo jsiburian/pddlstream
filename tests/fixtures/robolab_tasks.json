@@ -1,0 +1,4122 @@
+[
+ {
+  "name": "AnimalsInBinTask",
+  "instruction": {
+   "default": "Put the lizards in the bin",
+   "vague": "Put away the animals",
+   "specific": "Pick up the two identical green lizard figurines and place them into the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "lizard_figurine",
+      "lizard_figurine_01"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "rubiks_cube",
+   "rubiks_cube_1",
+   "rubiks_cube_2",
+   "grey_bin",
+   "lizard_figurine",
+   "birdhouse",
+   "yellow_block",
+   "red_block",
+   "green_block",
+   "blue_block",
+   "lizard_figurine_01"
+  ]
+ },
+ {
+  "name": "AppleAndYogurtInBowlTask",
+  "instruction": {
+   "default": "Put the apple and yogurt in the bowl",
+   "vague": "Put the food items in the bowl",
+   "specific": "Pick up the red apple and the small yogurt container and place both inside the bowl"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "apple_01",
+      "yogurt_cup"
+     ],
+     "container": "wooden_bowl",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "pitcher",
+   "plasticpail_a02",
+   "apple_01",
+   "table"
+  ]
+ },
+ {
+  "name": "BagelsOnPlateTask",
+  "instruction": {
+   "default": "Put the bagels on the plate",
+   "vague": "Plate some bagels",
+   "specific": "Pick up the two bagels from the table and place them onto the plate"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "bagel_00",
+      "bagel_06"
+     ],
+     "reference_object": "plate_large",
+     "gripper_name": "gripper",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bagel_00",
+   "bagel_06",
+   "banana",
+   "bowl",
+   "plate_large",
+   "table"
+  ]
+ },
+ {
+  "name": "BananaInBowlTask",
+  "instruction": {
+   "default": "Pick up the banana and place it in the bowl",
+   "vague": "Put the fruit in the bowl",
+   "specific": "Grasp the yellow banana and place it inside the red bowl on the table"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "banana",
+     "container": "bowl",
+     "gripper_name": "gripper",
+     "tolerance": 0.0,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "banana",
+   "bowl",
+   "table"
+  ]
+ },
+ {
+  "name": "BananaOnPlateTask",
+  "instruction": {
+   "default": "Pick up the banana and put it on the plate",
+   "vague": "Put fruit on the dish",
+   "specific": "Pick up the yellow banana and place it flat on the white ceramic plate"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "banana"
+     ],
+     "reference_object": "plate_large",
+     "gripper_name": "gripper",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bagel_00",
+   "bagel_06",
+   "banana",
+   "bowl",
+   "plate_large",
+   "table"
+  ]
+ },
+ {
+  "name": "BananaThenRubiksCubeTask",
+  "instruction": {
+   "default": "put the banana then the cube in the bowl",
+   "vague": "put banana then cube away",
+   "specific": "First pick up the yellow banana and place it in the bowl, then pick up the rubiks cube and place it in the bowl after"
+  },
+  "success": [
+   {
+    "func": "objects_placed_in_container_in_order",
+    "params": {
+     "objects": [
+      "banana",
+      "rubiks_cube"
+     ],
+     "container": "bowl",
+     "tolerance": 0.0,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "banana",
+   "bowl",
+   "table"
+  ]
+ },
+ {
+  "name": "BananasInBinOneMoreTask",
+  "instruction": {
+   "default": "Put one (1) more bananas in the grey bin.",
+   "vague": "Add a banana to the bin",
+   "specific": "Pick up one additional banana and place it in the grey bin alongside the ones already there"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "banana",
+      "banana_01",
+      "banana_03"
+     ],
+     "container": "grey_bin",
+     "logical": "choose",
+     "K": 1,
+     "require_gripper_detached": true,
+     "require_contact_with": false
+    }
+   }
+  ],
+  "objects": [
+   "banana",
+   "banana_01",
+   "banana_02",
+   "banana_03",
+   "banana_04",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "BananasInBinThreeTotalTask",
+  "instruction": {
+   "default": "Make sure there are 3 (three) bananas in the grey bin.",
+   "vague": "3 bananas in the bin",
+   "specific": "In addition to bananas in the bin, add one more banana to the grey bin until there are exactly three bananas inside"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "banana",
+      "banana_01",
+      "banana_03"
+     ],
+     "container": "grey_bin",
+     "logical": "choose",
+     "K": 1,
+     "require_gripper_detached": true,
+     "require_contact_with": false
+    }
+   }
+  ],
+  "objects": [
+   "banana",
+   "banana_01",
+   "banana_02",
+   "banana_03",
+   "banana_04",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "BananasInCrateTask",
+  "instruction": {
+   "default": "Put 2 bananas in the crate",
+   "vague": "Put 2 bananas in the container",
+   "specific": "Put 2 bananas in the purple crate. Make sure there are exactly 2 (two) bananas in the crate."
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "banana",
+      "banana_01",
+      "banana_02",
+      "banana_03",
+      "banana_04"
+     ],
+     "container": "purple_crate",
+     "logical": "choose",
+     "K": 2,
+     "require_gripper_detached": true,
+     "require_contact_with": false
+    }
+   }
+  ],
+  "objects": [
+   "banana",
+   "banana_01",
+   "banana_02",
+   "banana_03",
+   "banana_04",
+   "purple_crate",
+   "table"
+  ]
+ },
+ {
+  "name": "BananasOutOfBinTask",
+  "instruction": {
+   "specific": "Take all the bananas out of the grey bin and put it on the table.",
+   "default": "Take the bananas out",
+   "vague": "Empty the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_outside_of",
+    "params": {
+     "object": [
+      "banana_02",
+      "banana_04"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "banana",
+   "banana_01",
+   "banana_02",
+   "banana_03",
+   "banana_04",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "BBQSauceInBinTask",
+  "instruction": {
+   "default": "Put the red BBQ sauce bottles in the grey bin",
+   "vague": "Put the bbq sauce bottles away",
+   "specific": "Pick up the two red BBQ sauce bottles from the table and place them into the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "bbq_sauce_bottle",
+      "bbq_sauce_bottle_01"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "grey_bin",
+   "mug",
+   "mustard",
+   "bowl",
+   "ranch_dressing",
+   "bbq_sauce_bottle",
+   "oatmeal_raisin_cookies",
+   "canned_tuna",
+   "soft_scrub",
+   "wood_block",
+   "coffee_pot",
+   "bbq_sauce_bottle_01",
+   "table"
+  ]
+ },
+ {
+  "name": "LargerObjectRaisinBoxInBinTask",
+  "instruction": {
+   "default": "Place the larger object in the grey bin.",
+   "vague": "Put the larger object away",
+   "specific": "Compare the objects and put the larger raisin box in the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "raisin_box",
+     "container": "grey_bin",
+     "tolerance": 0.02,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "butter",
+   "grey_bin",
+   "raisin_box",
+   "table"
+  ]
+ },
+ {
+  "name": "BlackItemsInBinTask",
+  "instruction": {
+   "default": "Put the black items in the grey bin",
+   "vague": "Clean up the dark items",
+   "specific": "Identify all black-colored objects on the table and place them into the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "keyboard",
+      "remote_control",
+      "computer_mouse",
+      "smartphone",
+      "glasses"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "granola_bars",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "BlockStackingOrderAgnosticTask",
+  "instruction": {
+   "default": "Stack the blocks into a tower",
+   "vague": "Build a tower",
+   "specific": "Pick up the colored blocks and stack them vertically on top of each other, forming one tower"
+  },
+  "success": [
+   {
+    "func": "stacked",
+    "params": {
+     "objects": [
+      "red_block",
+      "blue_block",
+      "green_block",
+      "yellow_block"
+     ],
+     "order": "None"
+    }
+   }
+  ],
+  "objects": [
+   "red_block",
+   "blue_block",
+   "green_block",
+   "yellow_block",
+   "table"
+  ]
+ },
+ {
+  "name": "BlockStackingSpecifiedOrderTask",
+  "instruction": {
+   "default": "Stack the blocks in the order from bottom to top: red, blue, green, yellow",
+   "vague": "Stack in the order of red, blue, green, yellow",
+   "specific": "Build a tower by placing the red block first, then the blue block on top, then the green, and finally the yellow block on top as a single tower"
+  },
+  "success": [
+   {
+    "func": "stacked",
+    "params": {
+     "objects": [
+      "red_block",
+      "blue_block",
+      "green_block",
+      "yellow_block"
+     ],
+     "order": "bottom_to_top"
+    }
+   }
+  ],
+  "objects": [
+   "red_block",
+   "blue_block",
+   "green_block",
+   "yellow_block",
+   "table"
+  ]
+ },
+ {
+  "name": "BlocksInBinTask",
+  "instruction": {
+   "default": "Sort all colored blocks into the bin",
+   "vague": "Put away the colored blocks",
+   "specific": "Put away the solidly-colored wooden blocks from the table and place them all into the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "yellow_block",
+      "red_block",
+      "green_block",
+      "blue_block"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "rubiks_cube",
+   "rubiks_cube_1",
+   "rubiks_cube_2",
+   "grey_bin",
+   "lizard_figurine",
+   "birdhouse",
+   "yellow_block",
+   "red_block",
+   "green_block",
+   "blue_block",
+   "lizard_figurine_01"
+  ]
+ },
+ {
+  "name": "PlasticBottlesInSquarePailTask",
+  "instruction": {
+   "default": "Put all the small plastic bottles in the square pail",
+   "vague": "Clean up small bottles in the square pail",
+   "specific": "Pick up the three small plastic bottles and place them inside the square shaped pail"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "whitepackerbottle_a01",
+      "whitepackerbottle_a02",
+      "whitepackerbottle_a03"
+     ],
+     "container": "squarepail_a01",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "large_storage_rack",
+   "whitepackerbottle_a01",
+   "whitepackerbottle_a02",
+   "utilityjug_a01",
+   "utilityjug_a02",
+   "squarepail_a01",
+   "plasticpail_a02",
+   "whitepackerbottle_a03",
+   "table"
+  ]
+ },
+ {
+  "name": "BowlInBinTask",
+  "instruction": {
+   "default": "put the bowl in the grey bin",
+   "vague": "put away bowl",
+   "specific": "Pick up the bowl from the table and place it inside the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "bowl",
+     "container": "grey_bin",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "mustard",
+   "bowl",
+   "dry_erase_marker",
+   "mug",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "BowlStackingLeftOnRightTask",
+  "instruction": {
+   "default": "Stack the left bowl on the right bowl",
+   "vague": "Stack the left bowl on the right",
+   "specific": "Pick up the bowl to the left of the robot and place it on top of the bowl to the right of the robot"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "bowl_2"
+     ],
+     "container": "bowl_1",
+     "gripper_name": "gripper",
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bowl_1",
+   "bowl_2",
+   "table"
+  ]
+ },
+ {
+  "name": "BowlStackingRightOnLeftTask",
+  "instruction": {
+   "default": "Stack the right bowl on the left bowl",
+   "vague": "Stack the right bowl on the left",
+   "specific": "Pick up the bowl to the right of the robot and place it on top of the bowl to the left of the robot"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "bowl_1"
+     ],
+     "container": "bowl_2",
+     "gripper_name": "gripper",
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bowl_1",
+   "bowl_2",
+   "table"
+  ]
+ },
+ {
+  "name": "ButterAboveRaisinTask",
+  "instruction": {
+   "specific": "Place the butter on top of the raisin box. The butter should end up on the raisin box.",
+   "vague": "Put butter on raisin box",
+   "default": "Pick up the butter box and place it on top of the raisin box"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": "butter",
+     "reference_object": "raisin_box",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "butter",
+   "raisin_box",
+   "table"
+  ]
+ },
+ {
+  "name": "CannedFoodInBinTask",
+  "instruction": {
+   "default": "Put the canned food in the grey bin",
+   "vague": "Put away cans",
+   "specific": "Put the small canned tuna in the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "canned_tuna",
+     "container": "grey_bin",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "grey_bin",
+   "mug",
+   "mustard",
+   "bowl",
+   "ranch_dressing",
+   "bbq_sauce_bottle",
+   "oatmeal_raisin_cookies",
+   "canned_tuna",
+   "soft_scrub",
+   "wood_block",
+   "coffee_pot",
+   "bbq_sauce_bottle_01",
+   "table"
+  ]
+ },
+ {
+  "name": "ClampInRightBinTask",
+  "instruction": {
+   "default": "Put the spring clamp in the right bin",
+   "vague": "Put the clamp in the right bin",
+   "specific": "Pick up the spring clamp from the table and place it in the bin on the right side"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "spring_clamp",
+     "container": "right_bin",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "left_bin",
+   "right_bin",
+   "red_hammer",
+   "husky_hammer",
+   "cordless_drill",
+   "spring_clamp",
+   "table"
+  ]
+ },
+ {
+  "name": "CleanUpToysTask",
+  "instruction": {
+   "default": "Clean up all the smaller toys and leave the birdhouse on the table",
+   "vague": "Clean up everything except the birdhouse",
+   "specific": "Pick up every toy object (rubiks cube, lizard figurines, colored blocks) from the table and place them all into the bin. Please ignore the birdhouse and don't touch it."
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "rubiks_cube",
+      "rubiks_cube_1",
+      "rubiks_cube_2",
+      "lizard_figurine",
+      "yellow_block",
+      "red_block",
+      "green_block",
+      "blue_block",
+      "lizard_figurine_01"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "rubiks_cube",
+   "rubiks_cube_1",
+   "rubiks_cube_2",
+   "grey_bin",
+   "lizard_figurine",
+   "birdhouse",
+   "yellow_block",
+   "red_block",
+   "green_block",
+   "blue_block",
+   "lizard_figurine_01"
+  ]
+ },
+ {
+  "name": "BigPumpkinInBinTask",
+  "instruction": {
+   "default": "Put the bigger pumpkin in the bin",
+   "vague": "Put the big pumpkin away",
+   "specific": "Identify the larger pumpkin of the two pumpkins on the table and place it in the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "pumpkinlarge",
+     "container": "right_bin",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "red_onion",
+   "whitepackerbottle_a01",
+   "avocado01",
+   "crabbypenholder",
+   "milkjug_a01",
+   "serving_bowl",
+   "utilityjug_a03",
+   "right_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "ClearOrganicObjectsTask",
+  "instruction": {
+   "default": "Clear away the organic objects",
+   "vague": "Put away all the food items",
+   "specific": "Identify every organic fruits and vegetables (lemon, lime, orange, pomegranate, pumpkin, red onion, avocado) on the table and place each into the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "lemon_01",
+      "lemon_02",
+      "lime01",
+      "lime01_01",
+      "orange_01",
+      "orange_02",
+      "pomegranate01",
+      "pumpkinlarge",
+      "pumpkinsmall",
+      "red_onion",
+      "avocado01"
+     ],
+     "container": "right_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "red_onion",
+   "whitepackerbottle_a01",
+   "avocado01",
+   "crabbypenholder",
+   "milkjug_a01",
+   "serving_bowl",
+   "utilityjug_a03",
+   "right_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "ClutterPlasticTask",
+  "instruction": {
+   "default": "Put all plastic bottles away in the bin",
+   "vague": "Clean up all the bottles",
+   "specific": "Pick up all three plastic bottles (milk jug, utility jug, and plastic bottle) from the table and place them into the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "whitepackerbottle_a01",
+      "milkjug_a01",
+      "utilityjug_a03"
+     ],
+     "container": "right_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "red_onion",
+   "whitepackerbottle_a01",
+   "avocado01",
+   "crabbypenholder",
+   "milkjug_a01",
+   "serving_bowl",
+   "utilityjug_a03",
+   "right_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "ClutterPumpkinTask",
+  "instruction": {
+   "default": "Put all the pumpkins away in the bin",
+   "vague": "Clean up pumpkins",
+   "specific": "Pick up the big and small pumpkins from the table and place them all into the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "pumpkinlarge",
+      "pumpkinsmall"
+     ],
+     "container": "right_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "red_onion",
+   "whitepackerbottle_a01",
+   "avocado01",
+   "crabbypenholder",
+   "milkjug_a01",
+   "serving_bowl",
+   "utilityjug_a03",
+   "right_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "SmallPumpkinInBinTask",
+  "instruction": {
+   "default": "Put the small pumpkin in the bin",
+   "vague": "Put away the small pumpkin",
+   "specific": "Identify the smaller pumpkin of the two pumpkins on the table and place it in the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "pumpkinsmall",
+     "container": "right_bin",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "red_onion",
+   "whitepackerbottle_a01",
+   "avocado01",
+   "crabbypenholder",
+   "milkjug_a01",
+   "serving_bowl",
+   "utilityjug_a03",
+   "right_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "CoffeePotInBinTask",
+  "instruction": {
+   "default": "Put the coffee pot in the grey bin",
+   "vague": "Put away the coffee pot",
+   "specific": "Pick up the black speckled coffee pot and place it inside the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "coffee_pot",
+     "container": "grey_bin",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "grey_bin",
+   "mug",
+   "mustard",
+   "bowl",
+   "ranch_dressing",
+   "bbq_sauce_bottle",
+   "oatmeal_raisin_cookies",
+   "canned_tuna",
+   "soft_scrub",
+   "wood_block",
+   "coffee_pot",
+   "bbq_sauce_bottle_01",
+   "table"
+  ]
+ },
+ {
+  "name": "CondimentsInBinTask",
+  "instruction": {
+   "default": "Sort the sauce condiments into the grey bin",
+   "vague": "Put the sauces away",
+   "specific": "Pick up each sauce condiment bottle from the table and place it into the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "mustard",
+      "ranch_dressing",
+      "bbq_sauce_bottle",
+      "bbq_sauce_bottle_01"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "grey_bin",
+   "mug",
+   "mustard",
+   "bowl",
+   "ranch_dressing",
+   "bbq_sauce_bottle",
+   "oatmeal_raisin_cookies",
+   "canned_tuna",
+   "soft_scrub",
+   "wood_block",
+   "coffee_pot",
+   "bbq_sauce_bottle_01",
+   "table"
+  ]
+ },
+ {
+  "name": "CookingClearPlateTask",
+  "instruction": {
+   "default": "Put the two measuring cups outside of the plate",
+   "vague": "Clear the plate",
+   "specific": "Pick up the orange measuring cup and the blue measuring cup from the plate and place each on the table surface"
+  },
+  "success": [
+   {
+    "func": "object_outside_of",
+    "params": {
+     "object": [
+      "spoon_1",
+      "measuring_cups_1"
+     ],
+     "container": "clay_plates",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_spoons",
+   "spatula",
+   "storage_box",
+   "tomato_sauce_can",
+   "measuring_cups_1",
+   "pink_spaghetti_spoon",
+   "spoon_1",
+   "green_serving_spoon",
+   "storage_box_01",
+   "ladle",
+   "wooden_bowl",
+   "potato_masher"
+  ]
+ },
+ {
+  "name": "PickOrangeObjectTask",
+  "instruction": {
+   "default": "Pick up the orange measuring cup",
+   "vague": "Pick up orange-colored thing",
+   "specific": "Identify and pick up the orange-colored object from the cooking area"
+  },
+  "success": [
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "measuring_cups_1",
+     "surface": "table",
+     "distance": 0.05
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_spoons",
+   "spatula",
+   "storage_box",
+   "tomato_sauce_can",
+   "measuring_cups_1",
+   "pink_spaghetti_spoon",
+   "spoon_1",
+   "green_serving_spoon",
+   "storage_box_01",
+   "ladle",
+   "wooden_bowl",
+   "potato_masher"
+  ]
+ },
+ {
+  "name": "CookingPickPastaToolTask",
+  "instruction": {
+   "default": "Move the pink tool from this utensil container to the other utensil holder",
+   "vague": "Move the pink tool over to the other container",
+   "specific": "Remove the pink pasta tool from its current utensil container and place it in the other utensil holder"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "pink_spaghetti_spoon"
+     ],
+     "container": "storage_box_01",
+     "logical": "all",
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_spoons",
+   "spatula",
+   "storage_box",
+   "tomato_sauce_can",
+   "measuring_cups_1",
+   "pink_spaghetti_spoon",
+   "spoon_1",
+   "green_serving_spoon",
+   "storage_box_01",
+   "ladle",
+   "wooden_bowl",
+   "potato_masher"
+  ]
+ },
+ {
+  "name": "CubesAndBlocksInBinTask",
+  "instruction": {
+   "default": "Put all the cubes and blocks in the bin",
+   "vague": "Put blocks away",
+   "specific": "Pick up every solid-colored cube and rubiks cubes from the table and place them all into the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "rubiks_cube",
+      "rubiks_cube_1",
+      "rubiks_cube_2",
+      "yellow_block",
+      "red_block",
+      "green_block",
+      "blue_block"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "rubiks_cube",
+   "rubiks_cube_1",
+   "rubiks_cube_2",
+   "grey_bin",
+   "lizard_figurine",
+   "birdhouse",
+   "yellow_block",
+   "red_block",
+   "green_block",
+   "blue_block",
+   "lizard_figurine_01"
+  ]
+ },
+ {
+  "name": "DishesInBinTask",
+  "instruction": {
+   "default": "Put the dishware in the grey bin",
+   "vague": "Put away dishes",
+   "specific": "Pick up the two mugs and a bowl from the table and place them into the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "mug",
+      "mug_01",
+      "bowl"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "mug",
+   "mug_01",
+   "bowl",
+   "grey_bin",
+   "table",
+   "banana_near",
+   "banana_far",
+   "rubiks_cube_top",
+   "rubiks_cube_middle",
+   "rubiks_cube_bottom",
+   "ketchup_bottle"
+  ]
+ },
+ {
+  "name": "ElectronicsInBinTask",
+  "instruction": {
+   "default": "Put the electronic devices in the grey bin",
+   "vague": "Put the gadgets away",
+   "specific": "Identify every electronic device on the table and place each one into the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "smartphone",
+      "remote_control",
+      "computer_mouse",
+      "keyboard"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "granola_bars",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "FoodPackingByColorTask",
+  "instruction": {
+   "default": "Pack yellow objects in right container and blue object in the left container",
+   "vague": "Sort things by color",
+   "specific": "Pick up the yellow can and place it in the right container, then pick up the blue object and place it in the left container"
+  },
+  "success": [
+   {
+    "func": "object_groups_in_containers",
+    "params": {
+     "groups": [
+      {
+       "object": [
+        "coffee_can"
+       ],
+       "container": "bin_a06",
+       "logical": "all",
+       "require_contact_with": false,
+       "require_gripper_detached": true
+      },
+      {
+       "object": [
+        "mustard",
+        "sugar_box"
+       ],
+       "container": "bin_b03",
+       "logical": "all",
+       "require_contact_with": false,
+       "require_gripper_detached": true
+      }
+     ]
+    }
+   }
+  ],
+  "objects": [
+   "bin_a06",
+   "cheez_it",
+   "chocolate_pudding",
+   "coffee_can",
+   "mustard",
+   "spam_can",
+   "sugar_box",
+   "tomato_soup_can",
+   "bin_b03",
+   "table"
+  ]
+ },
+ {
+  "name": "FoodPacking1BoxesTask",
+  "instruction": {
+   "default": "Pack boxed foods into the bin",
+   "vague": "Pack boxes",
+   "specific": "Pick up the boxed food item and place it inside the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "cheez_it"
+     ],
+     "container": "bin_a06",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bin_a06",
+   "cheez_it",
+   "mustard",
+   "tomato_soup_can",
+   "table"
+  ]
+ },
+ {
+  "name": "FoodPacking1CansTask",
+  "instruction": {
+   "default": "Pack canned foods into the bin",
+   "vague": "Pack cans",
+   "specific": "Pick up the canned food item and place it inside the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "tomato_soup_can"
+     ],
+     "container": "bin_a06",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bin_a06",
+   "cheez_it",
+   "mustard",
+   "tomato_soup_can",
+   "table"
+  ]
+ },
+ {
+  "name": "FoodPacking2BoxesTask",
+  "instruction": {
+   "default": "Pack boxed foods into the bin",
+   "vague": "Pack boxes",
+   "specific": "Pick up each boxed food item and place them all inside the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "cheez_it",
+      "sugar_box"
+     ],
+     "container": "bin_a06",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bin_a06",
+   "cheez_it",
+   "mustard",
+   "sugar_box",
+   "tomato_soup_can",
+   "tuna_can",
+   "table"
+  ]
+ },
+ {
+  "name": "FoodPacking2CansTask",
+  "instruction": {
+   "default": "Pack canned foods into the bin",
+   "vague": "Pack cans",
+   "specific": "Pick up each canned food item and place them all inside the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "tomato_soup_can",
+      "tuna_can"
+     ],
+     "container": "bin_a06",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bin_a06",
+   "cheez_it",
+   "mustard",
+   "sugar_box",
+   "tomato_soup_can",
+   "tuna_can",
+   "table"
+  ]
+ },
+ {
+  "name": "FoodPacking3BoxesTask",
+  "instruction": {
+   "default": "Pack boxed foods into the bin",
+   "vague": "Pack boxes",
+   "specific": "Pick up all three boxed food items and place each one inside the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "cheez_it",
+      "chocolate_pudding",
+      "sugar_box"
+     ],
+     "container": "bin_a06",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bin_a06",
+   "cheez_it",
+   "chocolate_pudding",
+   "mustard",
+   "spam_can",
+   "sugar_box",
+   "tomato_soup_can",
+   "tuna_can",
+   "table"
+  ]
+ },
+ {
+  "name": "FoodPacking3CansTask",
+  "instruction": {
+   "default": "Pack canned foods into the bin",
+   "vague": "Pack cans",
+   "specific": "Pick up all three canned food items and place each one inside the bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "spam_can",
+      "tomato_soup_can",
+      "tuna_can"
+     ],
+     "container": "bin_a06",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bin_a06",
+   "cheez_it",
+   "chocolate_pudding",
+   "mustard",
+   "spam_can",
+   "sugar_box",
+   "tomato_soup_can",
+   "tuna_can",
+   "table"
+  ]
+ },
+ {
+  "name": "FruitsGreenLimesOnPlateTask",
+  "instruction": {
+   "default": "Put all the green fruit on the plate",
+   "vague": "Plate green fruits",
+   "specific": "Put all green limes on the table and place them on the flat, beige colored plate"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "lime01",
+      "lime01_01"
+     ],
+     "reference_object": "clay_plates",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_spoons",
+   "spatula",
+   "storage_box"
+  ]
+ },
+ {
+  "name": "FruitsMovingTask",
+  "instruction": {
+   "default": "Move an orange to the white bowl",
+   "vague": "Move orange to white bowl",
+   "specific": "Pick up one orange citrus fruit and place it inside the white bowl"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "orange_01",
+      "orange_02"
+     ],
+     "container": "serving_bowl",
+     "logical": "any",
+     "tolerance": 0.0,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_bowl",
+   "wooden_spoons",
+   "spatula",
+   "storage_box"
+  ]
+ },
+ {
+  "name": "FruitsMovingOrangeOrLimeTask",
+  "instruction": {
+   "default": "Move an orange or a lime to the wood bowl",
+   "vague": "Put an orange or lime fruit in the wooden bowl",
+   "specific": "Select either an orange or a green lime and place it inside the wooden bowl"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "orange_01",
+      "lime01",
+      "orange_02",
+      "lime01_01"
+     ],
+     "container": "wooden_bowl",
+     "logical": "any",
+     "tolerance": 0.0,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_bowl",
+   "wooden_spoons",
+   "spatula",
+   "storage_box"
+  ]
+ },
+ {
+  "name": "FruitsOnionTask",
+  "instruction": {
+   "default": "Put the onion in the wood bowl",
+   "vague": "Put the vegetable in the wood bowl",
+   "specific": "Pick up the round onion and place it inside the wooden bowl"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "redonion"
+     ],
+     "container": "wooden_bowl",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_bowl",
+   "wooden_spoons",
+   "spatula",
+   "storage_box"
+  ]
+ },
+ {
+  "name": "FruitsOnionToPlateTask",
+  "instruction": {
+   "default": "Put the onion on the plate",
+   "vague": "Plate the onion",
+   "specific": "Pick up the round onion and place it on the flat plate"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "redonion"
+     ],
+     "reference_object": "clay_plates",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_bowl",
+   "wooden_spoons",
+   "spatula",
+   "storage_box"
+  ]
+ },
+ {
+  "name": "FruitsOrangesOnPlateTask",
+  "instruction": {
+   "default": "Put all the oranges on the plate",
+   "vague": "Plate the oranges",
+   "specific": "Pick up all of the orange citrus fruit from the table and place them all on the plate, there should be two oranges on the plate"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "orange_01",
+      "orange_02"
+     ],
+     "reference_object": "clay_plates",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_spoons",
+   "spatula",
+   "storage_box"
+  ]
+ },
+ {
+  "name": "FruitsOnPlateTask",
+  "instruction": {
+   "default": "Put all the fruits on the plate",
+   "vague": "Put fruits on the plate",
+   "specific": "Pick up all fruits that are on the table and place them all onto the large round plate"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "lemon_01",
+      "lemon_02",
+      "lime01",
+      "lime01_01",
+      "orange_01",
+      "orange_02",
+      "pomegranate01"
+     ],
+     "reference_object": "clay_plates",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_spoons",
+   "spatula",
+   "storage_box"
+  ]
+ },
+ {
+  "name": "FruitsOnPlate3Task",
+  "instruction": {
+   "default": "Put three (3) fruits on the plate",
+   "vague": "Put three fruit on the plate",
+   "specific": "Select exactly three fruits (lemon, lime, orange, pomegranate) from the table and place all of them on the plate"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "lemon_01",
+      "lemon_02",
+      "lime01",
+      "lime01_01",
+      "orange_01",
+      "orange_02",
+      "pomegranate01"
+     ],
+     "reference_object": "clay_plates",
+     "logical": "choose",
+     "K": 3,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_spoons",
+   "spatula",
+   "storage_box"
+  ]
+ },
+ {
+  "name": "GrabABagelTask",
+  "instruction": {
+   "default": "Grab a bagel",
+   "vague": "Grab some bread",
+   "specific": "Reach for one of the bagels on the table and pick it up"
+  },
+  "success": [
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "bagel_02",
+     "surface": "table",
+     "distance": 0.05
+    }
+   },
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "bagel_01",
+     "surface": "table",
+     "distance": 0.05
+    }
+   },
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "bagel_07",
+     "surface": "table",
+     "distance": 0.05
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "bowl",
+   "banana",
+   "bagel_07",
+   "coffee_can",
+   "banana_01",
+   "yogurt_cup",
+   "coffee_pot",
+   "ceramic_mug",
+   "pitcher",
+   "fork_big",
+   "spoon_big",
+   "apple_01",
+   "orange2",
+   "milk_carton",
+   "orange_juice_carton",
+   "bagel_01",
+   "bagel_02",
+   "plate_small",
+   "plate_large"
+  ]
+ },
+ {
+  "name": "GrabAFruitTask",
+  "instruction": {
+   "default": "Pick up a fruit",
+   "vague": "Grab a fruit",
+   "specific": "Reach for and grasp any one of the fruits on the table and lift it off the surface"
+  },
+  "success": [
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "banana",
+     "surface": "table",
+     "distance": 0.05
+    }
+   },
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "banana_01",
+     "surface": "table",
+     "distance": 0.05
+    }
+   },
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "apple_01",
+     "surface": "table",
+     "distance": 0.05
+    }
+   },
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "orange2",
+     "surface": "table",
+     "distance": 0.05
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "bowl",
+   "banana",
+   "bagel_07",
+   "coffee_can",
+   "banana_01",
+   "yogurt_cup",
+   "coffee_pot",
+   "ceramic_mug",
+   "pitcher",
+   "fork_big",
+   "spoon_big",
+   "apple_01",
+   "orange2",
+   "milk_carton",
+   "orange_juice_carton",
+   "bagel_01",
+   "bagel_02",
+   "plate_small",
+   "plate_large"
+  ]
+ },
+ {
+  "name": "GreenSpoonsInPotTask",
+  "instruction": {
+   "default": "Put the green spoons in the pot",
+   "vague": "Put the green utensils in the pot",
+   "specific": "Pick up all green-colored spoons and place them inside the cooking pot"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "ladle",
+      "ladle_01",
+      "green_serving_spoon"
+     ],
+     "container": "anza_medium",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "anza_medium",
+   "ladle",
+   "plate_large",
+   "plate_small",
+   "fork_big",
+   "fork_small",
+   "spatula_13",
+   "spatula_14",
+   "spatula_15",
+   "pink_spaghetti_spoon",
+   "ladle_01",
+   "red_serving_spoon",
+   "green_serving_spoon"
+  ]
+ },
+ {
+  "name": "JugsOnShelfTask",
+  "instruction": {
+   "default": "Put all the jugs on the shelf",
+   "vague": "Put the jugs on the shelf",
+   "specific": "Pick up both jugs from the table and place them on the shelf"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "utilityjug_a01",
+      "utilityjug_a02"
+     ],
+     "container": "large_storage_rack",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "large_storage_rack",
+   "whitepackerbottle_a01",
+   "whitepackerbottle_a02",
+   "utilityjug_a01",
+   "utilityjug_a02",
+   "squarepail_a01",
+   "plasticpail_a02",
+   "whitepackerbottle_a03",
+   "table"
+  ]
+ },
+ {
+  "name": "KeyboardOutOfBinTask",
+  "instruction": {
+   "default": "Take the keyboard out of the bin and put it on the table",
+   "vague": "Take the keyboard out",
+   "specific": "Reach into the bin, grasp the keyboard, lift it out, and place it on the table surface"
+  },
+  "success": [
+   {
+    "func": "object_outside_of_and_on_surface",
+    "params": {
+     "object": "keyboard",
+     "container": "grey_bin",
+     "surface": "table",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "granola_bars",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "ToyInBinTask",
+  "instruction": {
+   "specific": "Put the green lizard figurine away in the grey bin",
+   "default": "Put the lizard away in the bin",
+   "vague": "Put the toy away"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "lizard_figurine",
+     "container": "grey_bin",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "granola_bars",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "MarkerInMugTask",
+  "instruction": {
+   "default": "Put the whiteboard marker in the mug",
+   "vague": "Put the marker in the mug",
+   "specific": "Pick up the marker and drop it vertically into the mug, make sure the marker stands upright"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "marker",
+     "container": "ceramic_mug",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "rubiks_cube",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "oatmeal_raisin_cookies",
+   "granola_bars",
+   "table"
+  ]
+ },
+ {
+  "name": "MouseOnKeyboardTask",
+  "instruction": {
+   "default": "Put the computer mouse on the keyboard",
+   "vague": "Put the mouse on the keyboard",
+   "specific": "Pick up the computer mouse and place it on top of the keyboard"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "computer_mouse"
+     ],
+     "reference_object": "keyboard",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "rubiks_cube",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "oatmeal_raisin_cookies",
+   "granola_bars",
+   "table"
+  ]
+ },
+ {
+  "name": "MoveBananaToBagelPlateTask",
+  "instruction": {
+   "default": "Move the bananas to the bagel plate",
+   "vague": "Put the bananas with the bagels",
+   "specific": "Pick up the yellow bananas and transfer them onto the plate containing the bagels"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "banana",
+      "banana_01"
+     ],
+     "reference_object": "plate_small",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "bowl",
+   "banana",
+   "bagel_07",
+   "coffee_can",
+   "banana_01",
+   "yogurt_cup",
+   "coffee_pot",
+   "ceramic_mug",
+   "pitcher",
+   "fork_big",
+   "spoon_big",
+   "apple_01",
+   "orange2",
+   "milk_carton",
+   "orange_juice_carton",
+   "bagel_01",
+   "bagel_02",
+   "plate_small",
+   "plate_large"
+  ]
+ },
+ {
+  "name": "MustardAboveRaisinTask",
+  "instruction": {
+   "default": "Place the mustard on the raisin box. ",
+   "vague": "Put bottle on box",
+   "specific": "Pick up the mustard bottle and put it on top of the raisin box. The mustard should end up directly above the raisin box."
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": "mustard_bottle",
+     "reference_object": "raisin_box",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "mustard_bottle",
+   "raisin_box",
+   "table"
+  ]
+ },
+ {
+  "name": "MustardInLeftBinTask",
+  "instruction": {
+   "default": "Put the mustard in the left bin",
+   "vague": "Use the left bin for mustard",
+   "specific": "Pick up the mustard bottle and place it in the bin on the left side"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "mustard",
+     "container": "grey_bin_left",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "mustard",
+   "grey_bin_right",
+   "grey_bin_left"
+  ]
+ },
+ {
+  "name": "MustardInRightBinTask",
+  "instruction": {
+   "default": "Put the mustard in the right bin",
+   "vague": "Use the right bin for mustard",
+   "specific": "Pick up the mustard bottle and place it in the bin on the right side"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "mustard",
+     "container": "grey_bin_right",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "mustard",
+   "grey_bin_right",
+   "grey_bin_left"
+  ]
+ },
+ {
+  "name": "NonHammerToolsInRightBinTask",
+  "instruction": {
+   "default": "Put the non-hammer tools in the right bin",
+   "vague": "Sort non-hammer tools to the right",
+   "specific": "Pick up the cordless drill and the spring clamp and place both in the bin on the right side, leaving the hammers untouched"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "cordless_drill",
+      "spring_clamp"
+     ],
+     "container": "right_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "left_bin",
+   "right_bin",
+   "red_hammer",
+   "husky_hammer",
+   "cordless_drill",
+   "spring_clamp",
+   "table"
+  ]
+ },
+ {
+  "name": "OneBottleInSquarePailTask",
+  "instruction": {
+   "default": "Put any white plastic bottle in the square pail",
+   "vague": "Put a bottle in the square pail",
+   "specific": "Pick up one of the three white plastic bottles and place it inside the square pail"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "whitepackerbottle_a01",
+      "whitepackerbottle_a02",
+      "whitepackerbottle_a03"
+     ],
+     "container": "squarepail_a01",
+     "logical": "any",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "squarepail_a01",
+   "whitepackerbottle_a01",
+   "whitepackerbottle_a02",
+   "utilityjug_a01",
+   "utilityjug_a02",
+   "plasticpail_a02",
+   "whitepackerbottle_a03",
+   "table",
+   "large_storage_rack"
+  ]
+ },
+ {
+  "name": "OneBottleOnShelfTask",
+  "instruction": {
+   "default": "Put any white plastic bottle on the shelf",
+   "vague": "Put a bottle on the shelf",
+   "specific": "Pick up one of the three white plastic bottles and place it on the shelf"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "whitepackerbottle_a01",
+      "whitepackerbottle_a02",
+      "whitepackerbottle_a03"
+     ],
+     "container": "large_storage_rack",
+     "logical": "any",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "large_storage_rack",
+   "whitepackerbottle_a01",
+   "whitepackerbottle_a02",
+   "utilityjug_a01",
+   "utilityjug_a02",
+   "squarepail_a01",
+   "plasticpail_a02",
+   "whitepackerbottle_a03",
+   "table"
+  ]
+ },
+ {
+  "name": "PhoneOrRemoteInBinTask",
+  "instruction": {
+   "default": "Put the phone or the remote in the grey bin",
+   "vague": "Put the phone or the remote away",
+   "specific": "Choose either the black phone or the remote control and it into the grey bin next to the keyboard"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "smartphone",
+      "remote_control"
+     ],
+     "container": "grey_bin",
+     "logical": "any",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "granola_bars",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "PickDrillTask",
+  "instruction": {
+   "default": "Pick up the cordless drill.",
+   "vague": "Get the drill",
+   "specific": "Pick up the orange cordless electric drill and lift it off the table"
+  },
+  "success": [
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "cordless_drill",
+     "surface": "table",
+     "distance": 0.03
+    }
+   }
+  ],
+  "objects": [
+   "red_mug",
+   "bowl",
+   "ceramic_mug",
+   "upright_white_mug",
+   "sideways_white_mug",
+   "cordless_drill",
+   "measuring_cup",
+   "table"
+  ]
+ },
+ {
+  "name": "PickGlassesTask",
+  "instruction": {
+   "default": "Pick up the eye glasses",
+   "vague": "Grab the glasses",
+   "specific": "Pick up the pair of black eyeglasses that's sitting on the table"
+  },
+  "success": [
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "glasses",
+     "surface": "table",
+     "distance": 0.05
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "rubiks_cube",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "oatmeal_raisin_cookies",
+   "granola_bars",
+   "table"
+  ]
+ },
+ {
+  "name": "PickUpBluePitcherTask",
+  "instruction": {
+   "default": "Pick up the large blue pitcher",
+   "vague": "Pick up blue object",
+   "specific": "Pick up the large blue pitcher on the table by the side handle and lift it off the table"
+  },
+  "success": [
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "pitcher",
+     "surface": "table",
+     "distance": 0.05
+    }
+   }
+  ],
+  "objects": [
+   "plasticjerrican_a02",
+   "plasticpail_a02",
+   "pitcher",
+   "table"
+  ]
+ },
+ {
+  "name": "PickUpGreenObjectTask",
+  "instruction": {
+   "default": "Pick up the green vegetable block",
+   "vague": "Pick up the green object",
+   "specific": "Identify the green vegetable block on the table and lift it off the table"
+  },
+  "success": [
+   {
+    "func": "object_picked_up",
+    "params": {
+     "object": "frozen_vegetable_block",
+     "surface": "table",
+     "distance": 0.05
+    }
+   }
+  ],
+  "objects": [
+   "frozen_vegetable_block",
+   "blackandbrassbowl_large",
+   "screwtoppail_a01",
+   "utilityjug_a02",
+   "table"
+  ]
+ },
+ {
+  "name": "PinkSpoonInPotTask",
+  "instruction": {
+   "default": "Put the pink spaghetti spoon in the pot",
+   "vague": "Put the pink spoon in the pot",
+   "specific": "Pick up the pink spaghetti serving spoon that's on the left plate and place it inside the pot in the center of the table"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "pink_spaghetti_spoon"
+     ],
+     "container": "anza_medium",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "anza_medium",
+   "ladle",
+   "plate_large",
+   "plate_small",
+   "fork_big",
+   "fork_small",
+   "spatula_13",
+   "spatula_14",
+   "spatula_15",
+   "pink_spaghetti_spoon",
+   "ladle_01",
+   "red_serving_spoon",
+   "green_serving_spoon"
+  ]
+ },
+ {
+  "name": "PutBowlOnShelfTopTask",
+  "instruction": {
+   "default": "Put the serving bowl anywhere on the shelf in front of you",
+   "vague": "Put the bowl on shelf",
+   "specific": "Pick up the white serving bowl that's on the table to the right and place it on any open space on the shelf on the center of the table"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "serving_bowl"
+     ],
+     "reference_object": "rack_l04",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "mug",
+   "rack_l04",
+   "serving_bowl",
+   "utilityjug_a01",
+   "table"
+  ]
+ },
+ {
+  "name": "PutMugsOnShelfTask",
+  "instruction": {
+   "default": "Put the two mugs on the shelf",
+   "vague": "Put the mugs on shelf",
+   "specific": "Pick up the two mugs from the table and place them on the shelf in front of you"
+  },
+  "success": [
+   {
+    "func": "object_on_top",
+    "params": {
+     "object": [
+      "ceramic_mug",
+      "mug"
+     ],
+     "reference_object": "rack_l04",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "mug",
+   "rack_l04",
+   "serving_bowl",
+   "utilityjug_a01",
+   "table"
+  ]
+ },
+ {
+  "name": "PutTwoMugsOnShelfTask",
+  "instruction": {
+   "default": "Put two (2) mugs on the wire shelf",
+   "vague": "Put the mugs on shelf",
+   "specific": "Select two mugs from the right side of the table and place them on the wire shelf in front of you"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "ceramic_mug",
+      "mug",
+      "mug_01"
+     ],
+     "container": "wireshelving_a01",
+     "require_contact_with": true,
+     "require_gripper_detached": true,
+     "logical": "choose",
+     "K": 2
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "wireshelving_a01",
+   "spatula_01",
+   "plate_small",
+   "fork_big",
+   "fork_small",
+   "ceramic_mug",
+   "mug",
+   "mug_01"
+  ]
+ },
+ {
+  "name": "RecycleCartonTask",
+  "instruction": {
+   "default": "Put the recyclable cartons in the grey bin",
+   "vague": "Recycle the cartons",
+   "specific": "Pick up the food cartons that can be recycled and place them into the grey bin in the center of the table"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "milk_carton",
+      "orange_juice_carton"
+     ],
+     "container": "container_a01",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "container_a01",
+   "milk_carton",
+   "orange_juice_carton",
+   "alphabet_soup_can",
+   "smartphone",
+   "mayonnaise_bottle",
+   "ketchup_bottle",
+   "mug",
+   "table"
+  ]
+ },
+ {
+  "name": "RecycleCartonsOnBoxTask",
+  "instruction": {
+   "default": "Put the cartons that can be recycled on the box",
+   "vague": "Put the carton recyclables on the box",
+   "specific": "Identify the food cartons that can be recycled and put them on top of the brown square box."
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "milk_carton",
+      "orange_juice_carton"
+     ],
+     "container": "cubebox_a02",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "cubebox_a02",
+   "milk_carton",
+   "orange_juice_carton",
+   "alphabet_soup_can",
+   "smartphone",
+   "mayonnaise_bottle",
+   "ketchup_bottle",
+   "mug",
+   "table"
+  ]
+ },
+ {
+  "name": "RecycleCartonsVerticalCrateTask",
+  "instruction": {
+   "default": "Put the cartons that can be recycled in the vertical crate",
+   "vague": "Recycle the cartons in the crate",
+   "specific": "Pick up the food cartons that can be recycled and place them into the vertical crate in the center of the table"
+  },
+  "success": [
+   {
+    "func": "object_inside",
+    "params": {
+     "object": [
+      "milk_carton",
+      "orange_juice_carton"
+     ],
+     "container": "container_a01",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "container_a01",
+   "milk_carton",
+   "orange_juice_carton",
+   "alphabet_soup_can",
+   "smartphone",
+   "mayonnaise_bottle",
+   "ketchup_bottle",
+   "mug",
+   "table"
+  ]
+ },
+ {
+  "name": "RedDishesInBinTask",
+  "instruction": {
+   "default": "Put the red dishware in the grey bin",
+   "vague": "Clean up red dishware",
+   "specific": "Pick up each red mug and bowl from the table and place them in the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "mug",
+      "bowl"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "mug",
+   "bowl",
+   "grey_bin",
+   "table",
+   "banana",
+   "rubiks_cube"
+  ]
+ },
+ {
+  "name": "RedItemsInBinTask",
+  "instruction": {
+   "default": "Put all the red things in the grey bin",
+   "vague": "Sort items by color",
+   "specific": "Identify every red-colored object on the table and place each one into the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "mug",
+      "bowl"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "mug",
+   "bowl",
+   "grey_bin",
+   "table",
+   "banana",
+   "rubiks_cube"
+  ]
+ },
+ {
+  "name": "ReorientAllMugsTask",
+  "instruction": {
+   "default": "Reorient all the mugs upright so that the opening is facing upwards.",
+   "vague": "Make sure the mugs are upright",
+   "specific": "Check each mug on the table and if any are tipped over or inverted, rotate them so the opening faces upward. Leave it if it's already upright."
+  },
+  "success": [
+   {
+    "func": "object_upright",
+    "params": {
+     "object": [
+      "red_mug",
+      "ceramic_mug",
+      "sideways_white_mug",
+      "upright_white_mug"
+     ],
+     "up_axis": "z",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "red_mug",
+   "bowl",
+   "ceramic_mug",
+   "upright_white_mug",
+   "sideways_white_mug",
+   "cordless_drill",
+   "measuring_cup",
+   "table"
+  ]
+ },
+ {
+  "name": "ReorientJugTask",
+  "instruction": {
+   "default": "Stand the jug upright",
+   "vague": "Fix the jug",
+   "specific": "Grasp the jug that is tipped on its side place it upright"
+  },
+  "success": [
+   {
+    "func": "object_upright",
+    "params": {
+     "object": [
+      "utilityjug_a02"
+     ],
+     "up_axis": "z",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "large_storage_rack",
+   "whitepackerbottle_a01",
+   "whitepackerbottle_a02",
+   "utilityjug_a01",
+   "utilityjug_a02",
+   "squarepail_a01",
+   "plasticpail_a02",
+   "whitepackerbottle_a03",
+   "table"
+  ]
+ },
+ {
+  "name": "ReorientRedMugTask",
+  "instruction": {
+   "default": "Put the red mug upright so that the opening is facing upwards.",
+   "vague": "Fix the red cup",
+   "specific": "Check the red ceramic mug and if it is tipped over or inverted, rotate it so the opening faces upward. Leave it if already upright."
+  },
+  "success": [
+   {
+    "func": "object_upright",
+    "params": {
+     "object": [
+      "red_mug"
+     ],
+     "up_axis": "z",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "red_mug",
+   "bowl",
+   "ceramic_mug",
+   "upright_white_mug",
+   "sideways_white_mug",
+   "cordless_drill",
+   "measuring_cup",
+   "table"
+  ]
+ },
+ {
+  "name": "ReorientWhiteMugsTask",
+  "instruction": {
+   "default": "Make sure all the white mugs are upright so that the opening is facing upwards.",
+   "vague": "Fix the cups",
+   "specific": "For each white mug that is tipped over or upside down, rotate it so the opening faces straight up"
+  },
+  "success": [
+   {
+    "func": "object_upright",
+    "params": {
+     "object": [
+      "upright_white_mug",
+      "sideways_white_mug"
+     ],
+     "up_axis": "z",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "red_mug",
+   "bowl",
+   "ceramic_mug",
+   "upright_white_mug",
+   "sideways_white_mug",
+   "cordless_drill",
+   "measuring_cup",
+   "table"
+  ]
+ },
+ {
+  "name": "RubiksCubeAndBananaTask",
+  "instruction": {
+   "default": "Put the cube and the banana in the bowl",
+   "vague": "Put everything in the bowl",
+   "specific": "Pick up the rubiks cube and the yellow banana and place both inside the bowl"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "rubiks_cube",
+      "banana"
+     ],
+     "container": "bowl",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "banana",
+   "bowl",
+   "table"
+  ]
+ },
+ {
+  "name": "RubiksCubeBehindBowlTask",
+  "instruction": {
+   "default": "Put the rubiks cube behind the bowl",
+   "vague": "Put the cube behind the bowl",
+   "specific": "Pick up the rubiks cube and place it on the table directly behind the bowl, further from you"
+  },
+  "success": [
+   {
+    "func": "object_behind",
+    "params": {
+     "object": "rubiks_cube",
+     "reference_object": "bowl",
+     "frame_of_reference": "robot",
+     "mirrored": false,
+     "require_contact_with": "table",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "banana",
+   "bowl",
+   "table"
+  ]
+ },
+ {
+  "name": "RubiksCubeInFrontOfBowlTask",
+  "instruction": {
+   "default": "Put the rubiks cube in front of the bowl",
+   "vague": "Put the cube in front of the bowl",
+   "specific": "Pick up the rubiks cube and place it on the table directly in front of the bowl, closer to you"
+  },
+  "success": [
+   {
+    "func": "object_in_front_of",
+    "params": {
+     "object": "rubiks_cube",
+     "reference_object": "bowl",
+     "frame_of_reference": "robot",
+     "mirrored": false,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "banana",
+   "bowl",
+   "table"
+  ]
+ },
+ {
+  "name": "RubiksCubeLeftOfBowlTask",
+  "instruction": {
+   "default": "Put the rubiks cube to the left of the bowl",
+   "vague": "Put the cube left of the bowl",
+   "specific": "Pick up the rubiks cube and place it on the table to the left side of the bowl"
+  },
+  "success": [
+   {
+    "func": "object_left_of",
+    "params": {
+     "object": "rubiks_cube",
+     "reference_object": "bowl",
+     "frame_of_reference": "robot",
+     "mirrored": false,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "banana",
+   "bowl",
+   "table"
+  ]
+ },
+ {
+  "name": "RubiksCubeOrBananaTask",
+  "instruction": {
+   "default": "Put the cube or the banana in the bowl",
+   "vague": "Choose an object and put it in the bowl",
+   "specific": "Choose either the rubiks cube or the yellow banana and place it inside the bowl"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "rubiks_cube",
+      "banana"
+     ],
+     "container": "bowl",
+     "logical": "any",
+     "tolerance": 0.0,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "banana",
+   "bowl",
+   "table"
+  ]
+ },
+ {
+  "name": "RubiksCubeRightOfBowlTask",
+  "instruction": {
+   "default": "Put the rubiks cube to the right of the bowl",
+   "vague": "Put the cube right of the bowl",
+   "specific": "Pick up the rubiks cube and place it on the table to the right side of the bowl"
+  },
+  "success": [
+   {
+    "func": "object_right_of",
+    "params": {
+     "object": "rubiks_cube",
+     "reference_object": "bowl",
+     "frame_of_reference": "robot",
+     "mirrored": false,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "banana",
+   "bowl",
+   "mug",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "Stack3RubiksCubeTask",
+  "instruction": {
+   "default": "Stack the rubiks cubes in a tower",
+   "vague": "Stack everything in a tower",
+   "specific": "Pick up the rubiks cubes and stack them vertically on top of each other on the table"
+  },
+  "success": [
+   {
+    "func": "stacked",
+    "params": {
+     "objects": [
+      "rubiks_cube",
+      "rubiks_cube_1",
+      "rubiks_cube_2"
+     ],
+     "order": "None"
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "rubiks_cube_1",
+   "rubiks_cube_2",
+   "table"
+  ]
+ },
+ {
+  "name": "RubiksCubeTask",
+  "instruction": {
+   "default": "Put the cube in the bowl",
+   "vague": "Put it in the bowl",
+   "specific": "Pick up the rubiks cube that's on the table and place it inside the bowl"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "rubiks_cube",
+     "container": "bowl",
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "bowl",
+   "table"
+  ]
+ },
+ {
+  "name": "RubiksCubeThenBananaTask",
+  "instruction": {
+   "default": "Put the cube then the banana in the bowl",
+   "vague": "Put the cube then banana in the bowl",
+   "specific": "First pick up the rubiks cube that's on the table and place it in the bowl, then pick up the yellow banana and place it in the bowl"
+  },
+  "success": [
+   {
+    "func": "objects_placed_in_container_in_order",
+    "params": {
+     "objects": [
+      "rubiks_cube",
+      "banana"
+     ],
+     "container": "bowl",
+     "tolerance": 0.0,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "rubiks_cube",
+   "banana",
+   "bowl",
+   "table"
+  ]
+ },
+ {
+  "name": "RubiksCubesInBinTask",
+  "instruction": {
+   "default": "Sort all rubiks cubes into the bin",
+   "vague": "Put away rubiks cubes",
+   "specific": "Pick up only the three rubiks cube from the table and place them all into the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "rubiks_cube",
+      "rubiks_cube_1",
+      "rubiks_cube_2"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "rubiks_cube",
+   "rubiks_cube_1",
+   "rubiks_cube_2",
+   "grey_bin",
+   "lizard_figurine",
+   "birdhouse",
+   "yellow_block",
+   "red_block",
+   "green_block",
+   "blue_block",
+   "lizard_figurine_01"
+  ]
+ },
+ {
+  "name": "SauceBottlesCrateTask",
+  "instruction": {
+   "default": "Put the red bbq sauce bottle in the crate",
+   "vague": "Put the red bottle away",
+   "specific": "Pick up the red BBQ sauce bottle and place it inside the wooden crate"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "bbq_sauce_bottle",
+     "container": "purple_crate",
+     "logical": "all",
+     "tolerance": -0.01,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "bbq_sauce_bottle",
+   "purple_crate",
+   "table",
+   "ceramic_mug",
+   "salad_dressing_bottle"
+  ]
+ },
+ {
+  "name": "SmallerObjectButterInBinTask",
+  "instruction": {
+   "default": "Place the smaller object in the grey bin.",
+   "vague": "Put one in the bin",
+   "specific": "Compare the objects on the table, identify the smaller one, and place it in the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "butter",
+     "container": "grey_bin",
+     "tolerance": 0.02,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "butter",
+   "grey_bin",
+   "raisin_box",
+   "table"
+  ]
+ },
+ {
+  "name": "SmartphoneInBinTask",
+  "instruction": {
+   "default": "Put the smartphone in the grey bin",
+   "vague": "Put the phone in the bin",
+   "specific": "Pick up the smartphone in front of you and place it inside the grey bin alongside the keyboard"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "smartphone",
+     "container": "grey_bin",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "granola_bars",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "SpoonInMugTask",
+  "instruction": {
+   "default": "Put the metal spoon that's in the wooden bowl in the mug",
+   "vague": "Put the spoon in the mug",
+   "specific": "Take the metal spoon in the wooden bowl and place it inside the ceramic mug with the handle sticking out"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "spoon_big",
+     "container": "ceramic_mug",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "lizard_figurine",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "granola_bars",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "SpoonsInPotTask",
+  "instruction": {
+   "default": "Put all of the serving spoons with no holes in the pot",
+   "vague": "Put the spoons with no holes in the pot",
+   "specific": "Pick up all of the serving spoons (two green, one red) with no holes from the table and place them inside the cooking pot"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "ladle",
+      "ladle_01",
+      "red_serving_spoon"
+     ],
+     "container": "anza_medium",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "anza_medium",
+   "ladle",
+   "plate_large",
+   "plate_small",
+   "fork_big",
+   "fork_small",
+   "spatula_13",
+   "spatula_14",
+   "spatula_15",
+   "pink_spaghetti_spoon",
+   "ladle_01",
+   "red_serving_spoon",
+   "green_serving_spoon"
+  ]
+ },
+ {
+  "name": "StackWhiteMugsTask",
+  "instruction": {
+   "default": "Stack the white mugs on top of each other.",
+   "vague": "Stack the white mugs ",
+   "specific": "Take a white mug and place it on top of the other white mug"
+  },
+  "success": [
+   {
+    "func": "stacked",
+    "params": {
+     "objects": [
+      "sideways_white_mug",
+      "upright_white_mug"
+     ],
+     "order": "None"
+    }
+   }
+  ],
+  "objects": [
+   "red_mug",
+   "bowl",
+   "ceramic_mug",
+   "upright_white_mug",
+   "sideways_white_mug",
+   "cordless_drill",
+   "measuring_cup",
+   "table"
+  ]
+ },
+ {
+  "name": "StackYellowOnRedTask",
+  "instruction": {
+   "default": "Stack the yellow block on the red block",
+   "vague": "Stack blocks: yellow on red",
+   "specific": "Pick up the yellow block on the left and place it precisely on top of the red block in front of the birdhouse"
+  },
+  "success": [
+   {
+    "func": "stacked",
+    "params": {
+     "objects": [
+      "red_block",
+      "yellow_block"
+     ],
+     "order": "bottom_to_top"
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "rubiks_cube",
+   "rubiks_cube_1",
+   "rubiks_cube_2",
+   "grey_bin",
+   "lizard_figurine",
+   "birdhouse",
+   "yellow_block",
+   "red_block",
+   "green_block",
+   "blue_block",
+   "lizard_figurine_01"
+  ]
+ },
+ {
+  "name": "TakeMeasuringSpoonOutTask",
+  "instruction": {
+   "default": "Take the white colored measuring spoon out of the red bowl and put it on the table.",
+   "vague": "Take the measuring spoon out of the bowl",
+   "specific": "Reach into the bowl, grasp the measuring spoon, lift it out, and place it on the table surface"
+  },
+  "success": [
+   {
+    "func": "object_outside_of",
+    "params": {
+     "object": [
+      "measuring_cup"
+     ],
+     "container": "bowl",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "red_mug",
+   "bowl",
+   "ceramic_mug",
+   "upright_white_mug",
+   "sideways_white_mug",
+   "cordless_drill",
+   "measuring_cup",
+   "table"
+  ]
+ },
+ {
+  "name": "TakeMugsOffOfShelfTask",
+  "instruction": {
+   "default": "Take the mugs off the shelf",
+   "vague": "Clear the shelf",
+   "specific": "Remove each mug from the second level of the shelf and place them on the table below"
+  },
+  "success": [
+   {
+    "func": "object_outside_of_and_on_surface",
+    "params": {
+     "object": [
+      "ceramic_mug",
+      "mug"
+     ],
+     "container": "rack_l04",
+     "surface": "table",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "mug",
+   "rack_l04",
+   "serving_bowl",
+   "utilityjug_a01",
+   "table"
+  ]
+ },
+ {
+  "name": "TakeSpatulaOffShelfTask",
+  "instruction": {
+   "default": "Take the spatula off the shelf and put it on the table",
+   "vague": "Take the spatula off the shelf",
+   "specific": "Reach up and remove the spatula from the shelf, then place it flat on the table surface"
+  },
+  "success": [
+   {
+    "func": "object_outside_of_and_on_surface",
+    "params": {
+     "object": [
+      "spatula_01"
+     ],
+     "container": "wireshelving_a01",
+     "surface": "table",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "wireshelving_a01",
+   "spatula_01",
+   "plate_small",
+   "fork_big",
+   "fork_small",
+   "ceramic_mug",
+   "mug",
+   "mug_01"
+  ]
+ },
+ {
+  "name": "ThrowAwayAppleTask",
+  "instruction": {
+   "default": "Throw away the apple",
+   "vague": "Toss the apple",
+   "specific": "Pick up the red apple from the table and drop it into the grey bin to discard it"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "apple_01",
+     "container": "plasticpail_a02",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "pitcher",
+   "plasticpail_a02",
+   "apple_01",
+   "table"
+  ]
+ },
+ {
+  "name": "ThrowAwaySnacksTask",
+  "instruction": {
+   "default": "Put away the snacks in the bin",
+   "vague": "Throw away the snacks",
+   "specific": "Pick up each snack item from the table and drop it into the bin to discard"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "apple_01",
+      "yogurt_cup"
+     ],
+     "container": "plasticpail_a02",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "ceramic_mug",
+   "glasses",
+   "keyboard",
+   "marker",
+   "remote_control",
+   "smartphone",
+   "wooden_bowl",
+   "spoon_big",
+   "computer_mouse",
+   "yogurt_cup",
+   "pitcher",
+   "plasticpail_a02",
+   "apple_01",
+   "table"
+  ]
+ },
+ {
+  "name": "ToolOrganizationBothTask",
+  "instruction": {
+   "default": "Put hammers in the right bin and do not touch anything else",
+   "vague": "Put hammers in the right bin",
+   "specific": "Pick up the red hammer and the black hammer and place them in the bin on the right side, leaving all other tools untouched"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "red_hammer",
+      "husky_hammer"
+     ],
+     "container": "right_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "left_bin",
+   "right_bin",
+   "red_hammer",
+   "husky_hammer",
+   "cordless_drill",
+   "spring_clamp",
+   "table"
+  ]
+ },
+ {
+  "name": "HammersInLeftBinTask",
+  "instruction": {
+   "default": "Put the red hammer and black hammer in the left bin",
+   "vague": "Put hammers in the left bin",
+   "specific": "Pick up the red-handled hammer and the black-handled hammer and place both in the left bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "red_hammer",
+      "husky_hammer"
+     ],
+     "container": "left_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "left_bin",
+   "right_bin",
+   "red_hammer",
+   "husky_hammer",
+   "cordless_drill",
+   "spring_clamp",
+   "table"
+  ]
+ },
+ {
+  "name": "ToolOrganizationTask",
+  "instruction": {
+   "default": "Put the red hammer and black hammer in the left bin",
+   "vague": "Put hammers in the left bin",
+   "specific": "Pick up the red-handled hammer and the black-handled hammer and place both in the left bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "red_hammer",
+      "husky_hammer"
+     ],
+     "container": "left_bin",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "left_bin",
+   "right_bin",
+   "red_hammer",
+   "husky_hammer",
+   "cordless_drill",
+   "spring_clamp",
+   "table"
+  ]
+ },
+ {
+  "name": "ToolsPickingAllHammersTask",
+  "instruction": {
+   "default": "Take out all the hammers and put them on the table",
+   "vague": "Empty the hammers bin",
+   "specific": "Remove every hammer from the left bin and place each one on the table in front of you"
+  },
+  "success": [
+   {
+    "func": "object_outside_of_and_on_surface",
+    "params": {
+     "object": [
+      "husky_hammer",
+      "blue_hammer",
+      "red_hammer",
+      "wood_hammer"
+     ],
+     "container": "left_bin",
+     "surface": "table",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "clamp",
+   "cordless_drill",
+   "spring_clamp",
+   "husky_hammer",
+   "blue_hammer",
+   "red_hammer",
+   "wood_hammer",
+   "left_bin",
+   "center_bin",
+   "right_bin",
+   "clamp_01"
+  ]
+ },
+ {
+  "name": "ToolsPickingDrillTask",
+  "instruction": {
+   "default": "Select the cordless drill and put it on the table",
+   "vague": "Get the drill",
+   "specific": "Pick up the cordless electric drill and place it on the table surface"
+  },
+  "success": [
+   {
+    "func": "object_outside_of_and_on_surface",
+    "params": {
+     "object": [
+      "cordless_drill"
+     ],
+     "container": "left_bin",
+     "surface": "table",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "clamp",
+   "cordless_drill",
+   "spring_clamp",
+   "husky_hammer",
+   "blue_hammer",
+   "red_hammer",
+   "wood_hammer",
+   "left_bin",
+   "center_bin",
+   "right_bin",
+   "clamp_01"
+  ]
+ },
+ {
+  "name": "ToolsPickingHammerTask",
+  "instruction": {
+   "default": "Select the blue hammer and put it on the table",
+   "vague": "Get the blue hammer",
+   "specific": "Reach into the tool area, grasp the blue-handled hammer, and place it flat on the table surface"
+  },
+  "success": [
+   {
+    "func": "object_outside_of_and_on_surface",
+    "params": {
+     "object": [
+      "blue_hammer"
+     ],
+     "container": "left_bin",
+     "surface": "table",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "clamp",
+   "cordless_drill",
+   "spring_clamp",
+   "husky_hammer",
+   "blue_hammer",
+   "red_hammer",
+   "wood_hammer",
+   "left_bin",
+   "center_bin",
+   "right_bin",
+   "clamp_01"
+  ]
+ },
+ {
+  "name": "UnstackRubiksCubeTask",
+  "instruction": {
+   "default": "Unstack the rubiks cube tower",
+   "vague": "Unstack the tower",
+   "specific": "Remove each rubiks cube from the stacked tower one at a time and place them separately on the table"
+  },
+  "success": [
+   {
+    "func": "object_outside_of_and_on_surface",
+    "params": {
+     "object": [
+      "rubiks_cube_middle",
+      "rubiks_cube_top",
+      "rubiks_cube_bottom"
+     ],
+     "container": "grey_bin",
+     "surface": "table",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "mug",
+   "banana",
+   "ketchup_bottle",
+   "rubiks_cube_middle",
+   "rubiks_cube_top",
+   "rubiks_cube_bottom",
+   "bowl",
+   "grey_bin",
+   "table"
+  ]
+ },
+ {
+  "name": "UtensilsInMugTask",
+  "instruction": {
+   "default": "Put the fork and spoon in the ceramicmug",
+   "vague": "Put the utensils in the mug",
+   "specific": "Take the fork on the bagel plate and put it in the ceramic mug, and take the spoon from the red bowl and put it in the mug"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "fork_big",
+      "spoon_big"
+     ],
+     "container": "ceramic_mug",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "bowl",
+   "banana",
+   "bagel_07",
+   "coffee_can",
+   "banana_01",
+   "yogurt_cup",
+   "coffee_pot",
+   "ceramic_mug",
+   "pitcher",
+   "fork_big",
+   "spoon_big",
+   "apple_01",
+   "orange2",
+   "milk_carton",
+   "orange_juice_carton",
+   "bagel_01",
+   "bagel_02",
+   "plate_small",
+   "plate_large"
+  ]
+ },
+ {
+  "name": "WhiteMugInCenterOfTableTask",
+  "instruction": {
+   "default": "Put the white mug in the center of the table.",
+   "vague": "Move the mug to the center",
+   "specific": "Pick up the white ceramic mug and place it in the center of the table surface away from the other objects"
+  },
+  "success": [
+   {
+    "func": "object_on_center",
+    "params": {
+     "object": "mug",
+     "reference_object": "table",
+     "tolerance": 0.05,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "mug",
+   "bowl",
+   "table",
+   "alphabet_soup_can",
+   "orange_juice_carton",
+   "smartphone",
+   "milk_carton",
+   "banana",
+   "rubiks_cube"
+  ]
+ },
+ {
+  "name": "WhiteMugsInBinTask",
+  "instruction": {
+   "specific": "Put the two white mugs in the grey bin",
+   "default": "Clean up the white mugs",
+   "vague": "Put away all mugs"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "mug",
+      "mug_01"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "mug",
+   "mug_01",
+   "grey_bin",
+   "banana_near",
+   "banana_far",
+   "rubiks_cube_middle",
+   "rubiks_cube_top",
+   "rubiks_cube_bottom",
+   "ketchup_bottle",
+   "table",
+   "bowl"
+  ]
+ },
+ {
+  "name": "WoodSpatulaToBowlTask",
+  "instruction": {
+   "default": "Put the wooden spatula in the bowl",
+   "vague": "Put the wood utensil in the bowl",
+   "specific": "Pick up the wooden spatula from the utensils box on the table and place it inside the wooden bowl in the center of the table"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "wooden_spoons"
+     ],
+     "container": "wooden_bowl",
+     "logical": "all",
+     "tolerance": 0.0,
+     "require_contact_with": true,
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "lemon_01",
+   "lemon_02",
+   "lime01",
+   "lime01_01",
+   "orange_01",
+   "orange_02",
+   "pomegranate01",
+   "pumpkinlarge",
+   "pumpkinsmall",
+   "redonion",
+   "serving_bowl",
+   "clay_plates",
+   "wooden_bowl",
+   "wooden_spoons",
+   "spatula",
+   "storage_box"
+  ]
+ },
+ {
+  "name": "YellowAndWhiteObjectsInBinTask",
+  "instruction": {
+   "default": "Put all white objects and yellow objects in the grey bin",
+   "vague": "Clean up white and yellow objects",
+   "specific": "Identify the white-colored and yellow-colored object on the table and place each one into the grey bin"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": [
+      "mug",
+      "banana"
+     ],
+     "container": "grey_bin",
+     "logical": "all",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "mug",
+   "banana",
+   "grey_bin",
+   "table",
+   "bowl",
+   "ketchup_bottle",
+   "rubiks_cube_top",
+   "rubiks_cube_middle",
+   "rubiks_cube_bottom"
+  ]
+ },
+ {
+  "name": "YogurtInBowlTask",
+  "instruction": {
+   "default": "Put the small red yogurt in the red bowl",
+   "vague": "Put the yogurt in the bowl",
+   "specific": "Pick up the small red yogurt container and place it inside the red bowl"
+  },
+  "success": [
+   {
+    "func": "object_in_container",
+    "params": {
+     "object": "yogurt_cup",
+     "container": "bowl",
+     "require_gripper_detached": true
+    }
+   }
+  ],
+  "objects": [
+   "table",
+   "bowl",
+   "banana",
+   "bagel_07",
+   "coffee_can",
+   "banana_01",
+   "yogurt_cup",
+   "coffee_pot",
+   "ceramic_mug",
+   "pitcher",
+   "fork_big",
+   "spoon_big",
+   "apple_01",
+   "orange2",
+   "milk_carton",
+   "orange_juice_carton",
+   "bagel_01",
+   "bagel_02",
+   "plate_small",
+   "plate_large"
+  ]
+ }
+]
