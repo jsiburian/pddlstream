@@ -3,7 +3,7 @@ import functools
 import inspect
 import logging
 from collections import Counter
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 
 from pddlstream.algorithms.common import SOLUTIONS
 from pddlstream.algorithms.constraints import add_plan_constraints
@@ -21,9 +21,10 @@ from pddlstream.core.context import (
 from pddlstream.core.conversion import obj_from_value_expression
 from pddlstream.core.evaluations import evaluations_from_init
 from pddlstream.core.log import console_output
-from pddlstream.core.objects import DebugValue, Object, OptimisticObject
+from pddlstream.core.objects import Object
+from pddlstream.core.registry import get_registry, use_registry
 from pddlstream.core.syntax import get_args, get_prefix
-from pddlstream.core.utils import INF, reset_creation_hashes
+from pddlstream.core.utils import INF
 from pddlstream.fastdownward.tasks import (
     has_costs,
     normalize_domain_goal,
@@ -32,11 +33,11 @@ from pddlstream.fastdownward.tasks import (
     parse_sequential_domain,
     set_unit_costs,
 )
-from pddlstream.language.exogenous import FutureValue, compile_to_exogenous
+from pddlstream.language.exogenous import compile_to_exogenous
 from pddlstream.language.external import External
 from pddlstream.language.function import parse_function, parse_predicate
 from pddlstream.language.optimizer import parse_optimizer
-from pddlstream.language.rule import RULES, apply_rules_to_streams, parse_rule
+from pddlstream.language.rule import apply_rules_to_streams, parse_rule
 from pddlstream.language.stream import Stream, StreamInstance, parse_stream
 
 logger = logging.getLogger(__name__)
@@ -89,13 +90,7 @@ def check_problem(domain, streams, obj_from_constant):
 
 
 def reset_registries():
-    # TODO: maintain these dictionaries in an object
-    Object.reset()
-    OptimisticObject.reset()
-    DebugValue._output_counts.clear()
-    FutureValue._output_counts.clear()
-    RULES[:] = []
-    reset_creation_hashes()
+    get_registry().clear()
 
 
 def reset_globals():
@@ -104,25 +99,27 @@ def reset_globals():
 
 
 @contextmanager
-def solve_scope(config=None, record=None):
+def solve_scope(config=None, record=None, registry=None):
     """Makes config (by default the current one) the current solve's configuration while solving. With
     config.deterministic, decisions based on elapsed time use work units instead of seconds (max_time is still
     wall-clock time). Nested solves keep the outer solve's clock, and its record unless given one (each solver run
-    gets its own). After the outermost solve, the object registries are cleared, so every solve starts from the same
-    state."""
+    gets its own). After the outermost solve, the current object registry is cleared, so every solve starts from the
+    same state; a registry passed in (e.g. by a planner session) is used instead and kept."""
     config = apply_legacy_flags(config or get_config())
     outer = get_context()
+    objects = nullcontext() if registry is None else use_registry(registry)
     if outer is not None:
-        with activate(SolveContext(config, outer.clock, record or outer.record)):
+        with objects, activate(SolveContext(config, outer.clock, record or outer.record)):
             yield
         return
     clock = WorkClock() if config.deterministic else WallClock()
     try:
-        with activate(SolveContext(config, clock, record or SolveRecord())), console_output():
+        with objects, activate(SolveContext(config, clock, record or SolveRecord())), console_output():
             yield
     finally:
         # Cleared afterwards rather than beforehand because callers may create objects before solving (satisfaction)
-        reset_registries()
+        if registry is None:
+            reset_registries()
 
 
 def scoped_solve(solve_fn):
@@ -193,7 +190,7 @@ def parse_streams(streams, rules, stream_pddl, procedure_map, procedure_info, us
         if name == ':stream':
             externals = [parse_stream(lisp_list, procedure_map, procedure_info)]
         elif name == ':rule':
-            externals = [parse_rule(lisp_list, procedure_map, procedure_info)]
+            externals = [parse_rule(lisp_list, procedure_map, procedure_info, index=len(rules))]
         elif name == ':function':
             if not use_functions:
                 continue

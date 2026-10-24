@@ -2,7 +2,8 @@
 
 pddlstream.algorithms.algorithm.solve_scope makes a SolveContext current for the duration of a solve, and code deep
 inside the solver reads it with get_config(), get_clock() and get_record(). Outside a solve, they return the defaults.
-The object registries are not part of the context: they are process-wide and cleared after each top-level solve.
+The objects are not part of the context: they live in a registry per thread (core/registry.py), cleared after each
+top-level solve unless the caller supplies its own.
 """
 
 import contextlib

@@ -192,9 +192,9 @@ def fact_from_evaluation(evaluation):
 
 
 def obj_from_pddl(pddl):
-    if pddl in Object._obj_from_name:
+    if Object.has_name(pddl):
         return Object.from_name(pddl)
-    elif pddl in OptimisticObject._obj_from_name:
+    elif OptimisticObject.has_name(pddl):
         return OptimisticObject.from_name(pddl)
     raise ValueError(pddl)
 

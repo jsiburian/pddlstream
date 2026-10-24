@@ -1,6 +1,4 @@
 import logging
-from collections import defaultdict
-from itertools import count
 
 from pddlstream.core.context import get_config
 from pddlstream.core.conversion import (
@@ -31,8 +29,6 @@ REPLACE_STREAM = True
 
 class FutureValue(DebugValue):
     """A placeholder for a value that an exogenous stream will produce once its inputs are known."""
-
-    _output_counts = defaultdict(count)  # Counted separately from DebugValue's
 
 
 class FutureStream(Stream):

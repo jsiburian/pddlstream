@@ -16,6 +16,8 @@ from itertools import count
 
 import numpy as np
 
+from pddlstream.core.registry import get_registry
+
 logger = logging.getLogger(__name__)
 
 INF = float('inf')
@@ -105,16 +107,14 @@ def elapsed_time(start_time):
 
 # Reproducibility: with PYTHONHASHSEED fixed and seeded samplers, a deterministic solve repeats exactly
 
-_creation_counter = count()
-
 
 class CreationHash:
-    """Hashes objects by creation order instead of memory address, so iterating over a set of them visits them in
-    the same order on every run. Equality is still identity."""
+    """Hashes objects by creation order (counted by the current registry) instead of memory address, so iterating
+    over a set of them visits them in the same order on every run. Equality is still identity."""
 
     def __new__(cls, *args, **kwargs):
         self = super().__new__(cls)
-        self._hash = next(_creation_counter)
+        self._hash = next(get_registry().hashes)
         return self
 
     def __hash__(self):
@@ -122,8 +122,7 @@ class CreationHash:
 
 
 def reset_creation_hashes():
-    global _creation_counter
-    _creation_counter = count()
+    get_registry().hashes = count()
 
 
 def safe_zip(sequence1, sequence2):

@@ -1,10 +1,13 @@
 """Seeded solves with deterministic=True must repeat exactly, including a second solve in the same process."""
 
+import threading
+
 from pddlstream.algorithms.algorithm import solve_scope
 from pddlstream.algorithms.meta import solve
 from pddlstream.core.config import INF, SolverConfig
 from pddlstream.core.context import WallClock, WorkClock, get_clock, get_config
 from pddlstream.core.objects import Object
+from pddlstream.core.registry import Registry, get_registry
 from pddlstream.core.utils import CreationHash
 from pddlstream.fastdownward.translator import pddl
 
@@ -27,6 +30,27 @@ def test_solve_scope():
         assert Object.has_value('value')
     assert isinstance(get_clock(), WallClock)
     assert not Object.has_value('value')  # Registries are cleared after the outermost solve
+
+
+def test_supplied_registry_is_kept():
+    registry = Registry()
+    with solve_scope(registry=registry):
+        Object.from_value('value')
+        assert get_registry() is registry
+    assert not Object.has_value('value')  # The current registry is untouched
+    with solve_scope(registry=registry):
+        assert Object.has_value('value')  # The supplied one keeps its objects
+
+
+def test_registry_per_thread():
+    Object.from_value('main')
+    seen = []
+    thread = threading.Thread(target=lambda: seen.append((get_registry(), Object.has_value('main'))))
+    thread.start()
+    thread.join()
+    [(registry, has_main)] = seen
+    assert (registry is not get_registry()) and not has_main
+    get_registry().clear()
 
 
 def test_fastdownward_hashes():

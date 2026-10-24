@@ -11,27 +11,24 @@ from pddlstream.language.external import parse_lisp_list
 from pddlstream.language.generator import from_test, universe_test
 from pddlstream.language.stream import Stream, StreamInfo
 
-RULES: list = []  # TODO: no global
 
-
-def parse_rule(lisp_list, stream_map, stream_info):
+def parse_rule(lisp_list, stream_map, stream_info, index=0):
+    """A rule as a stream that always succeeds, named rule<index>."""
     value_from_attribute = parse_lisp_list(lisp_list[1:])
     assert set(value_from_attribute) <= {':inputs', ':domain', ':certified'}
     # TODO: if len(certified) == 1, augment existing streams
-    RULES.append(
-        Stream(
-            name=f'rule{len(RULES)}',
-            gen_fn=from_test(universe_test),
-            inputs=value_from_attribute.get(':inputs', []),
-            domain=list_from_conjunction(value_from_attribute.get(':domain', [])),
-            fluents=[],
-            outputs=[],
-            certified=list_from_conjunction(value_from_attribute.get(':certified', [])),
-            info=StreamInfo(eager=True, p_success=1, overhead=0, verbose=False),
-        )
+    return Stream(
+        name=f'rule{index}',
+        gen_fn=from_test(universe_test),
+        inputs=value_from_attribute.get(':inputs', []),
+        domain=list_from_conjunction(value_from_attribute.get(':domain', [])),
+        fluents=[],
+        outputs=[],
+        certified=list_from_conjunction(value_from_attribute.get(':certified', [])),
+        info=StreamInfo(
+            eager=True, p_success=1, overhead=0, verbose=False
+        ),  # TODO: p_success=0 to prevent use in search
     )
-    return RULES[-1]
-    # TODO: could make p_success=0 to prevent use in search
 
 
 ##################################################
