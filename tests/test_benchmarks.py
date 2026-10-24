@@ -11,7 +11,7 @@ import pytest
 from benchmarks.common.goals import UnsupportedTask, coverage, goal_from_task, goal_literals
 from benchmarks.common.language import ScriptedAgent, score, symbolic_problem
 from benchmarks.common.policy import Reobserve, TampPolicy
-from benchmarks.common.primitives import Pose, collides, objects_collide, point_grasps, solve_ik
+from benchmarks.common.primitives import Pose, collides, get_procedures, objects_collide, point_grasps, solve_ik
 from benchmarks.common.protocol import Conditional, ObjectSpec, TaskSpec, observation_from_json, task_from_json, to_json
 from benchmarks.common.remote import start_server
 from benchmarks.common.skills import PRESS, compile_skills
@@ -249,6 +249,29 @@ def test_reobserve_needs_the_object():
         policy.actions, policy.expected = [Reobserve('banana')], [{}]  # The banana stayed on the table
         policy.act(observation)
         assert policy.held is None and policy.plans[-1]['plan'][0].startswith('move_free(')
+    finally:
+        policy.close()
+
+
+def test_preferred_goal_and_stacking():
+    # A disjunctive goal is first tried with its nearest alternative; a block stacks on a block its own size
+    blocks = [ObjectSpec(name, (0.047, 0.047, 0.047)) for name in 'abc'] + [
+        ObjectSpec('bin', (0.3, 0.2, 0.1), 'container')
+    ]
+    policy = TampPolicy(blocks, gripper='robotiq', containment='center')
+    try:
+        world = policy.world
+        policy.poses = {
+            name: Pose(world, name, ((x, y, 0.0235), (0, 0, 0, 1)))
+            for name, x, y in [('a', 0.5, 0.0), ('b', 0.3, 0.3), ('c', 0.5, 0.3), ('bin', 0.55, 0.05)]
+        }
+        goal = ('or', ('and', ('On', 'b', 'bin')), ('and', ('On', 'a', 'bin')))
+        assert policy.preferred(goal) == ('and', ('On', 'a', 'bin'))
+        for pose in policy.poses.values():
+            pose.assign()
+        samples = get_procedures(world)['sample-pose']('a', 'c', policy.poses['c'])
+        value = next(batch for batch in samples if batch)[0][0].value  # Batches of output tuples
+        assert np.linalg.norm(np.array(value[0][:2]) - [0.5, 0.3]) < 0.02 and value[0][2] > 0.06  # On top of c
     finally:
         policy.close()
 

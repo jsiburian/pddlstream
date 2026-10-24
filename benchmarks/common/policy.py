@@ -18,6 +18,7 @@ from pddlstream.algorithms.session import PlannerSession, WorldPatch
 from pddlstream.algorithms.validate import verify_certificate
 from pddlstream.core.conversion import values_from_objects
 from pddlstream.core.problem import PDDLProblem
+from pddlstream.core.syntax import AND, OR
 from pddlstream.core.utils import read
 
 logger = logging.getLogger(__name__)
@@ -114,21 +115,50 @@ class TampPolicy:
         self.conf = Conf(observation.arm)
         self.domain_pddl = compile_skills(read(os.path.join(DIRECTORY, 'domain.pddl')), self.skills.values())
         self.replans, self.skill_run, self.plans, self.prefix, self.held = 0, None, [], [], None
-        obstacles = self.obstacles() if self.focus else []
-        for name in obstacles:  # Fixed for a first, smaller solve
-            self.world.set_kind(name, 'obstacle')
-        self.start(max_time=min(self.max_time, self.focus_time) if obstacles else self.max_time)
-        if obstacles and (self.status == 'failed'):  # Maybe one is in the way: solve again with them all movable
-            logger.info(f'No plan with {obstacles} fixed: planning with them movable')
-            for name in obstacles:
-                self.world.set_kind(name, 'movable')
-            self.session.close()
-            self.start()
+        goal = self.goal
+        attempts = [(goal, self.focus)] + ([(goal, False)] if self.focus else [])
+        if self.focus and (self.preferred(goal) != goal):  # One of its alternatives first
+            attempts.insert(0, (self.preferred(goal), True))
+        for index, (self.goal, focused) in enumerate(attempts):
+            obstacles = self.obstacles() if focused else []
+            for name in self.world.specs:
+                if self.world.specs[name].kind in ('movable', 'obstacle'):
+                    self.world.set_kind(name, 'obstacle' if name in obstacles else 'movable')
+            if index:
+                logger.info(f'No plan: planning for {self.goal} with {obstacles} fixed')
+                self.session.close()
+            last = index == len(attempts) - 1
+            self.start(max_time=self.max_time if last else min(self.max_time, self.focus_time))
+            if self.status != 'failed':
+                break
+
+    def preferred(self, goal):
+        """The goal with one alternative at each disjunction: the one whose objects are nearest the objects they go
+        in or on (e.g. which 2 of 5 bananas to put in the crate, or in which order to stack blocks)."""
+        if goal[0] == OR:
+            return self.preferred(min(goal[1:], key=self.distance))
+        if goal[0] == AND:
+            return (AND, *(self.preferred(part) for part in goal[1:]))
+        return goal
+
+    def distance(self, goal):
+        """How far a goal's objects are from what they go on, in the plane."""
+        total = 0.0
+        for literal in goal_literals(goal):
+            if (literal[0] == 'On') and all(name in self.poses for name in literal[1:]):
+                positions = [np.array(self.poses[name].value[0][:2]) for name in literal[1:]]
+                total += np.linalg.norm(positions[0] - positions[1])
+        return total
 
     def obstacles(self):
-        """The movable objects that the goal does not mention."""
+        """The movable (or fixed) objects that the goal does not mention."""
         mentioned = {argument for literal in goal_literals(self.goal) for argument in literal[1:]}
-        return [name for name in self.world.movables if (name in self.poses) and (name not in mentioned)]
+        kinds = ('movable', 'obstacle')
+        return [
+            name
+            for name, spec in self.world.specs.items()
+            if (spec.kind in kinds) and (name in self.poses) and (name not in mentioned)
+        ]
 
     def start(self, max_time=None):
         """Starts a planner session for the current world and goal, and plans."""

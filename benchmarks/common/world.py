@@ -172,7 +172,8 @@ class World:
         self.names = {body: other for other, body in self.bodies.items()}
 
     def container_aabb(self, name):
-        """The AABB of a container at its pose: of its points, which its body (only its base) does not span."""
+        """The AABB of an object at its pose, from its points if it has them: a container's body (only its base) does
+        not span them."""
         spec = self.specs[name]
         if not spec.points:
             return pbu.get_aabb(self.bodies[name])

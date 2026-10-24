@@ -13,7 +13,8 @@ APPROACH = pbu.Pose(point=pbu.Point(z=-0.1))  # The gripper approaches 10 cm alo
 CENTER_MARGIN = 0.02  # With 'center' containment, object centers stay this far inside a container's footprint
 PAD_HALF_WIDTH = 0.011  # Half a finger pad's width, across the direction the fingers close in
 GRASP_DEPTH = 0.035  # How far below the top of the slice it grasps the tool frame goes (the pads are longer)
-FINGER_CLEARANCE = 0.01  # Room left between the object and each open finger, and above the table
+FINGER_CLEARANCE = 0.005  # Room left between the object and each open finger
+TABLE_CLEARANCE = 0.01  # Room left between the fingertips and the bottom of the object they grasp
 OBJECT_CONTACT = 0.005  # Meters two objects' shapes may overlap without colliding (see objects_collide)
 MOTION_TIME = 5  # Seconds for one motion-planning call: the solve's max_time is checked only between calls
 SELF_COLLISIONS = False  # PyBullet's Panda model reports contacts between the hand and its fingers
@@ -83,9 +84,11 @@ def get_procedures(world, teleport=False):
     def sample_pose(name, surface, surface_pose):
         surface_pose.assign()
         body, support = world.bodies[name], world.bodies.get(surface, world.table)
-        container = world.specs[surface].kind == 'container' if surface in world.specs else False
+        # With 'center' containment, an object is in or on another (but the table) when its center is over it, as
+        # RoboLab checks; the whole object rarely fits on an object its own size at a random turn (stacked blocks)
+        on_object = (surface in world.specs) and (world.containment == 'center')
         while True:
-            if container and world.containment == 'center':
+            if on_object:
                 value = pbu.sample_placement_on_aabb(body, center_region(world.container_aabb(surface)), percent=0.0)
             else:
                 value = pbu.sample_placement(body, support)
@@ -266,7 +269,7 @@ def point_grasps(points, max_width, yaws=16, num_centers=24, max_grasps=16):
                 continue
             point = center + close * (low + high) / 2  # The middle of the slice
             top = points[under_pads, 2].max()
-            z = max(top - GRASP_DEPTH, bottom + FINGER_CLEARANCE + 0.01)  # The fingertips are 1 cm below the tool
+            z = max(top - GRASP_DEPTH, bottom + TABLE_CLEARANCE + 0.01)  # The fingertips are 1 cm below the tool
             # The tool approaches down (-z) and its fingers close along its y axis
             rotation = np.array([[across[0], close[0], 0.0], [across[1], close[1], 0.0], [0.0, 0.0, -1.0]])
             object_from_tool = ((point[0], point[1], z), pbu.quat_from_matrix(rotation))
