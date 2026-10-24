@@ -64,6 +64,13 @@ too, where it used to leave `preimage_facts` as `None`.
 An exception raised by a stream now carries a note naming the call. `stream_errors='fail'` treats such a call as
 exhausted instead of stopping the solve.
 
+## Types and errors
+
+- Domains may declare `:types`, which used to be rejected (see [writing streams](writing-streams.md)).
+- Combinations that an algorithm does not support (the incremental algorithm with fluent streams, optimizers without
+  the adaptive algorithm) raise `CapabilityError`, a `NotImplementedError`, instead of an `AssertionError` or a bare
+  `NotImplementedError`.
+
 ## Output and files
 
 - Progress is reported through `logging` (loggers under `pddlstream`). Without a logging configuration it is still

@@ -10,6 +10,9 @@ A PDDLStream problem is a `PDDLProblem(domain_pddl, constant_map, stream_pddl, s
   Python values (numpy arrays included); pddlstream wraps them in objects.
 - `goal`: a formula, e.g. `And(('Holding', 'b1'))` or `Exists(['?p'], ('AtPose', 'b1', '?p'))`.
 
+The domain may declare `:types`. Types become unary predicates, so objects get their types from facts, such as
+`('Block', 'b1')` in `init` or `(Block ?b)` certified by a stream; the facts for supertypes are added automatically.
+
 ```python
 from pddlstream import solve, PDDLProblem, And, from_fn, from_gen_fn, from_test, print_solution
 
@@ -102,6 +105,8 @@ A *wild* stream returns `WildOutput(values, facts)` to certify facts beyond its 
 
 ## Debugging
 
+- `describe(problem)` lists what a problem declares (predicates, actions, streams with their source lines), the
+  language features it uses, and lint issues such as undeclared predicates or predicates used with the wrong arity.
 - `stream_map=DEBUG` (or `SHARED_DEBUG`) replaces every procedure with placeholder outputs, which tests the domain
   and stream declarations before the samplers exist.
 - `verbose=True` (the default) prints every stream call, and `debug=True` prints FastDownward's output and keeps
