@@ -12,7 +12,7 @@ from pddlstream.language.stream import StreamInfo
 APPROACH = pbu.Pose(point=pbu.Point(z=-0.1))  # The gripper approaches 10 cm along its axis
 CENTER_MARGIN = 0.02  # With 'center' containment, object centers stay this far inside a container's footprint
 PAD_HALF_WIDTH = 0.011  # Half a finger pad's width, across the direction the fingers close in
-GRASP_DEPTH = 0.02  # How far below an object's top the tool frame goes
+GRASP_DEPTH = 0.035  # How far below the top of the slice it grasps the tool frame goes (the pads are longer)
 FINGER_CLEARANCE = 0.01  # Room left between the object and each open finger, and above the table
 SELF_COLLISIONS = False  # PyBullet's Panda model reports contacts between the hand and its fingers
 IK_ATTEMPTS = 10
