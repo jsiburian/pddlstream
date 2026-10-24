@@ -9,6 +9,7 @@ import pstats
 import shutil
 import sys
 import tempfile
+import threading
 import time
 from collections import Counter, defaultdict, deque
 from heapq import heappop, heappush
@@ -267,22 +268,56 @@ class Profiler(Saver):
         return stats
 
 
-class Verbose(Saver):  # TODO: use DisableOutput
+class _QuietOutput:
+    """sys.stdout while some thread suppresses its output: drops the writes of the threads that do."""
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, text):
+        return len(text) if _quiet.depth else self.stream.write(text)
+
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+
+class _QuietState(threading.local):
+    depth = 0  # How many Verbose(False) blocks the current thread is in
+
+
+_quiet = _QuietState()
+_quiet_lock = threading.Lock()
+_quiet_threads = 0  # Threads that currently suppress output
+
+
+class Verbose(Saver):
+    """Suppresses the current thread's printed output (e.g. FastDownward's translator) unless verbose. Other threads
+    keep printing, so concurrent solves can each suppress their own."""
+
     def __init__(self, verbose=False):
         self.verbose = verbose
 
     def save(self):
+        global _quiet_threads
         if self.verbose:
             return
-        self.stdout = sys.stdout
-        self.devnull = open(os.devnull, 'w')
-        sys.stdout = self.devnull
+        _quiet.depth += 1
+        if _quiet.depth == 1:
+            with _quiet_lock:
+                _quiet_threads += 1
+                if not isinstance(sys.stdout, _QuietOutput):
+                    sys.stdout = _QuietOutput(sys.stdout)
 
     def restore(self):
+        global _quiet_threads
         if self.verbose:
             return
-        sys.stdout = self.stdout
-        self.devnull.close()
+        _quiet.depth -= 1
+        if _quiet.depth == 0:
+            with _quiet_lock:
+                _quiet_threads -= 1
+                if (_quiet_threads == 0) and isinstance(sys.stdout, _QuietOutput):
+                    sys.stdout = sys.stdout.stream
 
 
 ##################################################
