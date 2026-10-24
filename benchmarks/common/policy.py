@@ -24,7 +24,6 @@ DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 TABLE = 'table'
 OPEN, CLOSED = 0.0, 1.0
 MAX_JOINT_STEP = 0.05  # Radians between consecutive actions
-GRIPPER_STEPS = 5  # Actions that hold the arm still while the gripper opens or closes
 TOLERANCE = 0.03  # Meters an object may be from where the plan expects it before replanning
 
 
@@ -173,7 +172,7 @@ class TampPolicy:
                     positions.pop(obj, None)  # Held objects are not monitored
                 else:
                     positions[obj] = pose.value[0]
-                add([trajectory.path[-1]] * GRIPPER_STEPS)
+                add([trajectory.path[-1]] * self.world.gripper.settle_steps)
                 add(trajectory.path[::-1])
         return actions, expected
 
