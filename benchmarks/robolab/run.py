@@ -34,7 +34,7 @@ from robolab.core.world.world_state import get_world  # noqa: E402
 from robolab.eval.episode import run_episode  # noqa: E402
 from robolab.registrations.droid.auto_env_registrations_jointpos import auto_register_droid_envs  # noqa: E402
 
-from benchmarks.common.world import ObjectSpec  # noqa: E402
+from benchmarks.common.protocol import ObjectSpec  # noqa: E402
 from benchmarks.robolab.client import TampInferenceClient, task_spec_from_robolab  # noqa: E402
 
 FIXTURES = {'table', 'robot'}  # The planner models the robot and the table itself

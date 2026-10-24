@@ -10,14 +10,18 @@ import pytest
 
 from benchmarks.common.goals import UnsupportedTask, coverage, goal_from_task, goal_literals
 from benchmarks.common.language import ScriptedAgent, score, symbolic_problem
-from benchmarks.common.protocol import Conditional, TaskSpec, observation_from_json, task_from_json, to_json
+from benchmarks.common.policy import TampPolicy
+from benchmarks.common.protocol import Conditional, ObjectSpec, TaskSpec, observation_from_json, task_from_json, to_json
 from benchmarks.common.remote import start_server
 from benchmarks.common.skills import PRESS, compile_skills
+from benchmarks.common.world import World
 from benchmarks.standin.env import SCENARIOS, StandinEnv
 from benchmarks.standin.episodes import generate, load, replay, run_episode
+from examples.pybullet.utils.pybullet_tools import utils as pbu
 from pddlstream.tools import Toolbox, Workspace
 
 FIXTURES = pathlib.Path(__file__).with_name('fixtures') / 'robolab_tasks.json'
+LIVE_PROBE = pathlib.Path(__file__).with_name('fixtures') / 'robolab_live_probe.json'
 
 
 def test_goals():
@@ -44,6 +48,37 @@ def test_robolab_coverage():
         if task.name in supported:
             for literal in goal_literals(goal_from_task(task)):
                 assert literal[0] in ('On', 'Holding') and all(isinstance(arg, str) for arg in literal[1:]), literal
+
+
+def test_robolab_gripper_calibration():
+    # The live probe's arm: the mirror's Franka matches it, and the Robotiq tool frame is on the gripper's axis,
+    # 152.8 mm below the gripper's base
+    probe = json.loads(LIVE_PROBE.read_text())
+    world = World([], gripper='robotiq')
+    try:
+        world.set_arm(probe['arm'])
+        flange, tool = pbu.get_link_pose(world.robot, world.tool), world.tool_pose()
+        base = np.array(probe['bodies']['base_link'][:3])
+        assert np.allclose(flange[0], probe['bodies']['panda_link8'][:3], atol=1e-4)
+        assert np.allclose(tool[0], base - [0, 0, 0.1528], atol=1e-4)  # The gripper points down here
+    finally:
+        world.close()
+
+
+def test_robolab_scene():
+    # RoboLab's table is level with the robot's base, and a banana longer than the bowl is wide is in the bowl when
+    # its center is (object_in_container)
+    probe = json.loads(LIVE_PROBE.read_text())
+    task = next(task_from_json(data) for data in json.loads(FIXTURES.read_text()) if data['name'] == probe['task'])
+    scene = [ObjectSpec('banana', (0.06, 0.18, 0.04)), ObjectSpec('bowl', (0.16, 0.16, 0.06), 'container')]
+    observation = observation_from_json({'arm': probe['arm'], 'gripper': 0.0, 'objects': probe['objects']})
+    policy = TampPolicy(scene, gripper='robotiq', containment='center')
+    try:
+        policy.reset(task, observation)
+        assert policy.status == 'executing'
+        assert policy.world.table_top > -0.005
+    finally:
+        policy.close()
 
 
 def test_protocol_round_trip():
@@ -153,16 +188,32 @@ def test_propose_goal_checks():
 
 
 CLIENT_MODULES = ['benchmarks/common/protocol.py', 'benchmarks/common/remote.py', 'benchmarks/robolab/client.py']
+# The client's own imports: RoboLab's environment has neither pybullet nor this repository's examples (its own
+# examples/ package shadows them), and pddlstream only through PYTHONPATH
+CLIENT_IMPORTS = {'benchmarks.common.protocol', 'benchmarks.common.remote', 'benchmarks.robolab.client'}
+
+
+def imported_modules(path):
+    for node in ast.walk(ast.parse(path.read_text())):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            yield node.module
+        elif isinstance(node, ast.Import):
+            yield from (alias.name for alias in node.names)
 
 
 def test_client_modules_do_not_import_pddlstream():
     # Benchmark clients run in the benchmark's own Python environment, without pddlstream
     root = pathlib.Path(__file__).resolve().parents[1]
     for module in CLIENT_MODULES:
-        for node in ast.walk(ast.parse((root / module).read_text())):
-            names = [node.module] if isinstance(node, ast.ImportFrom) else [a.name for a in getattr(node, 'names', [])]
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                assert not any(name and name.startswith('pddlstream') for name in names), (module, names)
+        names = list(imported_modules(root / module))
+        assert not any(name.startswith(('pddlstream', 'examples', 'pybullet')) for name in names), (module, names)
+
+
+def test_robolab_runner_imports_only_the_client():
+    root = pathlib.Path(__file__).resolve().parents[1]
+    names = set(imported_modules(root / 'benchmarks' / 'robolab' / 'run.py'))
+    assert {name for name in names if name.startswith(('benchmarks', 'pddlstream', 'examples'))} <= CLIENT_IMPORTS
+    assert 'pybullet' not in names
 
 
 def test_package_does_not_import_benchmarks():

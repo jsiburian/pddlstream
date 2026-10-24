@@ -17,8 +17,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from benchmarks.common.goals import UnsupportedTask
 from benchmarks.common.policy import TampPolicy
-from benchmarks.common.protocol import observation_from_json, task_from_json, to_json
-from benchmarks.common.world import object_spec_from_json
+from benchmarks.common.protocol import object_spec_from_json, observation_from_json, task_from_json, to_json
 
 POLICIES = {}  # TampPolicy by env_id; at most one, since pybullet_tools uses one PyBullet client per process
 

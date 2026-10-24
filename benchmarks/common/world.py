@@ -6,11 +6,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from benchmarks.common.protocol import ObjectSpec, object_spec_from_json  # noqa: F401 (part of the world's interface)
 from examples.pybullet.utils.pybullet_tools import utils as pbu
 
 ARM_JOINTS = [f'panda_joint{i}' for i in range(1, 8)]
 FINGER_JOINTS = ['panda_finger_joint1', 'panda_finger_joint2']
-TOOL_LINK = 'tool_link'
 HOME_CONF = (0.0, -0.4, 0.0, -2.0, 0.0, 1.6, 0.8)  # Arm raised in front of the robot
 TABLE_SIZE = (1.6, 1.6, 0.02)
 TABLE_TOP = -0.01  # Just below the robot's base, which would otherwise touch the table
@@ -18,29 +18,37 @@ COLORS = {'movable': pbu.RED, 'container': pbu.GREY, 'surface': pbu.TAN, 'button
 
 
 @dataclass(frozen=True)
-class ObjectSpec:
-    """An object of the scene: a box of size (x, y, z) in meters; kind is 'movable', 'container' (a flat tray objects
-    can be put in), 'surface' (fixed, objects can be put on it) or 'button' (fixed, pressed by a skill)."""
+class Gripper:
+    """Where the gripper's tool frame is: a pose in one of the arm's links. The tool approaches along its z axis and
+    the fingers close along its y axis (pybullet_tools' top grasps); max_width is the widest object they close on."""
 
-    name: str
-    size: tuple
-    kind: str = 'movable'
+    link: str
+    offset: tuple = pbu.unit_pose()
+    max_width: float = pbu.INF
 
 
-def object_spec_from_json(data):
-    return ObjectSpec(data['name'], tuple(data['size']), data.get('kind', 'movable'))
+GRIPPERS = {
+    'panda': Gripper('tool_link'),  # The Panda hand of the URDF
+    # RoboLab's DROID Franka: a Robotiq 2F-85 mounted 18.1 mm past the flange (panda_link8) without the Panda hand's
+    # 45 degree turn (live probe), its fingertips 162.8 mm further; the tool frame is 1 cm above the fingertips
+    'robotiq': Gripper('panda_link8', pbu.Pose(point=pbu.Point(z=0.0181 + 0.1628 - 0.01)), max_width=0.085),
+}
 
 
 class World:
     """The PyBullet bodies of a scene (in this process's PyBullet client)."""
 
-    def __init__(self, specs, use_gui=False):
+    def __init__(self, specs, use_gui=False, gripper='panda', containment='full'):
+        """containment: how much of an object must be inside a container's footprint to count as in it, 'full' or
+        'center' (its center, as RoboLab's object_in_container checks)."""
         self.client = pbu.connect(use_gui=use_gui)
         with pbu.HideOutput():
             self.robot = pbu.load_pybullet(pbu.PANDA_ARM_URDF, fixed_base=True)
         self.arm = pbu.joints_from_names(self.robot, ARM_JOINTS)
         self.fingers = pbu.joints_from_names(self.robot, FINGER_JOINTS)
-        self.tool = pbu.link_from_name(self.robot, TOOL_LINK)
+        self.gripper = GRIPPERS[gripper]
+        self.containment = containment
+        self.tool = pbu.link_from_name(self.robot, self.gripper.link)  # The link the tool frame is fixed to
         self.table = pbu.create_box(*TABLE_SIZE, color=pbu.TAN)
         self.set_table_top(TABLE_TOP)
         self.specs = {spec.name: spec for spec in specs}
@@ -68,7 +76,7 @@ class World:
         pbu.set_joint_positions(self.robot, self.fingers, [0.04, 0.04])
 
     def tool_pose(self):
-        return pbu.get_link_pose(self.robot, self.tool)
+        return pbu.multiply(pbu.get_link_pose(self.robot, self.tool), self.gripper.offset)
 
     def set_pose(self, name, pose):
         pbu.set_pose(self.bodies[name], pose)

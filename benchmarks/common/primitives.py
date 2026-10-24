@@ -10,6 +10,7 @@ from pddlstream.language.generator import from_fn, from_gen_fn, from_test
 from pddlstream.language.stream import StreamInfo
 
 APPROACH = pbu.Pose(point=pbu.Point(z=-0.1))  # The gripper approaches 10 cm along its axis
+CENTER_MARGIN = 0.02  # With 'center' containment, object centers stay this far inside a container's footprint
 SELF_COLLISIONS = False  # PyBullet's Panda model reports contacts between the hand and its fingers
 IK_ATTEMPTS = 10
 
@@ -75,8 +76,12 @@ def get_procedures(world, teleport=False):
     def sample_pose(name, surface, surface_pose):
         surface_pose.assign()
         body, support = world.bodies[name], world.bodies.get(surface, world.table)
+        container = world.specs[surface].kind == 'container' if surface in world.specs else False
         while True:
-            value = pbu.sample_placement(body, support)
+            if container and world.containment == 'center':
+                value = pbu.sample_placement_on_aabb(body, center_region(pbu.get_aabb(support)), percent=0.0)
+            else:
+                value = pbu.sample_placement(body, support)
             obstacles = [b for b in world.fixed if b != support]
             if (value is None) or any(pbu.pairwise_collision(body, obstacle) for obstacle in obstacles):
                 yield None
@@ -85,7 +90,9 @@ def get_procedures(world, teleport=False):
 
     def sample_grasp(name):
         body = world.bodies[name]
-        grasps = get_top_grasps(body, under=True, tool_pose=pbu.Pose(), max_width=pbu.INF, grasp_length=0.02)
+        grasps = get_top_grasps(
+            body, under=True, tool_pose=pbu.Pose(), max_width=world.gripper.max_width, grasp_length=0.02
+        )
         for value in grasps:
             yield (Grasp(name, value),)
 
@@ -200,7 +207,8 @@ def get_stream_info():
 
 def solve_ik(world, target_pose):
     """Arm joint positions that put the tool at target_pose, or None."""
-    conf = pbu.inverse_kinematics(world.robot, world.tool, target_pose)
+    link_pose = pbu.multiply(target_pose, pbu.invert(world.gripper.offset))
+    conf = pbu.inverse_kinematics(world.robot, world.tool, link_pose)
     if conf is None:
         return None
     conf = tuple(conf[: len(world.arm)])
@@ -209,13 +217,24 @@ def solve_ik(world, target_pose):
     return conf if pbu.all_between(lower, conf, upper) else None
 
 
+def center_region(aabb, margin=CENTER_MARGIN):
+    """The part of an AABB at least margin inside its sides (its center line when it is narrower), same top."""
+    lower, upper = np.array(aabb[0]), np.array(aabb[1])
+    shrink = np.minimum(margin, (upper - lower) / 2)
+    shrink[2] = 0.0
+    return pbu.AABB(lower + shrink, upper - shrink)
+
+
 def collides(world, obstacles):
-    return any(pbu.pairwise_collision(world.robot, obstacle) for obstacle in obstacles)
+    """Whether the arm's moving links touch any of the obstacles. Its base is left out: on RoboLab's tables it stands
+    level with the table top, as the motion planner's collision checks already allow."""
+    moving = (world.robot, frozenset(pbu.get_moving_links(world.robot, world.arm)))
+    return any(pbu.pairwise_collision(moving, obstacle) for obstacle in obstacles)
 
 
 def attach(world, name, grasp):
     """The attachment of an object to the gripper in a grasp."""
-    return pbu.Attachment(world.robot, world.tool, grasp.value, world.bodies[name])
+    return pbu.Attachment(world.robot, world.tool, pbu.multiply(world.gripper.offset, grasp.value), world.bodies[name])
 
 
 def seed(value=0):

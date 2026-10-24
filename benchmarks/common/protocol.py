@@ -28,6 +28,20 @@ class TaskSpec:
 
 
 @dataclass(frozen=True)
+class ObjectSpec:
+    """An object of the scene: a box of size (x, y, z) in meters; kind is 'movable', 'container' (a flat tray objects
+    can be put in), 'surface' (fixed, objects can be put on it) or 'button' (fixed, pressed by a skill)."""
+
+    name: str
+    size: tuple
+    kind: str = 'movable'
+
+
+def object_spec_from_json(data):
+    return ObjectSpec(data['name'], tuple(data['size']), data.get('kind', 'movable'))
+
+
+@dataclass(frozen=True)
 class ObjectState:
     """An object's pose: position (meters, env-local frame) and quaternion (w, x, y, z), as in RoboLab's gt_state."""
 

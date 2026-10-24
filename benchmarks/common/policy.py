@@ -32,8 +32,18 @@ class TampPolicy:
     """A policy for one environment: reset() with a task, the scene's objects and the first observation, then act()
     with each observation."""
 
-    def __init__(self, scene, horizon=8, max_time=60, max_replans=3, teleport=False, skills=()):
-        self.world = World(scene)
+    def __init__(
+        self,
+        scene,
+        horizon=8,
+        max_time=60,
+        max_replans=3,
+        teleport=False,
+        skills=(),
+        gripper='panda',
+        containment='full',
+    ):
+        self.world = World(scene, gripper=gripper, containment=containment)
         self.horizon, self.max_time, self.max_replans = horizon, max_time, max_replans
         self.teleport = teleport
         self.skills = {skill.name: skill for skill in (SKILLS[s] if isinstance(s, str) else s for s in skills)}

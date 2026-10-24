@@ -92,7 +92,7 @@ class TampInferenceClient(InferenceClient):
     def _query_server(self, request):
         env_id, observation = request['env_id'], request['observation']
         if env_id not in self.started:
-            options = {'skills': self.skills} if self.skills else {}
+            options = {'gripper': 'robotiq', 'containment': 'center', 'skills': self.skills}
             self.planner.reset(self.task, self.scene, observation, env_id=env_id, **options)
             self.started.add(env_id)
         actions, _ = self.planner.act(observation, env_id=env_id)  # An unsupported task holds the arm still
