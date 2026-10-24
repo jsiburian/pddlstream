@@ -19,6 +19,7 @@ _MODULES = {
         'Certificate',
         'SolveResult',
         'Status',
+        'Incumbent',
         'Action',
         'is_plan',
         'print_solution',

@@ -3,7 +3,7 @@
 import pytest
 
 from pddlstream.algorithms.meta import solve
-from pddlstream.core.problem import PDDLProblem, Solution, SolveResult, Status
+from pddlstream.core.problem import Incumbent, PDDLProblem, Solution, SolveResult, Status
 
 DOMAIN_PDDL = """(define (domain line) (:requirements :strips)
   (:predicates (At ?l) (Adj ?a ?b))
@@ -37,3 +37,10 @@ def test_infeasible(algorithm):
 def test_failed():
     result = solve(line_problem('l2'), algorithm='adaptive', max_iterations=0, verbose=False)
     assert (result.plan is None) and (result.status is Status.FAILED)
+
+
+def test_solutions():
+    result = solve(line_problem('l2'), algorithm='adaptive', verbose=False)
+    [incumbent] = result.solutions
+    assert isinstance(incumbent, Incumbent)
+    assert (incumbent.plan, incumbent.cost) == (result.plan, result.cost) and (incumbent.time >= 0)

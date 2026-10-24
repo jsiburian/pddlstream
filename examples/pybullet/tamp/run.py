@@ -36,7 +36,6 @@ from examples.pybullet.utils.pybullet_tools.utils import (
     str_from_object,
     wait_for_user,
 )
-from pddlstream.algorithms.common import SOLUTIONS
 from pddlstream.algorithms.meta import create_parser, solve
 from pddlstream.language.constants import (
     And,
@@ -223,7 +222,7 @@ def main(verbose=True):
             )
             saver.restore()
 
-    cost_over_time = [(s.cost, s.time) for s in SOLUTIONS]
+    cost_over_time = [(s.cost, s.time) for s in solution.solutions]
     for i, (cost, runtime) in enumerate(cost_over_time):
         print(f'Plan: {i} | Cost: {cost:.3f} | Time: {runtime:.3f}')
     print_solution(solution)

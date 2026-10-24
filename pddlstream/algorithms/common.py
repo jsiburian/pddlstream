@@ -4,7 +4,7 @@ from collections import Counter, namedtuple
 
 from pddlstream.algorithms.certificate import certify
 from pddlstream.core.context import get_clock, get_config, get_record
-from pddlstream.core.conversion import revert_solution
+from pddlstream.core.conversion import param_from_object, revert_solution, transform_plan_args
 
 # Moved to pddlstream.core.evaluations; re-exported for existing code
 from pddlstream.core.evaluations import COMPLEXITY_OP as COMPLEXITY_OP
@@ -18,7 +18,7 @@ from pddlstream.core.evaluations import add_facts as add_facts
 from pddlstream.core.evaluations import compute_complexity as compute_complexity
 from pddlstream.core.evaluations import evaluations_from_init as evaluations_from_init
 from pddlstream.core.evaluations import is_instance_ready as is_instance_ready
-from pddlstream.core.problem import FAILED, OptPlan, SolveResult, Status, get_length, is_plan
+from pddlstream.core.problem import FAILED, Incumbent, OptPlan, SolveResult, Status, get_length, is_plan
 from pddlstream.core.utils import INF, check_memory, elapsed_time, str_from_object
 from pddlstream.language.external import Call, Outcome
 from pddlstream.language.statistics import write_stream_statistics
@@ -27,7 +27,11 @@ logger = logging.getLogger(__name__)
 
 Solution = namedtuple('Solution', ['plan', 'cost', 'time'])
 
-SOLUTIONS = []  # TODO: remove global variable
+SOLUTIONS = []  # Deprecated: the last solve's solutions, now SolveResult.solutions
+
+
+def get_action_plan(plan):
+    return plan.action_plan if isinstance(plan, OptPlan) else plan
 
 
 class SolutionStore:
@@ -143,7 +147,14 @@ class SolutionStore:
         if isinstance(self.best_plan, OptPlan):
             certificate = certify(certificate, self.evaluations, self.best_plan.preimage_facts)
         status = Status.SUCCEEDED if is_plan(plan) else Status.INFEASIBLE if infeasible else Status.FAILED
-        return SolveResult(plan, cost, certificate, status, self.export_summary() if stats is None else stats)
+        solutions = [
+            Incumbent(
+                transform_plan_args(get_action_plan(solution.plan), param_from_object), solution.cost, solution.time
+            )
+            for solution in self.solutions
+        ]
+        stats = self.export_summary() if stats is None else stats
+        return SolveResult(plan, cost, certificate, status, stats, solutions)
 
     def export_summary(self):
         return {

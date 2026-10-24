@@ -50,18 +50,28 @@ class Status(enum.Enum):
     INFEASIBLE = 'infeasible'  # Ran out of things to try without cutting anything short: no plan exists
 
 
+class Incumbent(NamedTuple):
+    """A plan that a solve found along the way; anytime solves find several, each cheaper than the last."""
+
+    plan: list
+    cost: float
+    time: float  # Seconds since the solve started
+
+
 class SolveResult(Solution):
     """What the solvers return: a Solution (plan, cost, certificate), which it unpacks and compares like, with the
-    solver's status and statistics (the summary that it prints, including search_time, sample_time, run_time, the
-    outcomes of the stream calls, termination and gaps)."""
+    solver's status, statistics (the summary that it prints, including search_time, sample_time, run_time, the
+    outcomes of the stream calls, termination and gaps) and solutions (every Incumbent, the best last)."""
 
     status: Status | None = None
     stats: dict | None = None
+    solutions: list | None = None
 
-    def __new__(cls, plan, cost, certificate, status=None, stats=None):
+    def __new__(cls, plan, cost, certificate, status=None, stats=None, solutions=None):
         self = super().__new__(cls, plan, cost, certificate)
         self.status = status
         self.stats = {} if stats is None else stats
+        self.solutions = [] if solutions is None else solutions
         return self
 
     def __repr__(self):
