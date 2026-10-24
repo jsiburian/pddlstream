@@ -112,6 +112,30 @@ def test_robolab_scene():
         policy.close()
 
 
+def test_retreat_from_contact():
+    # After a slipped grasp the gripper may still touch the object: the next plan starts after raising the tool
+    probe = json.loads(LIVE_PROBE.read_text())
+    task = next(task_from_json(data) for data in json.loads(FIXTURES.read_text()) if data['name'] == probe['task'])
+    scene = [ObjectSpec('banana', (0.1, 0.23, 0.036), points=tuple(map(tuple, banana_points())))]
+    scene.append(ObjectSpec('bowl', (0.16, 0.16, 0.06), 'container'))
+    observation = observation_from_json({'arm': probe['arm'], 'gripper': 0.0, 'objects': probe['objects']})
+    policy = TampPolicy(scene, gripper='robotiq', containment='center')
+    try:
+        policy.reset(task, observation)
+        world = policy.world
+        world.set_arm(probe['arm'])
+        flange, tool = pbu.get_link_pose(world.robot, world.tool), world.tool_pose()
+        objects = dict(probe['objects'], banana={'position': list(flange[0]), 'quaternion': [1, 0, 0, 0]})
+        touching = observation_from_json({'arm': probe['arm'], 'gripper': 0.0, 'objects': objects})
+        actions = policy.retreat(touching)
+        assert actions and all(action[7] == 0.0 for action in actions)  # Open
+        world.set_arm(actions[-1][:7])
+        assert np.allclose(world.tool_pose()[0], np.array(tool[0]) + [0, 0, 0.1], atol=0.01)
+        assert policy.retreat(observation) == []  # Out of contact
+    finally:
+        policy.close()
+
+
 def test_protocol_round_trip():
     env = StandinEnv(SCENARIOS[0])
     try:

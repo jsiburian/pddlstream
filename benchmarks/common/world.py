@@ -20,21 +20,26 @@ COLORS = {'movable': pbu.RED, 'container': pbu.GREY, 'surface': pbu.TAN, 'button
 @dataclass(frozen=True)
 class Gripper:
     """Where the gripper's tool frame is: a pose in one of the arm's links. The tool approaches along its z axis and
-    the fingers close along its y axis (pybullet_tools' top grasps); max_width is the widest object they close on, and
-    settle_steps how many actions the arm holds still while they open or close."""
+    the fingers close along its y axis (pybullet_tools' top grasps); max_width is the widest object they close on.
+    At a grasp or placement, the arm holds still for arrive_steps actions before the fingers move (so that a lagging
+    controller reaches the pose first), then for settle_steps actions while they open or close."""
 
     link: str
     offset: tuple = pbu.unit_pose()
     max_width: float = pbu.INF
     settle_steps: int = 5
+    arrive_steps: int = 0
 
 
 GRIPPERS = {
     'panda': Gripper('tool_link'),  # The Panda hand of the URDF
     # RoboLab's DROID Franka: a Robotiq 2F-85 mounted 18.1 mm past the flange (panda_link8) without the Panda hand's
     # 45 degree turn (live probe), its fingertips 162.8 mm further; the tool frame is 1 cm above the fingertips. In
-    # Isaac Sim it takes about a second (15 actions) to close on an object
-    'robotiq': Gripper('panda_link8', pbu.Pose(point=pbu.Point(z=0.0181 + 0.1628 - 0.01)), 0.085, settle_steps=15),
+    # Isaac Sim the arm's joint controller lags 1-2 cm behind a descent, and the gripper takes about a second (15
+    # actions) to close on an object
+    'robotiq': Gripper(
+        'panda_link8', pbu.Pose(point=pbu.Point(z=0.0181 + 0.1628 - 0.01)), 0.085, settle_steps=15, arrive_steps=10
+    ),
 }
 
 

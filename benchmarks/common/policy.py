@@ -10,7 +10,7 @@ import os
 import numpy as np
 
 from benchmarks.common.goals import goal_from_task, goal_literals
-from benchmarks.common.primitives import Conf, Pose, get_procedures, get_stream_info, seed
+from benchmarks.common.primitives import Conf, Pose, collides, get_procedures, get_stream_info, seed, solve_ik
 from benchmarks.common.protocol import condition_key, pose_from_state
 from benchmarks.common.skills import SKILLS, SkillStep, compile_skills
 from benchmarks.common.world import World, pbu
@@ -25,6 +25,7 @@ TABLE = 'table'
 OPEN, CLOSED = 0.0, 1.0
 MAX_JOINT_STEP = 0.05  # Radians between consecutive actions
 TOLERANCE = 0.03  # Meters an object may be from where the plan expects it before replanning
+RETREAT = 0.1  # Meters the tool rises before replanning when the arm touches an object (e.g. after a slipped grasp)
 
 
 def lowest_point(spec, state):
@@ -62,6 +63,7 @@ class TampPolicy:
         self.status, self.replans = 'idle', 0
         self.skill_run = None  # The SkillStep being performed, its policy and the actions it took
         self.plans = []  # A report of each plan (see report_plan)
+        self.prefix = []  # Actions that precede the next plan's (see retreat)
 
     def reset(self, task, observation):
         seed(0)
@@ -92,7 +94,7 @@ class TampPolicy:
         self.session = PlannerSession(
             problem, stream_info=get_stream_info(), unit_costs=not self.skills, deterministic=True, verbose=False
         )
-        self.replans, self.skill_run, self.plans = 0, None, []
+        self.replans, self.skill_run, self.plans, self.prefix = 0, None, [], []
         self.plan()
 
     def get_init(self):
@@ -122,7 +124,29 @@ class TampPolicy:
             return result
         self.status = 'executing'
         self.actions, self.expected = self.compile(result.plan)
+        if self.prefix:  # The retreat that the plan starts after
+            positions = {name: pose.value[0] for name, pose in self.poses.items()}
+            self.actions = self.prefix + self.actions
+            self.expected = [positions] * len(self.prefix) + self.expected
+            self.prefix = []
         return result
+
+    def retreat(self, observation):
+        """When the arm touches an object or the table, actions that raise the tool RETREAT meters with the gripper
+        open, so that motion planning starts from a collision-free configuration; otherwise []."""
+        world = self.world
+        for name, state in observation.objects.items():
+            if name in world.bodies:
+                world.set_pose(name, pose_from_state(state))
+        world.set_arm(observation.arm)
+        if not collides(world, world.fixed + [world.bodies[name] for name in world.movables]):
+            return []
+        target = pbu.multiply(pbu.Pose(point=pbu.Point(z=RETREAT)), world.tool_pose())
+        conf = solve_ik(world, target)  # Seeded with the current configuration
+        if conf is None:
+            return []
+        logger.info('The arm touches an object: retreating before replanning')
+        return [np.array([*q, OPEN]) for q in interpolate([tuple(observation.arm), conf])[1:]]
 
     def report_plan(self, result):
         """What a plan is and what it rests on: its steps, a digest of its certificate, whether the certificate
@@ -167,6 +191,7 @@ class TampPolicy:
             elif name in ('pick', 'place'):
                 obj, pose, _, _, trajectory = args
                 add(trajectory.path)
+                add([trajectory.path[-1]] * self.world.gripper.arrive_steps)
                 gripper = CLOSED if name == 'pick' else OPEN
                 if name == 'pick':
                     positions.pop(obj, None)  # Held objects are not monitored
@@ -193,7 +218,8 @@ class TampPolicy:
                 patch_remove += [('AtPose', name, old)]
                 patch_add += [('Pose', name, new), ('AtPose', name, new)]
                 self.poses[name] = new
-        conf = Conf(observation.arm)
+        self.prefix = self.retreat(observation)
+        conf = Conf(self.prefix[-1][:7] if self.prefix else observation.arm)
         patch_remove += [('AtConf', self.conf)]
         patch_add += [('Conf', conf), ('AtConf', conf)]
         self.conf = conf
