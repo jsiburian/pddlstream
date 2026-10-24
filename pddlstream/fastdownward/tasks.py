@@ -368,6 +368,74 @@ def plan_preimage(combined_plan, goal=[]):
 ##################################################
 
 
+def get_supertypes(domain):
+    """The supertypes (other than object) of each declared type."""
+    parent = {pddl_type.name: pddl_type.basetype_name for pddl_type in domain.types}
+    supertypes = {}
+    for name in parent:
+        chain, current = [], parent[name]
+        while current not in (None, 'object'):
+            chain.append(current)
+            current = parent.get(current)
+        supertypes[name] = chain
+    return {name: chain for name, chain in supertypes.items() if name != 'object'}
+
+
+def compile_types(domain):
+    """Compiles a typed domain into an untyped one in which types are unary predicates: each typed parameter (of an
+    action, axiom, effect or quantifier) becomes untyped with a condition on its type. Returns the supertypes of each
+    type and the type of each typed constant, so that type facts can be added for the closure of the hierarchy."""
+    if len(domain.types) == 1:
+        return {}, {}
+    supertypes = get_supertypes(domain)
+    conflicts = set(supertypes) & set(domain.predicate_dict)
+    if conflicts:
+        raise ValueError(f'Types and predicates share the names {sorted(conflicts)}')
+    for name in supertypes:
+        add_predicate(domain, make_predicate(name, ['?x']))
+
+    def untyped(parameters):
+        return [pddl.TypedObject(parameter.name, 'object') for parameter in parameters]
+
+    def type_atoms(parameters):
+        for parameter in parameters:
+            if not isinstance(parameter.type_name, str):
+                raise NotImplementedError(f'Either types are not supported: {parameter}')
+        return [pddl.Atom(p.type_name, [p.name]) for p in parameters if p.type_name != 'object']
+
+    def conjoin(atoms, condition):
+        return pddl.Conjunction(atoms + [condition]).simplified() if atoms else condition
+
+    def compile_condition(condition):
+        parts = [compile_condition(part) for part in condition.parts]
+        if isinstance(condition, pddl.ExistentialCondition):
+            parameters = condition.parameters
+            return pddl.ExistentialCondition(untyped(parameters), [pddl.Conjunction(type_atoms(parameters) + parts)])
+        if isinstance(condition, pddl.UniversalCondition):
+            parameters = condition.parameters
+            negated_types = [atom.negate() for atom in type_atoms(parameters)]
+            return pddl.UniversalCondition(untyped(parameters), [pddl.Disjunction(negated_types + parts)])
+        return condition.change_parts(parts) if parts else condition
+
+    for action in domain.actions:
+        action.precondition = conjoin(type_atoms(action.parameters), compile_condition(action.precondition))
+        action.parameters = untyped(action.parameters)
+        for effect in action.effects:
+            effect.condition = conjoin(type_atoms(effect.parameters), compile_condition(effect.condition))
+            effect.parameters = untyped(effect.parameters)
+    for axiom in domain.axioms:
+        axiom.condition = conjoin(type_atoms(axiom.parameters), compile_condition(axiom.condition))
+        axiom.parameters = untyped(axiom.parameters)
+    for predicate in domain.predicates + list(domain.functions):
+        predicate.arguments = untyped(predicate.arguments)
+    constant_types = {constant.name: constant.type_name for constant in domain.constants}
+    domain.constants[:] = untyped(domain.constants)
+    domain.types[:] = [pddl_type for pddl_type in domain.types if pddl_type.name == 'object']
+    domain.type_dict.clear()
+    domain.type_dict.update({pddl_type.name: pddl_type for pddl_type in domain.types})
+    return supertypes, {name: type_name for name, type_name in constant_types.items() if type_name != 'object'}
+
+
 def add_predicate(domain, predicate):
     if predicate.name in domain.predicate_dict:
         return False

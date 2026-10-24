@@ -19,12 +19,14 @@ from pddlstream.core.context import (
     get_context,
 )
 from pddlstream.core.conversion import obj_from_value_expression
-from pddlstream.core.evaluations import add_certified, evaluations_from_init, is_instance_ready
+from pddlstream.core.evaluations import add_certified, add_fact, evaluations_from_init, is_instance_ready
 from pddlstream.core.log import console_output
 from pddlstream.core.objects import Object
 from pddlstream.core.registry import get_registry, use_registry
+from pddlstream.core.syntax import Fact, get_args, get_prefix
 from pddlstream.core.utils import INF
 from pddlstream.fastdownward.tasks import (
+    compile_types,
     has_costs,
     normalize_domain_goal,
     parse_goal,
@@ -38,7 +40,7 @@ from pddlstream.language.function import parse_function, parse_predicate
 from pddlstream.language.lint import ERROR, lint
 from pddlstream.language.optimizer import parse_optimizer
 from pddlstream.language.rule import apply_rules_to_streams, parse_rule
-from pddlstream.language.stream import StreamInstance, parse_stream
+from pddlstream.language.stream import Stream, StreamInstance, parse_stream
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +140,27 @@ def scoped_solve(solve_fn):
     return wrapper
 
 
+def add_certified_supertypes(streams, supertypes):
+    """Streams that certify that an output has a type also certify its supertypes."""
+    for stream in streams:
+        if isinstance(stream, Stream):
+            facts = [
+                Fact(supertype, get_args(fact))
+                for fact in stream.certified
+                for supertype in supertypes.get(get_prefix(fact), [])
+            ]
+            stream.certified = tuple(stream.certified) + tuple(fact for fact in facts if fact not in stream.certified)
+
+
+def add_type_facts(evaluations, supertypes, constant_types, obj_from_constant):
+    """Adds the facts that typed constants have their types, and that objects of a type have its supertypes."""
+    for name, type_name in constant_types.items():
+        add_fact(evaluations, Fact(type_name, [obj_from_constant[name]]))
+    for evaluation in list(evaluations):
+        for supertype in supertypes.get(evaluation.head.function, []):
+            add_fact(evaluations, Fact(supertype, evaluation.head.args))
+
+
 def preload_results(evaluations, results):
     """Adds the certified facts of the results whose domain facts hold, until none is left (results can certify each
     other's domain facts). Returns the results whose domain facts do not hold."""
@@ -159,8 +182,7 @@ def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, u
     domain_pddl, constant_map, stream_pddl, stream_map, init, goal = problem
 
     domain = parse_sequential_domain(domain_pddl)  # TODO: normalize here
-    if len(domain.types) != 1:
-        raise NotImplementedError('Types are not currently supported')
+    supertypes, constant_types = compile_types(domain)  # Types become unary predicates
     if unit_costs:
         set_unit_costs(domain)
     if not has_costs(domain):
@@ -171,9 +193,11 @@ def parse_problem(problem, stream_info={}, constraints=None, unit_costs=False, u
     streams = parse_stream_pddl(
         stream_pddl, stream_map, stream_info=stream_info, unit_costs=unit_costs, unit_efforts=unit_efforts
     )
+    add_certified_supertypes(streams, supertypes)
     check_problem(domain, streams, obj_from_constant)
 
     evaluations = evaluations_from_init(init)
+    add_type_facts(evaluations, supertypes, constant_types, obj_from_constant)
     preload_results(evaluations, get_context().reuse if get_context() else ())
     goal_exp = obj_from_value_expression(goal)
 
