@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0a1 (unreleased)
+## 2.0.0a1 (2026-10-24)
 
 The first V2 pre-release. Programs written for earlier versions keep working: see
 [migrating from earlier versions](docs/migration.md) for what changed and the old names that still work. The design
