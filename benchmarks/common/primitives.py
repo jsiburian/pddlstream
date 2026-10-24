@@ -238,8 +238,8 @@ def balance_point(xy, bins=10):
 def point_grasps(points, max_width, yaws=16, num_centers=24, max_grasps=16):
     """Top grasps (tool from object poses) of an object given by surface points in its frame, assumed upright. The
     fingers close across a slice of the object (the points under the finger pads) narrower than max_width, centered
-    on it; grasps nearest where the object balances (balance_point) come first, so it doesn't swing down. Unlike box grasps, they fit curved objects such as a
-    banana, whose bounding box is wider than the gripper opens."""
+    on it; grasps nearest where the object balances (balance_point) come first, so it doesn't swing down. Unlike box
+    grasps, they fit curved objects such as a banana, whose bounding box is wider than the gripper opens."""
     points = np.asarray(points, dtype=float)
     xy = points[:, :2]
     middle = balance_point(xy)
