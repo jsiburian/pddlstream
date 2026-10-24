@@ -9,6 +9,7 @@ from pddlstream.core.evaluations import compute_complexity
 from pddlstream.core.objects import Object, OptimisticObject
 from pddlstream.core.syntax import Fact, get_args, get_prefix, is_parameter
 from pddlstream.core.utils import INF, CreationHash, Score, get_mapping, safe_apply_mapping, str_from_object
+from pddlstream.language.executor import REPLAY, SerialExecutor
 from pddlstream.language.statistics import DEFAULT_SEARCH_OVERHEAD, Performance, PerformanceInfo
 
 logger = logging.getLogger(__name__)
@@ -87,7 +88,16 @@ def convert_constants(fact):
 
 
 class ExternalInfo(PerformanceInfo):
-    def __init__(self, eager=False, eager_skeleton=False, defer_fn=never_defer, complete=False, reads=None, **kwargs):
+    def __init__(
+        self,
+        eager=False,
+        eager_skeleton=False,
+        defer_fn=never_defer,
+        complete=False,
+        reads=None,
+        resource=None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         # Whether the procedure's outputs are exactly the values that satisfy the certified facts, so running out of
         # outputs proves that no others exist (used by strict=True; see docs/v2/adr-001-stream-outcomes.md)
@@ -96,6 +106,9 @@ class ExternalInfo(PerformanceInfo):
         # to the world invalidates: None (unknown: any change), () (nothing: only the inputs), or names of the things
         # it reads (e.g. ('walls',)), which may be predicates of facts that change
         self.reads = reads
+        # Where a parallel executor runs the procedure: a named pool, 'main' (the solver's thread) or None (the default
+        # pool); see language/executor.py
+        self.resource = resource
         # TODO: enable eager=True for inexpensive test streams by default
         # TODO: change p_success and overhead if it's a function or test stream
         self.eager = eager
@@ -212,6 +225,15 @@ class Call(NamedTuple):
     results: list  # The new results
     facts: list  # The new facts beyond the results' certified facts (wild streams)
     fresh: bool  # Whether the procedure ran, rather than the instance replaying its history
+    seconds: float = 0.0  # How long the procedure ran
+
+
+SERIAL_EXECUTOR = SerialExecutor()
+
+
+def get_executor():
+    """The solve's executor (SolverConfig.executor), by default serial."""
+    return get_config().executor or SERIAL_EXECUTOR
 
 
 ##################################################
@@ -229,6 +251,7 @@ class Instance(CreationHash):
         self.error = None  # The exception the procedure raised, with stream_errors='fail'
         self._mapping = None
         self._domain = None
+        self._prefetched = None  # The next call's procedure run, started ahead by a parallel executor
         self.reset()
 
     @property
@@ -285,8 +308,50 @@ class Instance(CreationHash):
             self.opt_index -= 1
         return self.opt_index
 
-    def next_results(self, verbose=False):
+    def will_replay(self):
+        """Whether the next call replays the instance's history rather than running the procedure."""
+        return self.num_calls < len(self.history)
+
+    def run_procedure(self):
+        """Runs the procedure for the next call and returns a PendingCall. It changes only the instance's own
+        generator, so an executor may run it on another thread; finish_call commits its outcome."""
         raise NotImplementedError()
+
+    def procedure_request(self, key):
+        """What a ProcessExecutor's worker needs to run the procedure for the next call."""
+        return key, self.external.name, self.get_input_values(), None, 'function'
+
+    def batch_procedure(self):
+        """The BatchProcedure that can run the next call together with other instances' calls, if any."""
+        return None
+
+    def runs_inline(self):
+        """Whether the procedure must run on the solver's thread."""
+        return (self.info.resource == 'main') or getattr(self.external, 'inline', False)
+
+    def can_prefetch(self):
+        """Whether the next call can start ahead: it runs the procedure, which is not running already."""
+        return (self._prefetched is None) and not (self.enumerated or self.will_replay())
+
+    def set_prefetched(self, handle):
+        self._prefetched = handle
+
+    def begin_call(self):
+        """The PendingCall of the next call: the prefetched run, a new run by the solve's executor, or REPLAY."""
+        assert not self.enumerated
+        if self.will_replay():
+            return REPLAY
+        handle, self._prefetched = self._prefetched, None
+        if handle is None:
+            handle = get_executor().submit(self)
+        return handle.result()
+
+    def finish_call(self, pending, verbose=False):
+        """Commits a call: its new results and new facts."""
+        raise NotImplementedError()
+
+    def next_results(self, verbose=False):
+        return self.finish_call(self.begin_call(), verbose=verbose)
 
     def first_results(self, num=1, **kwargs):
         results = []

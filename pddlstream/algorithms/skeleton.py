@@ -2,7 +2,7 @@ import logging
 import time
 from collections import namedtuple
 from collections.abc import Sized
-from heapq import heappop, heappush
+from heapq import heappop, heappush, nsmallest
 
 from pddlstream.algorithms.common import get_action_plan, stream_plan_preimage
 from pddlstream.algorithms.disabled import bind_action_plan, process_instance, update_bindings, update_cost
@@ -21,6 +21,7 @@ from pddlstream.core.utils import (
     incoming_from_edges,
     outgoing_from_edges,
 )
+from pddlstream.language.external import get_executor
 from pddlstream.language.function import FunctionResult
 from pddlstream.language.plans import get_output_objects, get_partial_orders
 
@@ -381,8 +382,20 @@ class SkeletonQueue(Sized):
 
     #########################
 
+    def upcoming_instances(self, num):
+        """The instances that the next num queued bindings would call. Only bindings whose stream result is bound
+        already count, since binding one would create objects ahead of the serial order."""
+        instances = []
+        for _, binding in nsmallest(num, self.queue):
+            if (binding._result is not False) and (binding._result is not None) and binding.up_to_date():
+                instances.append(binding._result.instance)
+        return instances
+
     def _process_binding(self, binding):
         assert binding.calls <= binding.visits  # TODO: global DEBUG mode
+        executor = get_executor()
+        if executor.parallel:  # Starts the next bindings' calls, which are committed when they are processed
+            executor.prefetch(self.upcoming_instances(executor.lookahead))
         readd = is_new = False
         if binding.is_dominated():
             return readd, is_new

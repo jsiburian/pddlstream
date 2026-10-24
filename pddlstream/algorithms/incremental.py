@@ -15,6 +15,7 @@ from pddlstream.core.utils import INF, Verbose, str_from_object
 from pddlstream.fastdownward.grounding import instantiate_task, sas_from_instantiated
 from pddlstream.fastdownward.search import abstrips_solve_from_task
 from pddlstream.fastdownward.tasks import get_problem, task_from_domain_problem
+from pddlstream.language.external import get_executor
 from pddlstream.language.statistics import load_stream_statistics
 
 logger = logging.getLogger(__name__)
@@ -60,10 +61,13 @@ def process_stream_queue(instantiator, store, complexity_limit=INF, verbose=Fals
     instances = []
     results = []
     num_successes = 0
+    executor = get_executor()
     while not store.is_terminated() and instantiator and (instantiator.min_complexity() <= complexity_limit):
         instance = instantiator.pop_stream()
         if instance.enumerated:
             continue
+        if executor.parallel:  # Starts the next calls, which are committed in queue order
+            executor.prefetch(instantiator.upcoming(executor.lookahead, complexity_limit))
         instances.append(instance)
         new_results = process_instance(instantiator, store, instance, verbose=verbose)
         results.extend(new_results)
@@ -104,7 +108,7 @@ def solve_incremental(
     :param problem: a PDDLProblem
     :param constraints: PlanConstraints that plans must satisfy, such as plan skeletons
     :param stream_info: a StreamInfo, FunctionInfo or PredicateInfo by stream or function name (incremental uses
-        their complete and reads options)
+        their complete, reads and resource options)
     The other parameters are SolverConfig fields, documented there (max_complexity=0 uses only the initial facts,
     complexity_step=INF calls everything at once); search_kwargs are its search options (planner, debug, ...).
     Returns a SolveResult, which unpacks as (plan, cost, certificate) and reports its status and stats.

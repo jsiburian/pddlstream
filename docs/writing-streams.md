@@ -92,6 +92,8 @@ which is evaluated as needed instead of certified by a stream.
 - `complete=True`: the procedure produces every value that satisfies its certified facts (e.g. an exact test or an
   enumeration of all grasps). With `solve(..., strict=True)`, only exhausted complete streams let the solver conclude
   that no plan exists.
+- `resource`: where a parallel executor runs the procedure (see [executors](executors.md)): a named thread pool,
+  the worker processes of a `ProcessExecutor`, or `'main'` for procedures that must stay on the solver's thread.
 
 `FunctionInfo` and `PredicateInfo` do the same for functions and predicates.
 

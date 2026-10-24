@@ -84,12 +84,17 @@ class SolverConfig:
     greedy_best: bool = True
     require_downstream: bool = True
     binding_policy: object = None  # A skeleton.BindingPolicy that replaces the four fields above
+    # Where stream procedures run (language/executor.py): None runs them on the solver's thread; a ThreadExecutor or
+    # ProcessExecutor also starts upcoming calls ahead. Deterministic solves need the serial default.
+    executor: object = None
     exogenous_axioms: bool = True  # Compile exogenous streams into axioms rather than actions
     exogenous_future_values: bool = True  # Plan with placeholder values until an exogenous stream can be called
 
     def __post_init__(self):
         if self.algorithm not in ALGORITHMS:
             raise ValueError(f'Unknown algorithm {self.algorithm!r}; choose one of {ALGORITHMS}')
+        if self.deterministic and getattr(self.executor, 'parallel', False):
+            raise ValueError('Deterministic solves run stream procedures serially; use executor=None')
         if self.stream_errors not in STREAM_ERRORS:
             raise ValueError(f'Unknown stream_errors {self.stream_errors!r}; choose one of {STREAM_ERRORS}')
 

@@ -28,6 +28,10 @@ class WallClock:
     def charge(self, work):
         pass
 
+    def procedure_time(self, seconds):
+        """The clock time of a stream procedure that ran for seconds."""
+        return seconds
+
 
 class WorkClock:
     """Measures time in work units that the solver charges for each stream call and search, so that decisions based
@@ -43,6 +47,9 @@ class WorkClock:
 
     def charge(self, work):
         self.work += work
+
+    def procedure_time(self, seconds):
+        return 0.0  # Only the solver charges work
 
 
 CALL_WORK = 1.0  # Work units charged per stream or function call

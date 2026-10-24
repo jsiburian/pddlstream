@@ -80,6 +80,7 @@ pddlstream$ ./update.sh
 * [Replanning with planner sessions](docs/sessions.md): reusing stream results as the world changes.
 * [Agent tools](docs/agents.md): JSON tools for agents to inspect problems, test samplers, plan and validate.
 * [Strategies](docs/strategies.md): the algorithms as search and refinement strategies, and how to write your own.
+* [Executors](docs/executors.md): running stream procedures on threads, in worker processes, or in batches.
 * [Architecture](docs/architecture.md): how the package is organized and what happens during a solve.
 * [Migrating from earlier versions](docs/migration.md): new options, results and import paths, and what was removed.
 

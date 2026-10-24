@@ -1,14 +1,14 @@
 import logging
 from collections import defaultdict, namedtuple
 from collections.abc import Sized
-from heapq import heappop, heappush
+from heapq import heappop, heappush, nsmallest
 from itertools import product
 
 from pddlstream.core.conversion import head_from_fact, is_atom
 from pddlstream.core.evaluations import COMPLEXITY_OP
 from pddlstream.core.relation import Relation, compute_order, solve_satisfaction
 from pddlstream.core.syntax import is_parameter
-from pddlstream.core.utils import HeapElement, safe_apply_mapping, safe_zip
+from pddlstream.core.utils import INF, HeapElement, safe_apply_mapping, safe_zip
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,12 @@ class Instantiator(Sized):  # Dynamic Instantiator
     def pop_stream(self):
         priority, instance = heappop(self.queue)
         return instance
+
+    def upcoming(self, num, complexity_limit=INF):
+        """The next num instances in the queue, within the complexity limit."""
+        return [
+            instance for priority, instance in nsmallest(num, self.queue) if priority.complexity <= complexity_limit
+        ]
 
     def min_complexity(self):
         priority, _ = self.queue[0]

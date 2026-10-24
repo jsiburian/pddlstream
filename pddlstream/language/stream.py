@@ -26,6 +26,7 @@ from pddlstream.core.problem import StreamAction
 from pddlstream.core.syntax import AND, Fact, concatenate, get_args, get_prefix, is_parameter
 from pddlstream.core.utils import apply_mapping, get_mapping, irange, str_from_object
 from pddlstream.fastdownward.tasks import make_axiom
+from pddlstream.language.executor import timed
 from pddlstream.language.external import (
     DEBUG,
     SHARED_DEBUG,
@@ -38,7 +39,7 @@ from pddlstream.language.external import (
     parse_lisp_list,
     select_inputs,
 )
-from pddlstream.language.generator import BoundedGenerator, from_fn, get_next, universe_test
+from pddlstream.language.generator import BatchProcedure, BoundedGenerator, from_fn, get_next, universe_test
 
 logger = logging.getLogger(__name__)
 
@@ -296,20 +297,36 @@ class StreamInstance(Instance):
                 self._generator = self.external.gen_fn(*input_values)
         return self._generator
 
-    def _next_wild(self):
-        output, self.enumerated = get_next(self._generator, default=[])
+    def _next_procedure_output(self):
+        self._create_generator()
+        return get_next(self._generator, default=[])
+
+    def run_procedure(self):
+        return timed(self._next_procedure_output)
+
+    def batch_procedure(self):
+        procedure = self.external.gen_fn
+        return procedure if isinstance(procedure, BatchProcedure) and (self._generator is None) else None
+
+    def procedure_request(self, key):
+        fluents = self.get_fluent_values() if self.external.is_fluent else None
+        return key, self.external.name, self.get_input_values(), fluents, 'stream'
+
+    def _wild_output(self, output):
         if not isinstance(output, WildOutput):
             output = WildOutput(values=output)
         self.enumerated |= output.enumerated
         return output
 
-    def _next_outputs(self):
+    def _next_outputs(self, pending):
         # TODO: shuffle history
         # TODO: return all test stream outputs at once
-        if self.num_calls == len(self.history):
+        if pending.ran:
             try:
-                self._create_generator()
-                output = self._next_wild()
+                if pending.error is not None:
+                    raise pending.error
+                self.enumerated = pending.enumerated
+                output = self._wild_output(pending.output)
             except Exception as error:
                 self.fail(error)
                 output = WildOutput()
@@ -334,11 +351,10 @@ class StreamInstance(Instance):
                 f'{str_from_object(self.get_input_values())}:{new_facts}->{len(new_facts)}'
             )
 
-    def next_results(self, verbose=False):
-        assert not self.enumerated
-        start_time = get_clock().now()
+    def finish_call(self, pending, verbose=False):
+        start_time = get_clock().now() - get_clock().procedure_time(pending.seconds)
         start_history = len(self.history)
-        new_values, new_facts = self._next_outputs()
+        new_values, new_facts = self._next_outputs(pending)
         self._check_output_values(new_values)
         self._check_wild_facts(new_facts)
         if verbose:
@@ -515,6 +531,8 @@ class Stream(External):
 
         # TODO: automatically switch to unique if only used once
         self.gen_fn = gen_fn  # DEBUG_MODES
+        # Debug procedures name their placeholder values with the solve's counters, so they run on the solver's thread
+        self.inline = gen_fn in (DEBUG, SHARED_DEBUG)
         if gen_fn == DEBUG:
             self.gen_fn = get_debug_gen_fn(self, shared=False)  # TODO: list of abstractions that is considered in turn
         elif gen_fn == SHARED_DEBUG:

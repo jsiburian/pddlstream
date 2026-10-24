@@ -98,6 +98,23 @@ def from_list_fn(list_fn: Callable[..., list]) -> StreamProcedure:
     return lambda *args, **kwargs: BoundedGenerator(iter([list_fn(*args, **kwargs)]), max_calls=1)
 
 
+class BatchProcedure:
+    """A stream procedure that can also compute the calls of many instances at once (see from_batch_fn)."""
+
+    def __init__(self, batch_fn):
+        self.batch_fn = batch_fn
+
+    def __call__(self, *input_values):
+        return BoundedGenerator(iter(self.batch_fn([input_values])), max_calls=1)
+
+
+def from_batch_fn(batch_fn: Callable[[list], list]) -> StreamProcedure:
+    """From a function that maps a list of input tuples to a list with each one's output tuples (as from_list_fn
+    returns them), e.g. a vectorized GPU sampler; each instance is called once. A parallel executor (ThreadExecutor)
+    passes it the inputs of several upcoming calls at once; otherwise it gets one input tuple per call."""
+    return BatchProcedure(batch_fn)
+
+
 def from_fn(fn: Callable[..., Outputs | None]) -> StreamProcedure:
     """From a function that returns one output tuple, or None; it is called once."""
 

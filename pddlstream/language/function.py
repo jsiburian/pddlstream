@@ -5,6 +5,7 @@ from pddlstream.core.conversion import list_from_conjunction, str_from_head, sub
 from pddlstream.core.problem import FunctionAction
 from pddlstream.core.syntax import Equal, Not, get_args, get_prefix, is_head
 from pddlstream.core.utils import apply_mapping, str_from_object
+from pddlstream.language.executor import timed
 from pddlstream.language.external import DEBUG_MODES, External, ExternalInfo, Instance, Result, get_procedure_fn
 
 logger = logging.getLogger(__name__)
@@ -92,11 +93,19 @@ class FunctionInstance(Instance):
         assert len(self.history) == 1
         return self.history[0]
 
-    def _compute_output(self):
+    def will_replay(self):
+        return bool(self.history) or (self.error is not None)
+
+    def run_procedure(self):
+        return timed(lambda: (self.external.fn(*self.get_input_values()), True))
+
+    def _compute_output(self, pending):
         """The function's value (None if it raised and stream_errors='fail')."""
-        if not self.history and (self.error is None):
+        if pending.ran:
             try:
-                value = self.external.fn(*self.get_input_values())
+                if pending.error is not None:
+                    raise pending.error
+                value = pending.output
                 # TODO: cast the inputs and test whether still equal?
                 if value < 0:
                     raise ValueError(f'Function [{self.external.name}] produced a negative value [{value}]')
@@ -108,11 +117,10 @@ class FunctionInstance(Instance):
         self.num_calls += 1
         return self.value if self.history else None
 
-    def next_results(self, verbose=False):
-        assert not self.enumerated
-        start_time = get_clock().now()
+    def finish_call(self, pending, verbose=False):
+        start_time = get_clock().now() - get_clock().procedure_time(pending.seconds)
         start_history, error = len(self.history), self.error
-        value = self._compute_output()
+        value = self._compute_output(pending)
         new_results = [] if value is None else [self._Result(self, value, optimistic=False)]
         new_facts = []
 

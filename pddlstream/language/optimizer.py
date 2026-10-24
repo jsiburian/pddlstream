@@ -6,7 +6,6 @@ from pddlstream.core.syntax import Minimize, get_args, get_parameter_name, get_p
 from pddlstream.core.utils import get_mapping, safe_zip, str_from_object
 from pddlstream.language.external import get_procedure_fn, parse_lisp_list
 from pddlstream.language.function import FunctionResult, PredicateResult
-from pddlstream.language.generator import get_next
 from pddlstream.language.plans import get_stream_plan_components, partition_external_plan
 from pddlstream.language.stream import (
     NEGATIVE_SUFFIX,
@@ -208,8 +207,7 @@ class OptimizerInstance(StreamInstance):
         # TODO: compute things dependent on a stream and treat like an optimizer
         # Also make an option to just treat everything like an optimizer
 
-    def _next_wild(self):
-        output, self.enumerated = get_next(self._generator, default=[])
+    def _wild_output(self, output):
         if not isinstance(output, OptimizerOutput):
             output = OptimizerOutput(assignments=output)
         self.infeasible.update(output.infeasible)

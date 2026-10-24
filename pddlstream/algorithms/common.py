@@ -42,6 +42,18 @@ def to_incumbent(solution):
     )
 
 
+def get_resource_usage(calls):
+    """The procedure calls and their running time by executor resource ('default' for streams without one)."""
+    usage = {}
+    for call in calls:
+        if call.fresh:
+            resource = call.instance.info.resource or 'default'
+            counts = usage.setdefault(resource, {'calls': 0, 'seconds': 0.0})
+            counts['calls'] += 1
+            counts['seconds'] += call.seconds
+    return usage
+
+
 class SolutionStore:
     def __init__(self, evaluations, max_time, success_cost, verbose, max_memory=INF):
         # TODO: store a map from head to value?
@@ -94,7 +106,8 @@ class SolutionStore:
         """The instance's next results and new facts, with the time charged to sampling and the call recorded."""
         start_time = get_clock().now()
         call_index, num_history, error = instance.num_calls, len(instance.history), instance.error
-        new_results, new_facts = instance.next_results(verbose=verbose)
+        pending = instance.begin_call()
+        new_results, new_facts = instance.finish_call(pending, verbose=verbose)
         self.sample_time += get_clock().now() - start_time
         if instance.error is not error:
             outcome = Outcome.ERROR
@@ -103,7 +116,7 @@ class SolutionStore:
         else:
             outcome = Outcome.EXHAUSTED if instance.enumerated else Outcome.NO_SAMPLE_YET
         fresh = (num_history < len(instance.history)) or (outcome is Outcome.ERROR)
-        call = Call(instance, call_index, outcome, new_results, new_facts, fresh)
+        call = Call(instance, call_index, outcome, new_results, new_facts, fresh, pending.seconds)
         get_record().calls.append(call)
         emit(call)
         return new_results, new_facts
@@ -131,6 +144,8 @@ class SolutionStore:
             termination=self.get_termination(infeasible, gaps, stats),
             gaps=sorted(gaps),
         )
+        if get_config().executor is not None:
+            summary.update(resources=get_resource_usage(record.calls))
         logger.info(f'Summary: {str_from_object(summary, ndigits=3)}')
         write_stream_statistics(externals, self.verbose)
         return self.extract_solution(summary, infeasible and not gaps)
