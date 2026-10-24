@@ -181,6 +181,10 @@ class Function(External):
         return True
 
     @property
+    def is_complete(self):
+        return True  # A function has exactly one value
+
+    @property
     def is_cost(self):
         return True
 

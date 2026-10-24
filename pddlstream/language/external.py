@@ -87,8 +87,11 @@ def convert_constants(fact):
 
 
 class ExternalInfo(PerformanceInfo):
-    def __init__(self, eager=False, eager_skeleton=False, defer_fn=never_defer, **kwargs):
+    def __init__(self, eager=False, eager_skeleton=False, defer_fn=never_defer, complete=False, **kwargs):
         super().__init__(**kwargs)
+        # Whether the procedure's outputs are exactly the values that satisfy the certified facts, so running out of
+        # outputs proves that no others exist (used by strict=True; see docs/v2/adr-001-stream-outcomes.md)
+        self.complete = complete
         # TODO: enable eager=True for inexpensive test streams by default
         # TODO: change p_success and overhead if it's a function or test stream
         self.eager = eager
@@ -375,6 +378,10 @@ class External(Performance):
     @property
     def is_special(self):
         return self.is_fluent or self.is_negated
+
+    @property
+    def is_complete(self):
+        return self.info.complete
 
     @property
     def is_function(self):

@@ -63,6 +63,9 @@ class SolverConfig:
     # When a stream or predicate raises: 'raise' stops the solve, 'fail' treats the call as exhausted (a cost function
     # that raises always stops the solve, since planning needs its value)
     stream_errors: str = 'raise'
+    # Conclude that no plan exists only if every stream that ran out of outputs is declared complete
+    # (StreamInfo(complete=True)); otherwise exhausting a stream counts as proof, as in earlier versions
+    strict: bool = False
 
     # Stream statistics from earlier runs
     load_statistics: bool = True

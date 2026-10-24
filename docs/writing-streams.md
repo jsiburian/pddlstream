@@ -84,6 +84,9 @@ which is evaluated as needed instead of certified by a stream.
 - `opt_gen_fn=PartialInputs(...)`: which inputs the optimistic placeholder outputs depend on.
 - `defer_fn`: whether a call can wait until the plan reaches the step that needs it (`never_defer`,
   `defer_unique`, `defer_shared`). Deferred calls appear in the plan as `StreamAction` steps.
+- `complete=True`: the procedure produces every value that satisfies its certified facts (e.g. an exact test or an
+  enumeration of all grasps). With `solve(..., strict=True)`, only exhausted complete streams let the solver conclude
+  that no plan exists.
 
 `FunctionInfo` and `PredicateInfo` do the same for functions and predicates.
 
@@ -102,4 +105,7 @@ A *wild* stream returns `WildOutput(values, facts)` to certify facts beyond its 
 - `verbose=True` (the default) prints every stream call, and `debug=True` prints FastDownward's output and keeps
   its files in `./temp/`.
 - `result.status` says whether a plan was found, a limit was reached, or the solver concluded that no plan exists.
+  `result.stats['termination']` says why the solver stopped, `result.stats['gaps']` what it cut short, and
+  `result.stats['outcomes']` counts what the stream calls did.
+- `stream_errors='fail'` treats a stream that raises as exhausted instead of stopping the solve.
 - The `examples/` directory covers each feature, from `examples/blocksworld` (no streams) to the PyBullet robots.

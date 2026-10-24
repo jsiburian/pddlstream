@@ -140,6 +140,8 @@ class StreamInfo(ExternalInfo):
     :param eager_skeleton: not used yet
     :param defer_fn: decides whether a call can be deferred until the plan reaches it (e.g. never_defer,
         defer_unique, defer_shared)
+    :param complete: the procedure's outputs are exactly the values that satisfy the certified facts, so running out
+        of outputs proves that no others exist (only matters with strict=True)
     :param p_success: the prior probability that a call produces outputs
     :param overhead: the prior expected cost of a call
     :param effort: a fixed effort that replaces the estimate from p_success and overhead

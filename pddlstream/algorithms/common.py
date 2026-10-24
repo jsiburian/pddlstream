@@ -104,6 +104,10 @@ class SolutionStore:
             gaps.add('max_memory')
         if any(call.outcome is Outcome.ERROR for call in record.calls):
             gaps.add('stream_errors')
+        if get_config().strict and any(
+            call.instance.enumerated and not call.instance.external.is_complete for call in record.calls
+        ):
+            gaps.add('incomplete_streams')
         summary = self.export_summary()
         summary.update(stats)
         summary.update(

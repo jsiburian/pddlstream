@@ -14,7 +14,7 @@ from pddlstream.algorithms.reorder import reorder_stream_plan
 from pddlstream.algorithms.scheduling.plan_streams import OptSolution
 from pddlstream.algorithms.skeleton import SkeletonQueue
 from pddlstream.algorithms.visualization import create_visualizations, has_pygraphviz, log_plans, reset_visualizations
-from pddlstream.core.context import note_gap
+from pddlstream.core.context import get_config, note_gap
 from pddlstream.core.problem import INFEASIBLE, get_length, is_plan, str_from_plan
 from pddlstream.core.utils import INF, implies
 from pddlstream.language.fluent import compile_fluent_streams
@@ -198,6 +198,12 @@ def compile_problem(problem, stream_info, constraints, unit_costs, unit_efforts)
     automatically_negate_externals(domain, externals)
     enforce_simultaneous(domain, externals)
     compile_fluent_streams(domain, externals)
+    if get_config().strict:
+        for external in externals:
+            if isinstance(external, Stream) and external.is_negated and not external.is_complete:
+                logger.warning(
+                    f'{external.name} is used negated but not declared complete, so its failures are trusted'
+                )
     return evaluations, goal_exp, domain, externals
 
 
