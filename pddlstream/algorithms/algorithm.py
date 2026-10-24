@@ -3,7 +3,6 @@ import dataclasses
 import functools
 import inspect
 import logging
-from collections import Counter
 from contextlib import contextmanager, nullcontext
 
 from pddlstream.algorithms.common import SOLUTIONS
@@ -24,7 +23,6 @@ from pddlstream.core.evaluations import add_certified, evaluations_from_init, is
 from pddlstream.core.log import console_output
 from pddlstream.core.objects import Object
 from pddlstream.core.registry import get_registry, use_registry
-from pddlstream.core.syntax import get_args, get_prefix
 from pddlstream.core.utils import INF
 from pddlstream.fastdownward.tasks import (
     has_costs,
@@ -37,9 +35,10 @@ from pddlstream.fastdownward.tasks import (
 from pddlstream.language.exogenous import compile_to_exogenous
 from pddlstream.language.external import External
 from pddlstream.language.function import parse_function, parse_predicate
+from pddlstream.language.lint import ERROR, lint
 from pddlstream.language.optimizer import parse_optimizer
 from pddlstream.language.rule import apply_rules_to_streams, parse_rule
-from pddlstream.language.stream import Stream, StreamInstance, parse_stream
+from pddlstream.language.stream import StreamInstance, parse_stream
 
 logger = logging.getLogger(__name__)
 
@@ -72,26 +71,12 @@ def parse_constants(domain, constant_map):
 
 
 def check_problem(domain, streams, obj_from_constant):
-    for action in domain.actions + domain.axioms:
-        for p, c in Counter(action.parameters).items():
-            if c != 1:
-                raise ValueError(f'Parameter [{p.name}] for action [{action.name}] is not unique')
-        # TODO: check that no undeclared parameters & constants
-
-    undeclared_predicates = set()
-    for stream in streams:
-        # TODO: domain.functions
-        facts = list(stream.domain)
-        if isinstance(stream, Stream):
-            facts.extend(stream.certified)
-        for fact in facts:
-            name = get_prefix(fact)
-            if name not in domain.predicate_dict:
-                undeclared_predicates.add(name)
-            elif len(get_args(fact)) != domain.predicate_dict[name].get_arity():  # predicate used with wrong arity: {}
-                logger.warning(f'predicate used with wrong arity in stream [{stream.name}]: {fact}')
-    if undeclared_predicates:
-        logger.warning(f'Undeclared predicates: {sorted(undeclared_predicates)}')  # Undeclared predicate: {}
+    """Raises the lint errors of a parsed problem and logs its warnings about predicates."""
+    for issue in lint(domain, streams):
+        if issue.severity == ERROR:
+            raise ValueError(issue.message)
+        if issue.code in ['wrong-arity', 'undeclared-predicate']:  # Streams log their other warnings when created
+            logger.warning(issue.message)
 
 
 def reset_registries():

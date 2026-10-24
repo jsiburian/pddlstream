@@ -17,9 +17,10 @@ from pddlstream.algorithms.visualization import create_visualizations, has_pygra
 from pddlstream.core.context import get_config, note_gap
 from pddlstream.core.problem import INFEASIBLE, get_length, is_plan, str_from_plan
 from pddlstream.core.trace import Iteration, SkeletonProgress, emit
-from pddlstream.core.utils import INF, implies
+from pddlstream.core.utils import INF
 from pddlstream.language.fluent import compile_fluent_streams
 from pddlstream.language.function import Function, Predicate
+from pddlstream.language.lint import CapabilityError
 from pddlstream.language.optimizer import ComponentStream
 from pddlstream.language.statistics import compute_plan_effort, load_stream_statistics
 from pddlstream.language.stream import Stream
@@ -107,7 +108,8 @@ def solve_abstract(
     eager_externals = list(filter(lambda e: e.info.eager, externals))
     positive_externals = streams + functions + optimizers
     has_optimizers = bool(optimizers)  # TODO: deprecate
-    assert implies(has_optimizers, use_skeletons)
+    if has_optimizers and not use_skeletons:
+        raise CapabilityError('Optimizers need the adaptive algorithm (with plan skeletons)')
 
     store = SolutionStore(evaluations, max_time, success_cost, verbose, max_memory=max_memory)
     skeleton_queue = SkeletonQueue(store, domain, disable=not has_optimizers)

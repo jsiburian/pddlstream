@@ -14,6 +14,7 @@ from pddlstream.core.utils import INF, Verbose, str_from_object
 from pddlstream.fastdownward.grounding import instantiate_task, sas_from_instantiated
 from pddlstream.fastdownward.search import abstrips_solve_from_task
 from pddlstream.fastdownward.tasks import get_problem, task_from_domain_problem
+from pddlstream.language.lint import CapabilityError
 from pddlstream.language.statistics import load_stream_statistics
 from pddlstream.language.stream import Stream
 
@@ -119,7 +120,7 @@ def solve_incremental(
         load_stream_statistics(externals)
     fluent_streams = [external.name for external in externals if isinstance(external, Stream) and external.is_fluent]
     if fluent_streams:
-        raise NotImplementedError(
+        raise CapabilityError(
             'The incremental algorithm does not support fluent streams ({}); use a focused '
             'algorithm such as adaptive'.format(', '.join(fluent_streams))
         )
