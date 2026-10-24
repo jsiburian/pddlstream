@@ -10,7 +10,8 @@ from pddlstream.algorithms.focused import solve_hierarchical
 from pddlstream.algorithms.incremental import solve_exhaustive, solve_immediate
 from pddlstream.algorithms.meta import solve
 from pddlstream.algorithms.serialized import solve_serialized
-from pddlstream.core.problem import is_plan, print_solution
+from pddlstream.core.problem import PDDLProblem, is_plan, print_solution
+from pddlstream.core.syntax import And
 from pddlstream.language.generator import compose_gen_fns, from_fn, gen_fn_from_wild_gen_fn
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -65,3 +66,22 @@ def test_numpy_math_shim():
     from examples.pybullet.utils.pybullet_tools.utils import get_yaw
 
     assert get_yaw((1, 1)) == pytest.approx(0.785398, abs=1e-6)
+
+
+CONSTANT_DOMAIN = """(define (domain constant) (:requirements :strips) (:constants @t)
+  (:predicates (Block ?b) (Table ?t) (Placement ?b ?p) (Placed ?b))
+  (:action place :parameters (?b ?p) :precondition (Placement ?b ?p) :effect (Placed ?b)))"""
+
+CONSTANT_STREAMS = """(define (stream constant)
+  (:stream sample-placement :inputs (?b) :domain (and (Block ?b) (Table @t)) :outputs (?p)
+    :certified (Placement ?b ?p)))"""
+
+
+def test_serialized_with_constants():
+    """solve_serialized reuses its parsed streams, whose domain facts refer to constants, across subgoals."""
+    init = [('Block', 'a'), ('Block', 'b'), ('Table', 'table')]
+    stream_map = {'sample-placement': from_fn(lambda b: (f'{b}-pose',))}
+    goal = And(('Placed', 'a'), ('Placed', 'b'))
+    problem = PDDLProblem(CONSTANT_DOMAIN, {'@t': 'table'}, CONSTANT_STREAMS, stream_map, init, goal)
+    plan, _, _ = solve_serialized(problem, unit_costs=True, verbose=False)
+    assert [action.args for action in plan] == [('a', 'a-pose'), ('b', 'b-pose')]

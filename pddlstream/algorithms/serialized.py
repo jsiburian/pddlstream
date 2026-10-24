@@ -1,10 +1,9 @@
 import logging
 
-from pddlstream.algorithms.algorithm import parse_problem
+from pddlstream.algorithms.algorithm import parse_problem, solve_scope
 from pddlstream.algorithms.focused import solve_focused
 from pddlstream.core.conversion import transform_plan_args, value_from_evaluation
 from pddlstream.core.evaluations import evaluations_from_init
-from pddlstream.core.log import console_output
 from pddlstream.core.objects import Object
 from pddlstream.core.problem import Certificate, PDDLProblem, SolveResult, Status, print_solution
 from pddlstream.core.syntax import AND, And, get_args, get_function, get_prefix
@@ -67,10 +66,19 @@ def apply_actions(domain, state, plan, unit_costs=False):
 ##################################################
 
 
-@console_output()
 def solve_serialized(
     initial_problem, stream_info={}, unit_costs=False, unit_efforts=False, verbose=True, retain_facts=True, **kwargs
 ):
+    """Solves the goal's conjuncts one after another (each subproblem starts where the last plan ended), reusing the
+    parsed streams. The other keyword arguments are those of solve_focused."""
+    # One scope for all subgoals, so their objects (which the parsed streams refer to) persist between them
+    with solve_scope():
+        return _solve_serialized(
+            initial_problem, stream_info, unit_costs, unit_efforts, verbose, retain_facts, **kwargs
+        )
+
+
+def _solve_serialized(initial_problem, stream_info, unit_costs, unit_efforts, verbose, retain_facts, **kwargs):
     # TODO: be careful of CanMove deadends
     domain_pddl, constant_map, stream_pddl, stream_map, init, goal = initial_problem
     _, _, domain, streams = parse_problem(

@@ -53,7 +53,11 @@ def parse_constants(domain, constant_map):
         if constant.name not in constant_map:
             raise ValueError(f'Undefined constant {constant.name}')
         value = constant_map.get(constant.name, constant.name)
-        obj_from_constant[constant.name] = Object(value, name=constant.name)  # TODO: remap names
+        # A solve that reuses parsed streams (e.g. a later subgoal of solve_serialized) reuses their constants
+        if Object.has_name(constant.name) and (Object.from_name(constant.name).value is value):
+            obj_from_constant[constant.name] = Object.from_name(constant.name)
+        else:
+            obj_from_constant[constant.name] = Object(value, name=constant.name)  # TODO: remap names
         # TODO: add object predicate
 
     for name in constant_map:
