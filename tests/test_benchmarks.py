@@ -10,7 +10,7 @@ import pytest
 
 from benchmarks.common.goals import UnsupportedTask, coverage, goal_from_task, goal_literals
 from benchmarks.common.language import ScriptedAgent, score, symbolic_problem
-from benchmarks.common.policy import TampPolicy
+from benchmarks.common.policy import Reobserve, TampPolicy
 from benchmarks.common.primitives import Pose, collides, point_grasps, solve_ik
 from benchmarks.common.protocol import Conditional, ObjectSpec, TaskSpec, observation_from_json, task_from_json, to_json
 from benchmarks.common.remote import start_server
@@ -213,6 +213,23 @@ def test_tumbled_object():
         )
         policy.replan(tumbled)
         assert 'banana' in policy.frames and policy.status == 'executing'
+    finally:
+        policy.close()
+
+
+def test_reobserve_needs_the_object():
+    # After lifting, the policy plans from the observed grasp only if the object came along
+    probe = json.loads(LIVE_PROBE.read_text())
+    task = next(task_from_json(data) for data in json.loads(FIXTURES.read_text()) if data['name'] == probe['task'])
+    scene = [ObjectSpec('banana', (0.1, 0.23, 0.036), points=tuple(map(tuple, banana_points())))]
+    scene.append(ObjectSpec('bowl', (0.16, 0.16, 0.06), 'container'))
+    observation = observation_from_json({'arm': probe['arm'], 'gripper': 1.0, 'objects': probe['objects']})
+    policy = TampPolicy(scene, gripper='robotiq', containment='center')
+    try:
+        policy.reset(task, observation)
+        policy.actions, policy.expected = [Reobserve('banana')], [{}]  # The banana stayed on the table
+        policy.act(observation)
+        assert policy.held is None and policy.plans[-1]['plan'][0].startswith('move_free(')
     finally:
         policy.close()
 

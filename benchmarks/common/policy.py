@@ -11,7 +11,7 @@ import numpy as np
 
 from benchmarks.common.goals import goal_from_task, goal_literals
 from benchmarks.common.primitives import Conf, Grasp, Pose, collides, get_procedures, get_stream_info, seed, solve_ik
-from benchmarks.common.protocol import condition_key, pose_from_state
+from benchmarks.common.protocol import Conditional, condition_key, pose_from_state
 from benchmarks.common.skills import SKILLS, SkillStep, compile_skills
 from benchmarks.common.world import World, pbu
 from pddlstream.algorithms.session import PlannerSession, WorldPatch
@@ -402,7 +402,14 @@ class TampPolicy:
         if self.actions and isinstance(self.actions[0], Reobserve):
             step = self.actions.pop(0)
             self.expected.pop(0)
-            self.replan(observation, holding=step.name, count=False)
+            if self.observed(Conditional('object_picked_up', {'object': step.name}), observation):
+                self.replan(observation, holding=step.name, count=False)
+            elif self.replans >= self.max_replans:
+                self.status, self.actions = 'failed', []
+            else:  # It slipped out of the gripper, yet stayed near it
+                logger.info(f'{step.name} is not in the gripper: replanning')
+                fumbled = [('Fumbled', step.name)] if any('pick' in s.restricts for s in self.skills.values()) else []
+                self.replan(observation, confirmed=fumbled)
         if self.actions and isinstance(self.actions[0], SkillStep):
             step = self.actions.pop(0)
             self.expected.pop(0)
