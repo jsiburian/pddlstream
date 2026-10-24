@@ -11,9 +11,10 @@ algorithms share. A plugin imports only this module, so it keeps working as the 
 A search strategy proposes plans (propose, postprocess); a refinement strategy calls streams and decides when the
 solve is over (initialize, before_search, may_search, after_search, stats). Either can be your own class, or wrap the
 built-in ones. A BindingPolicy orders the bindings that the skeleton queue samples (solve(..., binding_policy=...)).
-See docs/strategies.md.
+Rows for learning from solves come from their traces (rows_from_trace). See docs/strategies.md.
 """
 
+from pddlstream.algorithms.dataset import read_jsonl, rows_from_trace, write_jsonl
 from pddlstream.algorithms.focused import (
     FocusedRefinement,
     GreedyRefinement,
@@ -56,6 +57,9 @@ __all__ = [
     'drive',
     'finish',
     'is_plan',
+    'read_jsonl',
+    'rows_from_trace',
     'solve_abstract',
     'solve_with',
+    'write_jsonl',
 ]

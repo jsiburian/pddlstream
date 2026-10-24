@@ -132,3 +132,24 @@ class RoundRobinPolicy(BindingPolicy):
         self.turns[binding.skeleton.index] += 1
         return (default.not_greedy, default.complexity, self.turns[binding.skeleton.index], *default[2:])
 ```
+
+## Learning
+
+`rows_from_trace(result.trace, **labels)` turns the trace of a solve (`trace=True`) into dataset rows. There is a row
+per stream call (stream, inputs, call index, outcome, results, whether the procedure ran) and a row per skeleton
+(streams, actions, cost, how far binding it got). `write_jsonl` and `read_jsonl` store the rows.
+
+`examples/learning/policies.py` has two binding policies that learn, written against the facade:
+
+- `LearnedPolicy` learns each stream's success rate from the rows (`StreamStatistics.from_rows`). It treats a binding
+  as more complex by the expected failures of its remaining streams.
+- `ConflictPolicy` learns within a solve (conflict-directed sampling). Values introduced by bindings that could not
+  be extended count as conflicts, and bindings that use them are tried later.
+
+`python -m examples.learning.run` trains on two continuous TAMP problems and solves three held-out ones:
+
+| Held-out problem | Default | Learned | Conflicts |
+|---|---|---|---|
+| tight, 2 blocks | 152 calls | 152 | 152 |
+| blocked, 3 blocks | 100 | 100 | 100 |
+| blocked, 4 blocks | 137 | 107 | 137 |
