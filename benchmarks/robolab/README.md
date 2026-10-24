@@ -55,7 +55,21 @@ conditionals put things in or on (bowls, bins, plates) are containers, which the
 - an object counts as in a container when its center is inside the container's footprint, as RoboLab's
   `object_in_container` checks, so an object placed in a bowl may settle without a replan.
 
-The table's height comes from where the objects rest: level with the robot's base.
+The table's height comes from where the objects rest: level with the robot's base. Two more things make RoboLab's
+scenes plannable:
+- some meshes lie on their side in their own frame; the planner plans such objects in an upright frame at the same
+  origin, since grasps approach from above in the object's frame;
+- most scenes are cluttered with objects the goal does not mention; the planner first plans with them fixed (as
+  obstacles, for up to 20 s), and with them movable only if that finds no plan.
+
+`replay.py` rebuilds the planner's problem of a recorded episode (RoboLab's `run_N.hdf5` and the task's scene) and
+solves it on a CPU, with an explanation when it fails:
+
+```bash
+cd benchmarks/robolab/RoboLab  # In RoboLab's environment, with pxr (Isaac Sim's USD libraries or usd-core)
+PYTHONPATH=../../.. .venv/bin/python -m benchmarks.robolab.replay export output/<folder>/<Task> --output problem.json
+cd ../../.. && pixi run python -m benchmarks.robolab.replay solve benchmarks/robolab/RoboLab/problem.json
+```
 
 ## Tasks
 
@@ -124,3 +138,4 @@ python -m benchmarks.robolab.baseline summarize benchmarks/robolab/RoboLab/outpu
 | `probe.py` | Task fixtures and coverage (static), or observation layouts (live) |
 | `meshes.py` | The objects' surface points from a scene's USD file (needs pxr: Isaac Sim, or usd-core on a CPU) |
 | `baseline.py` | The supported tasks in shards, and a summary of RoboLab's episode results |
+| `replay.py` | A recorded episode's planning problem, exported (RoboLab's environment) and solved (pddlstream's) |

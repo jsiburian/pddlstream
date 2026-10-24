@@ -16,6 +16,7 @@ from benchmarks.common.protocol import Conditional, ObjectSpec, TaskSpec, observ
 from benchmarks.common.remote import start_server
 from benchmarks.common.skills import PRESS, compile_skills
 from benchmarks.common.world import GRIPPERS, World
+from benchmarks.robolab import replay as robolab_replay
 from benchmarks.robolab.baseline import shard, summarize, supported_tasks
 from benchmarks.standin.env import SCENARIOS, StandinEnv
 from benchmarks.standin.episodes import generate, load, replay, run_episode
@@ -197,6 +198,18 @@ def test_focus():
             'block1',
             'block2',
         }
+    finally:
+        policy.close()
+
+
+def test_replay_solve():
+    # A recorded run's problem (as replay.py exports it from Isaac Sim's recording) plans on a CPU
+    probe = json.loads(LIVE_PROBE.read_text())
+    points = {'banana': banana_points().tolist(), 'bowl': bowl_points().tolist()}
+    problem = {'task': probe['task'], 'arm': probe['arm'], 'objects': probe['objects'], 'points': points}
+    policy, explanation = robolab_replay.solve(problem, max_time=30)
+    try:
+        assert policy.status == 'executing' and 'succeeded' in str(explanation)
     finally:
         policy.close()
 
