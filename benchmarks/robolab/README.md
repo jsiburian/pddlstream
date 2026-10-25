@@ -102,13 +102,15 @@ RoboLab's robot is DROID's Franka arm with a Robotiq 2F-85 gripper. A live probe
 
 ## pi0.5 as a skill
 
-When a planned grasp slips (a held object is not where the gripper should carry it), the planner leaves out its own
-pick of that object and uses the `vla_pick` skill instead: the server answers with the skill's instruction ("pick up
-the banana") rather than actions, the client runs a VLA, and once the object is off the table next to the gripper,
-the planner plans the rest from the grasp it observes. When the planner gives up on an episode (it finds no plan,
-or has no replans left), the VLA takes over the whole task from its instruction. On RoboLab the VLA is pi0.5 (DROID, joint positions), served
-by [openpi](https://github.com/Physical-Intelligence/openpi) in its own environment and queried through RoboLab's
-pi0-family client (`policies/pi0_family`), as RoboLab documents:
+The `vla_pick` skill picks an object with a VLA. Its action needs no inverse kinematics, but costs more than the
+planner's own pick (8 against 1, from its prior success probability of 0.5). The planner uses it for an object when
+it finds no grasp of its own, or after a planned grasp of the object slipped (a held object is not where the gripper
+should carry it), which rules out its own pick. The server answers with the skill's instruction ("pick up the
+banana") rather than actions, the client runs the VLA, and once the object is off the table next to the gripper, the
+planner plans the rest from the grasp it observes. When the planner gives up on an episode (it finds no plan, or has
+no replans left), the VLA takes over the whole task from its instruction. On RoboLab the VLA is pi0.5 (DROID, joint
+positions), served by [openpi](https://github.com/Physical-Intelligence/openpi) in its own environment and queried
+through RoboLab's pi0-family client (`policies/pi0_family`), as RoboLab documents:
 
 ```bash
 git clone https://github.com/xuningy/openpi.git ~/openpi && cd ~/openpi  # The fork RoboLab's docs use
@@ -139,6 +141,15 @@ tasks succeed (22.7%)**. The failures, by cause (from the planner server's log a
 | A replan after a disturbance fails | 3 | block stacking |
 | The planner's goal holds, RoboLab's condition does not | 2 | glasses picked up, but not 5 cm above the table |
 | Still executing when the episode ends | 1 | two bananas into a crate |
+
+Planner + pi0.5, commit 5e8acfb, on the 75 failures (one episode each, seed 0), 2026-10-24/25: **9 more succeed,
+31 of 97 (32.0%)**.
+- In 4, pi0.5 finished the task after the planner gave up: cubes and blocks into a bin, plastic bottles into a pail,
+  an orange or a lime moved, the third banana into a bin (after pi0.5 picked it up again from a slipped grasp).
+- In 5, the planner succeeded alone. Episodes vary between runs (contacts in Isaac Sim, and the planner's time
+  limits), so the planner-only result varies by a few tasks too.
+- pi0.5 completed 3 of its 83 picks within 300 actions. Its instructions name objects by their scene names ("pick up
+  the lime01_01"), which may be one reason.
 
 ## Files
 
