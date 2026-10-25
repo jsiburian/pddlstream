@@ -129,6 +129,17 @@ python -m benchmarks.robolab.baseline list --shard 1/2   # The supported tasks, 
 python -m benchmarks.robolab.baseline summarize benchmarks/robolab/RoboLab/output/<folders>
 ```
 
+Planner only, commit c33f23b, one episode per task (seed 0) on RTX A6000s, 2026-10-24: **22 of the 97 supported
+tasks succeed (22.7%)**. The failures, by cause (from the planner server's log and RoboLab's events):
+
+| Cause | Tasks | Example |
+|---|---|---|
+| A grasp slips or misses in Isaac Sim, and replans run out of episode time | 44 | lizards, bagels, bowls, mugs |
+| No plan within the time limit | 25 | objects out of top-down reach (a spoon 0.83 m from the base); objects packed against others, which the open gripper's fingers hit; five objects into one bin |
+| A replan after a disturbance fails | 3 | block stacking |
+| The planner's goal holds, RoboLab's condition does not | 2 | glasses picked up, but not 5 cm above the table |
+| Still executing when the episode ends | 1 | two bananas into a crate |
+
 ## Files
 
 | File | Contents |
